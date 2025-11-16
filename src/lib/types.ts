@@ -34,6 +34,7 @@ export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
 export type CollectionTask = {
   id: string;
   vehicleId: string;
+  driver?: string;
   customerId: string;
   materialType: 'Plastic' | 'Glass' | 'Paper' | 'Metal' | 'Mixed';
   address: string;

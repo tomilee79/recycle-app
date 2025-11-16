@@ -87,6 +87,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T01',
     vehicleId: 'V001',
+    driver: 'John Doe',
     customerId: 'C001',
     materialType: 'Plastic',
     address: '서울시 종로구 세종대로 175',
@@ -98,6 +99,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T02',
     vehicleId: 'V003',
+    driver: 'Mike Johnson',
     customerId: 'C002',
     materialType: 'Paper',
     address: '서울시 강남구 테헤란로 152',
@@ -108,7 +110,7 @@ export const collectionTasks: CollectionTask[] = [
   },
   {
     id: 'T03',
-    vehicleId: 'V002',
+    vehicleId: '',
     customerId: 'C003',
     materialType: 'Glass',
     address: '서울시 송파구 올림픽로 300',
@@ -120,6 +122,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T04',
     vehicleId: 'V005',
+    driver: 'Chris Brown',
     customerId: 'C004',
     materialType: 'Metal',
     address: '서울시 영등포구 의사당대로 1',
@@ -132,6 +135,7 @@ export const collectionTasks: CollectionTask[] = [
    {
     id: 'T05',
     vehicleId: 'V001',
+    driver: 'John Doe',
     customerId: 'C005',
     materialType: 'Plastic',
     address: '서울시 서초구 반포대로 222',
@@ -144,6 +148,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T06',
     vehicleId: 'V003',
+    driver: 'Mike Johnson',
     customerId: 'C001',
     materialType: 'Mixed',
     address: '서울시 중구 세종대로 110',
@@ -156,6 +161,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T07',
     vehicleId: 'V005',
+    driver: 'Chris Brown',
     customerId: 'C002',
     materialType: 'Paper',
     address: '서울시 마포구 월드컵로 240',
@@ -167,7 +173,7 @@ export const collectionTasks: CollectionTask[] = [
   },
    {
     id: 'T08',
-    vehicleId: 'V002',
+    vehicleId: '',
     customerId: 'C005',
     materialType: 'Glass',
     address: '서울시 용산구 이태원로 29',
@@ -190,6 +196,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T10',
     vehicleId: 'V001',
+    driver: 'John Doe',
     customerId: 'C003',
     materialType: 'Metal',
     address: '서울시 종로구 종로 1',
@@ -202,6 +209,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T11',
     vehicleId: 'V002',
+    driver: 'Jane Smith',
     customerId: 'C002',
     materialType: 'Glass',
     address: '서울시 강동구 올림픽로 578',
@@ -212,7 +220,7 @@ export const collectionTasks: CollectionTask[] = [
   },
   {
     id: 'T12',
-    vehicleId: 'V003',
+    vehicleId: '',
     customerId: 'C004',
     materialType: 'Plastic',
     address: '서울시 은평구 통일로 1050',
