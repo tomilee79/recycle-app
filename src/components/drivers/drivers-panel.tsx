@@ -8,7 +8,7 @@ import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight, PlusCircle, Search, Trash2, Edit } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal } from "lucide-react";
 import type { Driver } from '@/lib/types';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
 const driverFormSchema = z.object({
@@ -99,11 +100,10 @@ export default function DriversPanel() {
     closeSheet();
   };
 
-  const handleDelete = () => {
-    if (!selectedDriver) return;
-      setDrivers(drivers.filter(d => d.id !== selectedDriver.id));
-      toast({ title: "직원 삭제 완료", description: "직원 정보가 삭제되었습니다.", variant: "destructive" });
-      closeSheet();
+  const handleDelete = (id: string) => {
+    setDrivers(drivers.filter(d => d.id !== id));
+    toast({ title: "직원 삭제 완료", description: "직원 정보가 삭제되었습니다.", variant: "destructive" });
+    closeSheet();
   }
 
   const handleToggleAvailability = (id: string, isAvailable: boolean) => {
@@ -173,9 +173,39 @@ export default function DriversPanel() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openSheet(driver)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => openSheet(driver)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  <span>수정</span>
+                              </DropdownMenuItem>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>삭제</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  이 작업은 되돌릴 수 없습니다. {driver.name} 직원의 정보가 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(driver.id)}>삭제 확인</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -247,27 +277,6 @@ export default function DriversPanel() {
                       {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {selectedDriver ? '저장' : '추가'}
                   </Button>
-                   {selectedDriver && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button type="button" variant="destructive">
-                              <Trash2 className="mr-2"/>삭제
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                이 작업은 되돌릴 수 없습니다. {selectedDriver.name} 직원의 정보가 영구적으로 삭제됩니다.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>취소</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
                 </div>
             </form>
             </Form>
