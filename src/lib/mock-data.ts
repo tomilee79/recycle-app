@@ -1,7 +1,15 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
+
+export const users: User[] = [
+    { id: 'U001', name: '김관리', email: 'admin@ecotrack.co.kr', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
+    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
+    { id: 'U003', name: '박사원', email: 'user@ecotrack.co.kr', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
+    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
+    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
+];
 
 export const vehicles: Vehicle[] = [
   {
@@ -88,6 +96,29 @@ const startOfThisMonth = startOfMonth(today);
 const startOfLastMonth = startOfMonth(subMonths(today, 1));
 const startOfNextMonth = startOfMonth(addMonths(today, 1));
 
+const sampleComments: Comment[] = [
+    {
+        id: 'COM01',
+        authorId: 'U002',
+        text: '예상보다 수거량이 많네요. 다음 방문 시에는 2.5톤 트럭 배차가 필요해 보입니다.',
+        timestamp: formatISO(subMinutes(new Date(), 60)),
+        replies: [
+            {
+                id: 'REPLY01',
+                authorId: 'U001',
+                text: '@이매니저님, 확인했습니다. 다음 주 배차 일정에 반영하겠습니다.',
+                timestamp: formatISO(subMinutes(new Date(), 30)),
+            }
+        ]
+    },
+    {
+        id: 'COM02',
+        authorId: 'U003',
+        text: '현장 진입로가 협소하여 대형 차량 진입에 어려움이 있습니다. 참고 부탁드립니다.',
+        timestamp: formatISO(subMinutes(new Date(), 120)),
+    }
+]
+
 export const collectionTasks: CollectionTask[] = [
   {
     id: 'T01',
@@ -144,6 +175,7 @@ export const collectionTasks: CollectionTask[] = [
         collectedWeight: 2100,
         notes: '지정된 장소 외 추가 수거 요청 있었음.',
         photoUrl: 'https://images.unsplash.com/photo-1574974671999-d57e5e059344?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+        comments: sampleComments,
     }
   },
    {
@@ -451,12 +483,4 @@ export const expensesData: Expense[] = [
     { id: 'EXP003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), category: '통행료', description: '경부고속도로 통행료', amount: 15000, vehicleId: 'V003', status: 'Pending' },
     { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
     { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: '리사이클 로버 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
-];
-
-export const users: User[] = [
-    { id: 'U001', name: '김관리', email: 'admin@ecotrack.co.kr', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
-    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
-    { id: 'U003', name: '박사원', email: 'user@ecotrack.co.kr', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
-    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
-    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];

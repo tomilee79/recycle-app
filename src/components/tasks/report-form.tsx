@@ -8,10 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from "@/hooks/use-toast";
 import type { CollectionTask, TaskReport } from '@/lib/types';
 import { Loader2, Upload, File } from 'lucide-react';
-import { format } from 'date-fns';
 import { useState } from 'react';
 
 const reportFormSchema = z.object({
@@ -24,11 +22,10 @@ type ReportFormValues = z.infer<typeof reportFormSchema>;
 
 interface ReportFormProps {
   task: CollectionTask;
-  onSave: (taskId: string, report: TaskReport) => void;
+  onSave: (taskId: string, report: Omit<TaskReport, 'comments'>) => void;
 }
 
 export function ReportForm({ task, onSave }: ReportFormProps) {
-  const { toast } = useToast();
   const [photoPreview, setPhotoPreview] = useState<string | null>(task.report?.photoUrl || null);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -54,8 +51,8 @@ export function ReportForm({ task, onSave }: ReportFormProps) {
   };
 
   const onSubmit: SubmitHandler<ReportFormValues> = (data) => {
-    const reportData: TaskReport = {
-        reportDate: format(new Date(), 'yyyy-MM-dd'),
+    const reportData: Omit<TaskReport, 'comments'> = {
+        reportDate: task.report?.reportDate || new Date().toISOString().split('T')[0],
         collectedWeight: data.collectedWeight,
         notes: data.notes,
         photoUrl: photoPreview || undefined,

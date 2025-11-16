@@ -7,16 +7,16 @@ import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { collectionTasks as initialCollectionTasks, customers, vehicles as initialVehicles, drivers as initialDrivers } from "@/lib/mock-data";
+import { collectionTasks as initialCollectionTasks, customers, vehicles as initialVehicles, drivers as initialDrivers, users } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy, AlertTriangle, FileText } from 'lucide-react';
+import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy, AlertTriangle, FileText, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { placeholderImages } from '@/lib/placeholder-images';
-import type { CollectionTask, TaskStatus, Vehicle, Driver, TaskReport } from '@/lib/types';
+import type { CollectionTask, TaskStatus, Vehicle, Driver, TaskReport, Comment } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { usePagination } from '@/hooks/use-pagination';
@@ -35,6 +35,7 @@ import { Calendar } from '../ui/calendar';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { ReportForm } from './report-form';
 import { ScrollArea } from '../ui/scroll-area';
+import { Comments } from './comments';
 
 const statusMap: { [key in TaskStatus]: string } = {
   'Pending': '대기중',
@@ -59,12 +60,6 @@ const materialTypeMap: { [key: string]: string } = {
     'Mixed': '혼합'
 };
 const materialTypes = Object.keys(materialTypeMap) as (keyof typeof materialTypeMap)[];
-
-const updateTaskFormSchema = z.object({
-  collectedWeight: z.coerce.number().min(0, "수거량은 0 이상이어야 합니다.").default(0),
-  status: z.enum(statuses),
-});
-type UpdateTaskFormValues = z.infer<typeof updateTaskFormSchema>;
 
 const newTaskFormSchema = z.object({
     customerId: z.string().min(1, "고객사를 선택해주세요."),
@@ -92,19 +87,14 @@ export default function TasksPanel() {
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
 
   const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
-  const [editingTask, setEditingTask] = useState<CollectionTask | null>(null);
-  const [reportingTask, setReportingTask] = useState<CollectionTask | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   
   const sitePhoto = placeholderImages.find(p => p.id === 'collection-site');
-  
-  const updateForm = useForm<UpdateTaskFormValues>({
-    resolver: zodResolver(updateTaskFormSchema),
-  });
 
   const newForm = useForm<NewTaskFormValues>({
       resolver: zodResolver(newTaskFormSchema),
@@ -122,6 +112,7 @@ export default function TasksPanel() {
   
   const handleSheetClose = () => {
     setSelectedTask(null);
+    setIsEditing(false);
   };
 
   const handleStatusChange = useCallback((taskIds: string[], newStatus: TaskStatus) => {
@@ -129,7 +120,6 @@ export default function TasksPanel() {
       prevTasks.map(task => {
         if (taskIds.includes(task.id)) {
             const oldStatus = task.status;
-            // When a task is completed or cancelled, make the driver available again
             if ((oldStatus === 'In Progress') && (newStatus === 'Completed' || newStatus === 'Cancelled')) {
                 const driverName = task.driver;
                 if (driverName) {
@@ -137,7 +127,6 @@ export default function TasksPanel() {
                     setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverName ? {...v, status: 'Idle'} : v));
                 }
             }
-            // When a task becomes 'In Progress', make the driver unavailable
             if (newStatus === 'In Progress' && task.driver) {
                 const driverName = task.driver;
                 setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: false} : d));
@@ -163,7 +152,10 @@ export default function TasksPanel() {
           variant: "destructive",
       });
       setSelectedRowKeys(new Set());
-  }, [toast]);
+      if (selectedTask && taskIds.includes(selectedTask.id)) {
+        handleSheetClose();
+      }
+  }, [toast, selectedTask]);
   
   const handleAssignVehicle = useCallback((taskId: string, vehicleId: string) => {
     const vehicleToAssign = vehicles.find(v => v.id === vehicleId);
@@ -192,28 +184,6 @@ export default function TasksPanel() {
       setSelectedTask(prev => prev ? {...prev, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress'} : null);
     }
   }, [vehicles, selectedTask, toast, handleStatusChange]);
-
-  const handleUpdateTask: SubmitHandler<UpdateTaskFormValues> = (data) => {
-    if (!editingTask) return;
-    
-    const updatedTask = { ...editingTask, collectedWeight: data.collectedWeight, status: data.status };
-
-    setTasks(prevTasks =>
-        prevTasks.map(task => 
-            task.id === editingTask.id ? updatedTask : task
-        )
-    );
-
-    if (editingTask.status !== data.status) {
-        handleStatusChange([editingTask.id], data.status);
-    }
-    
-    toast({
-      title: "작업 업데이트",
-      description: `작업(#${editingTask.id}) 정보가 업데이트 되었습니다.`
-    });
-    setEditingTask(null);
-  }
 
   const handleCreateTask: SubmitHandler<NewTaskFormValues> = (data) => {
       let newTasks: CollectionTask[] = [];
@@ -256,10 +226,11 @@ export default function TasksPanel() {
       newForm.reset();
   }
   
-  const handleSaveReport = (taskId: string, report: TaskReport) => {
+  const handleSaveReport = (taskId: string, reportData: Omit<TaskReport, 'comments'>) => {
       setTasks(prevTasks => prevTasks.map(task => {
           if (task.id === taskId) {
-              const updatedTask = { ...task, report, collectedWeight: report.collectedWeight, status: 'Completed' as TaskStatus };
+              const updatedReport = { ...(task.report || { comments: [] }), ...reportData };
+              const updatedTask = { ...task, report: updatedReport, collectedWeight: reportData.collectedWeight, status: 'Completed' as TaskStatus };
               if (selectedTask?.id === taskId) {
                 setSelectedTask(updatedTask);
               }
@@ -269,7 +240,41 @@ export default function TasksPanel() {
       }));
       handleStatusChange([taskId], 'Completed');
       toast({ title: "보고서 저장됨", description: `작업(#${taskId})의 보고서가 저장되었습니다.` });
-      setReportingTask(null);
+      setIsEditing(false);
+  }
+
+  const handleSaveComment = (taskId: string, comment: Comment) => {
+    setTasks(prevTasks => prevTasks.map(task => {
+        if (task.id === taskId) {
+            const newReport = task.report ? { ...task.report, comments: [...(task.report.comments || []), comment] } : null;
+            const updatedTask = { ...task, report: newReport };
+            if (selectedTask?.id === taskId) {
+              setSelectedTask(updatedTask);
+            }
+            return updatedTask;
+        }
+        return task;
+    }));
+  }
+  
+  const handleSaveReply = (taskId: string, commentId: string, reply: Comment) => {
+    setTasks(prevTasks => prevTasks.map(task => {
+        if (task.id === taskId && task.report?.comments) {
+            const newComments = task.report.comments.map(comment => {
+                if (comment.id === commentId) {
+                    return { ...comment, replies: [...(comment.replies || []), reply] };
+                }
+                return comment;
+            });
+            const newReport = { ...task.report, comments: newComments };
+            const updatedTask = { ...task, report: newReport };
+             if (selectedTask?.id === taskId) {
+              setSelectedTask(updatedTask);
+            }
+            return updatedTask;
+        }
+        return task;
+    }));
   }
 
   const handleCloneTask = (taskToClone: CollectionTask) => {
@@ -503,7 +508,6 @@ export default function TasksPanel() {
                             </DropdownMenu>
                             </TableCell>
                             <TableCell className="text-right">
-                            <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
                                 <AlertDialog>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -512,12 +516,6 @@ export default function TasksPanel() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DialogTrigger asChild>
-                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setReportingTask(task); }}>
-                                                    <FileText className="mr-2 h-4 w-4" />
-                                                    <span>보고서 관리</span>
-                                                </DropdownMenuItem>
-                                            </DialogTrigger>
                                             <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
                                                 <Copy className="mr-2 h-4 w-4" />
                                                 <span>복제</span>
@@ -544,7 +542,6 @@ export default function TasksPanel() {
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
-                            </Dialog>
                             </TableCell>
                         </TableRow>
                     )
@@ -574,34 +571,43 @@ export default function TasksPanel() {
         </Card>
       </div>
 
-      <Dialog open={!!reportingTask} onOpenChange={(open) => !open && setReportingTask(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>작업 결과 보고서 관리</DialogTitle>
-                <DialogDescription>
-                    작업 #{reportingTask?.id}의 수거 결과를 입력하거나 수정합니다.
-                </DialogDescription>
-            </DialogHeader>
-            {reportingTask && <ReportForm task={reportingTask} onSave={handleSaveReport} />}
-        </DialogContent>
-      </Dialog>
-
       <Sheet open={!!selectedTask} onOpenChange={(open) => !open && handleSheetClose()}>
-        <SheetContent className="sm:max-w-lg w-full">
+        <SheetContent className="sm:max-w-xl w-full">
           {selectedTask && (() => {
             const vehicle = getVehicle(selectedTask.vehicleId);
+            const currentUser = users[0]; // Mock current user
             return (
               <>
                 <SheetHeader>
-                  <SheetTitle className="font-headline text-2xl">작업 상세: {selectedTask.id}</SheetTitle>
-                  <SheetDescription>
-                    {getCustomerName(selectedTask.customerId)} / {selectedTask.scheduledDate}
-                  </SheetDescription>
+                   <div className="flex justify-between items-start">
+                    <div>
+                      <SheetTitle className="font-headline text-2xl">작업 상세: {selectedTask.id}</SheetTitle>
+                      <SheetDescription>
+                        {getCustomerName(selectedTask.customerId)} / {selectedTask.scheduledDate}
+                      </SheetDescription>
+                    </div>
+                    {isEditing ? (
+                        <div className="flex gap-2">
+                           <Button size="sm" onClick={() => setIsEditing(false)} variant="outline"><X className="mr-2"/> 취소</Button>
+                        </div>
+                    ) : (
+                       <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}><Edit className="mr-2"/>정보/보고서 수정</Button>
+                    )}
+                  </div>
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100vh-8rem)]">
                 <div className="mt-6 space-y-6 pr-6 pb-6">
                   
-                  {selectedTask.report ? (
+                  {isEditing ? (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">보고서 수정</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           <ReportForm task={selectedTask} onSave={handleSaveReport} />
+                        </CardContent>
+                     </Card>
+                  ) : selectedTask.report ? (
                     <Card>
                       <CardHeader><CardTitle className="text-lg">작업 결과 보고서</CardTitle></CardHeader>
                       <CardContent>
@@ -644,61 +650,91 @@ export default function TasksPanel() {
                   ) : (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">수거 현장 사진 (예시)</CardTitle>
+                        <CardTitle className="text-lg">작업 결과 보고</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {sitePhoto && (
-                          <Image
-                            src={sitePhoto.imageUrl}
-                            alt="수거 현장 사진"
-                            width={600}
-                            height={400}
-                            className="rounded-lg object-cover w-full aspect-video"
-                            data-ai-hint={sitePhoto.imageHint}
-                          />
-                        )}
+                         <ReportForm task={selectedTask} onSave={handleSaveReport} />
                       </CardContent>
                     </Card>
                   )}
                   
-                  <Card>
-                    <CardHeader><CardTitle className="text-lg">작업 기본 정보</CardTitle></CardHeader>
-                    <CardContent className="space-y-4 text-sm">
-                      <div className="flex items-center gap-3">
-                        <Info className="size-5 text-muted-foreground" />
-                        <span className="font-medium">현재 상태:</span>
-                        <Badge variant={statusVariant[selectedTask.status]}>{statusMap[selectedTask.status]}</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="size-5 text-muted-foreground" />
-                        <span className="font-medium">수거지:</span>
-                        <span>{selectedTask.address}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Trash2 className="size-5 text-muted-foreground" />
-                        <span className="font-medium">폐기물 종류:</span>
-                        <span>{materialTypeMap[selectedTask.materialType]}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Truck className="size-5 text-muted-foreground" />
-                        <span className="font-medium">배정 차량:</span>
-                        <span>{vehicle ? `${vehicle.name} (${vehicle.type})` : '미배정'}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <User className="size-5 text-muted-foreground" />
-                        <span className="font-medium">담당 기사:</span>
-                        <span>{selectedTask.driver || '미배정'}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {!vehicle && (
-                     <Card>
-                        <CardHeader><CardTitle className="text-lg">차량 배정</CardTitle></CardHeader>
-                        <CardContent>
-                           <AssignVehicleForm taskId={selectedTask.id} onAssign={handleAssignVehicle} availableVehicles={availableVehicles}/>
+                  {!isEditing && (
+                    <>
+                    <Card>
+                        <CardHeader><CardTitle className="text-lg">작업 기본 정보</CardTitle></CardHeader>
+                        <CardContent className="space-y-4 text-sm">
+                        <div className="flex items-center gap-3">
+                            <Info className="size-5 text-muted-foreground" />
+                            <span className="font-medium">현재 상태:</span>
+                            <Badge variant={statusVariant[selectedTask.status]}>{statusMap[selectedTask.status]}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <MapPin className="size-5 text-muted-foreground" />
+                            <span className="font-medium">수거지:</span>
+                            <span>{selectedTask.address}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Trash2 className="size-5 text-muted-foreground" />
+                            <span className="font-medium">폐기물 종류:</span>
+                            <span>{materialTypeMap[selectedTask.materialType]}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Truck className="size-5 text-muted-foreground" />
+                            <span className="font-medium">배정 차량:</span>
+                            <span>{vehicle ? `${vehicle.name} (${vehicle.type})` : '미배정'}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <User className="size-5 text-muted-foreground" />
+                            <span className="font-medium">담당 기사:</span>
+                            <span>{selectedTask.driver || '미배정'}</span>
+                        </div>
                         </CardContent>
-                     </Card>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><MessageSquare/>소통 기록</CardTitle></CardHeader>
+                        <CardContent>
+                            <Comments 
+                                comments={selectedTask.report?.comments || []} 
+                                users={users}
+                                currentUser={currentUser}
+                                taskId={selectedTask.id}
+                                onSaveComment={handleSaveComment}
+                                onSaveReply={handleSaveReply}
+                            />
+                        </CardContent>
+                    </Card>
+                    {!vehicle && (
+                        <Card>
+                            <CardHeader><CardTitle className="text-lg">차량 배정</CardTitle></CardHeader>
+                            <CardContent>
+                            <AssignVehicleForm taskId={selectedTask.id} onAssign={handleAssignVehicle} availableVehicles={availableVehicles}/>
+                            </CardContent>
+                        </Card>
+                    )}
+                    </>
                   )}
+                   <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          작업 삭제
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>정말로 이 작업을 삭제하시겠습니까?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            이 작업은 되돌릴 수 없습니다. 이 작업과 관련된 모든 정보가 영구적으로 삭제됩니다.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteTasks([selectedTask.id])}>
+                            삭제 확인
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </div>
                 </ScrollArea>
               </>
@@ -741,4 +777,3 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
-

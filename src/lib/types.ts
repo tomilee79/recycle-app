@@ -33,11 +33,20 @@ export type Equipment = {
 
 export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
 
+export type Comment = {
+  id: string;
+  authorId: string; // User ID
+  text: string;
+  timestamp: string;
+  replies?: Comment[];
+}
+
 export type TaskReport = {
     reportDate: string;
     collectedWeight: number;
     notes?: string;
     photoUrl?: string;
+    comments?: Comment[];
 }
 
 export type CollectionTask = {
