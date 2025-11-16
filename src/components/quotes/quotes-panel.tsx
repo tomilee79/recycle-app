@@ -115,6 +115,19 @@ export default function QuotesPanel() {
     }
   }, [watchedStatus, initialStatus, form]);
 
+  useEffect(() => {
+    if (!watchItems) return;
+    watchItems.forEach((item, index) => {
+      const quantity = item.quantity || 0;
+      const unitPrice = item.unitPrice || 0;
+      const newTotal = quantity * unitPrice;
+      if (item.total !== newTotal) {
+        update(index, { ...item, total: newTotal });
+      }
+    });
+  }, [watchItems, update]);
+
+
   const dashboardData = useMemo(() => {
     const totalQuotes = quotes.length;
     const acceptedQuotes = quotes.filter(q => q.status === 'Accepted');
@@ -233,18 +246,6 @@ export default function QuotesPanel() {
     setInitialStatus(quote.status);
     setIsSheetOpen(true);
   };
-
-  useEffect(() => {
-    if (!watchItems) return;
-    watchItems.forEach((item, index) => {
-      const quantity = item.quantity || 0;
-      const unitPrice = item.unitPrice || 0;
-      const newTotal = quantity * unitPrice;
-      if (item.total !== newTotal) {
-        update(index, { ...item, total: newTotal });
-      }
-    });
-  }, [watchItems, update]);
 
   const onSubmit: SubmitHandler<QuoteFormValues> = (data) => {
     const { subtotal, tax, total } = calculateTotals(data.items);
