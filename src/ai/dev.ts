@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/predict-material-type.ts';
-import '@/ai/flows/optimize-route-flow.ts';
-import '@/ai/flows/schemas.ts';
+// This file is used to register all Genkit flows for the dev server.
+import '@/ai/flows/predict-material-type';
+import '@/ai/flows/optimize-route-flow';
