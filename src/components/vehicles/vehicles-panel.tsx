@@ -271,6 +271,22 @@ export default function VehiclesPanel() {
     document.body.removeChild(link);
   }
 
+  const handleEquipmentExport = () => {
+    const headers = ["ID", "종류", "상태", "현재 위치", "최근 점검일", "등록일"];
+    const csvContent = [
+      headers.join(','),
+      ...filteredEquipments.map(e => [e.id, equipmentTypeMap[e.type], equipmentStatusMap[e.status], e.location, e.lastInspected, e.createdAt].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `equipments_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <>
       <Card className="shadow-lg">
@@ -388,9 +404,32 @@ export default function VehiclesPanel() {
               </Pagination>
             </TabsContent>
             <TabsContent value="equipment" className="space-y-4">
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="장비 ID 또는 위치로 검색..." value={equipmentSearch} onChange={(e) => setEquipmentSearch(e.target.value)} className="pl-9" />
+              <div className="flex items-center justify-between gap-2 mt-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="장비 ID 또는 위치로 검색..." value={equipmentSearch} onChange={(e) => setEquipmentSearch(e.target.value)} className="pl-9" />
+                </div>
+                <div className="flex gap-2">
+                    <Dialog>
+                        <DialogTrigger asChild><Button variant="outline"><Upload className="mr-2"/>가져오기</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>CSV 파일에서 장비 가져오기</DialogTitle>
+                                <DialogDescription>
+                                    CSV 파일을 업로드하여 여러 장비를 한 번에 추가합니다.
+                                </DialogDescription>
+                            </DialogHeader>
+                             <div className="space-y-4 py-4">
+                                <Input type="file" accept=".csv" />
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline">취소</Button>
+                                <Button>가져오기</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <Button variant="outline" onClick={handleEquipmentExport}><Download className="mr-2"/>내보내기</Button>
+                </div>
               </div>
               <Table>
                 <TableHeader><TableRow><TableHead>장비 ID</TableHead><TableHead>종류</TableHead><TableHead>상태</TableHead><TableHead>현재 위치</TableHead><TableHead className="text-right">최근 점검일</TableHead></TableRow></TableHeader>
