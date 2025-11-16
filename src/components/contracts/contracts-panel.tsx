@@ -65,6 +65,8 @@ export default function ContractsPanel() {
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
+  const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
+
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
   });
@@ -133,8 +135,6 @@ export default function ContractsPanel() {
     }
     setIsDialogOpen(false);
   };
-  
-  const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
   
 
   return (
@@ -329,5 +329,7 @@ export default function ContractsPanel() {
     </>
   );
 }
+
+    
 
     
