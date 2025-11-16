@@ -1,11 +1,45 @@
 
 'use client';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { reportData } from "@/lib/mock-data";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { reportData, settlementData as initialSettlementData } from "@/lib/mock-data";
+import type { SettlementData, SettlementStatus } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
+const settlementStatusMap: { [key in SettlementStatus]: string } = {
+  'Pending': '청구 대기',
+  'Issued': '발행 완료',
+  'Paid': '수납 완료',
+};
+
+const settlementStatusVariant: { [key in SettlementStatus]: "default" | "secondary" | "outline" } = {
+  'Pending': 'outline',
+  'Issued': 'default',
+  'Paid': 'secondary',
+};
 
 export default function ReportsPanel() {
+  const [settlementData, setSettlementData] = useState<SettlementData[]>(initialSettlementData);
+  const { toast } = useToast();
+
+  const handleStatusChange = (id: string, newStatus: SettlementStatus) => {
+    setSettlementData(prevData =>
+      prevData.map(item =>
+        item.id === id ? { ...item, status: newStatus } : item
+      )
+    );
+    toast({
+      title: '상태 변경 완료',
+      description: `정산 항목의 상태가 '${settlementStatusMap[newStatus]}'(으)로 변경되었습니다.`,
+    });
+  };
+
   const chartConfig = {
     plastic: { label: "플라스틱", color: "hsl(var(--chart-1))" },
     glass: { label: "유리", color: "hsl(var(--chart-2))" },
@@ -85,6 +119,58 @@ export default function ReportsPanel() {
               </ComposedChart>
             </ResponsiveContainer>
           </ChartContainer>
+        </CardContent>
+      </Card>
+      
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>월별 상세 정산 내역</CardTitle>
+          <CardDescription>고객사별 정산 내역 및 청구 상태를 관리합니다.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>정산 월</TableHead>
+                <TableHead>고객사</TableHead>
+                <TableHead>수거 횟수</TableHead>
+                <TableHead>총 수거량(kg)</TableHead>
+                <TableHead>정산 금액(원)</TableHead>
+                <TableHead>상태</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {settlementData.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.month}</TableCell>
+                  <TableCell className="font-medium">{item.customerName}</TableCell>
+                  <TableCell>{item.collectionCount}</TableCell>
+                  <TableCell>{item.totalWeight.toLocaleString()}</TableCell>
+                  <TableCell>{item.amount.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-auto p-0 font-normal">
+                          <Badge variant={settlementStatusVariant[item.status]} className="cursor-pointer">
+                            {settlementStatusMap[item.status]}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {(Object.keys(settlementStatusMap) as SettlementStatus[])
+                          .filter(status => status !== item.status)
+                          .map(status => (
+                            <DropdownMenuItem key={status} onSelect={() => handleStatusChange(item.id, status)}>
+                              {settlementStatusMap[status]}으로 변경
+                            </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

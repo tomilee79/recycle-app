@@ -1,5 +1,5 @@
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
@@ -191,6 +191,16 @@ export const reportData: ReportData[] = [
   { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800000 },
   { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900000 },
 ];
+
+export const settlementData: SettlementData[] = [
+    { id: 'S001', month: '2024-06', customerName: 'BigBelly Inc.', collectionCount: 15, totalWeight: 12500, amount: 3500000, status: 'Paid' },
+    { id: 'S002', month: '2024-06', customerName: 'Recycle Corp', collectionCount: 22, totalWeight: 18200, amount: 5100000, status: 'Issued' },
+    { id: 'S003', month: '2024-06', customerName: 'Green Solutions', collectionCount: 8, totalWeight: 7500, amount: 1800000, status: 'Pending' },
+    { id: 'S004', month: '2024-06', customerName: '지구환경 주식회사', collectionCount: 30, totalWeight: 25000, amount: 7200000, status: 'Pending' },
+    { id: 'S005', month: '2024-05', customerName: 'BigBelly Inc.', collectionCount: 14, totalWeight: 11800, amount: 3300000, status: 'Paid' },
+    { id: 'S006', month: '2024-05', customerName: 'Recycle Corp', collectionCount: 20, totalWeight: 17500, amount: 4950000, status: 'Paid' },
+    { id: 'S007', month: '2024-05', customerName: 'Eco Services', collectionCount: 5, totalWeight: 4200, amount: 950000, status: 'Paid' },
+]
 
 export const drivers: Driver[] = [
   { id: 'D001', name: 'John Doe', contact: '555-0101', isAvailable: false },

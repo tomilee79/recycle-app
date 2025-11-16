@@ -119,7 +119,7 @@ export function MainLayout() {
 
   const viewTitles: { [key in View]: string } = {
     dashboard: '대시보드',
-    reports: '정산 보고서',
+    reports: '정산 관리',
     notifications: '알림 센터',
     vehicles: '차량 관리',
     drivers: '직원 목록',
@@ -188,10 +188,10 @@ export function MainLayout() {
               <SidebarMenuButton
                 onClick={() => setActiveView('reports')}
                 isActive={activeView === 'reports'}
-                tooltip={{ children: '정산 보고서' }}
+                tooltip={{ children: '정산 관리' }}
               >
                 <BarChart3 />
-                <span>보고서</span>
+                <span>정산 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

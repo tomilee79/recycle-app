@@ -55,6 +55,18 @@ export type ReportData = {
   revenue: number;
 };
 
+export type SettlementStatus = 'Pending' | 'Issued' | 'Paid';
+
+export type SettlementData = {
+  id: string;
+  month: string;
+  customerName: string;
+  collectionCount: number;
+  totalWeight: number;
+  amount: number;
+  status: SettlementStatus;
+};
+
 export type Driver = {
   id: string;
   name: string;
