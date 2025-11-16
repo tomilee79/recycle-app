@@ -130,7 +130,7 @@ export function MainLayout() {
 
   const viewTitles: { [key in View]: string } = {
     dashboard: '실시간 배차 현황',
-    billing: '대금 관리',
+    billing: '정산 관리',
     notifications: '알림 센터',
     vehicles: '차량 및 장비 관리',
     drivers: '직원 목록',
@@ -241,10 +241,10 @@ export function MainLayout() {
               <SidebarMenuButton
                 onClick={() => setActiveView('billing')}
                 isActive={activeView === 'billing'}
-                tooltip={{ children: '대금 관리' }}
+                tooltip={{ children: '정산 관리' }}
               >
                 <Receipt />
-                <span>대금 관리</span>
+                <span>정산 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

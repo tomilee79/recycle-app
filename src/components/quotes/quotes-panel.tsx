@@ -282,7 +282,7 @@ export default function QuotesPanel() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="상태를 선택하세요" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                              {(Object.keys(quoteStatusMap) as QuoteStatus[]).map(status => (
