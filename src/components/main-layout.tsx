@@ -132,7 +132,7 @@ export function MainLayout() {
     dashboard: '실시간 배차 현황',
     billing: '대금 관리',
     notifications: '알림 센터',
-    vehicles: '차량 관리',
+    vehicles: '차량 및 장비 관리',
     drivers: '직원 목록',
     'driver-performance': '운전자 성과',
     customers: '고객 목록',
@@ -281,10 +281,10 @@ export function MainLayout() {
               <SidebarMenuButton
                 onClick={() => setActiveView('vehicles')}
                 isActive={activeView === 'vehicles'}
-                tooltip={{ children: '차량 관리' }}
+                tooltip={{ children: '차량 및 장비 관리' }}
               >
                 <LayoutDashboard />
-                <span>차량</span>
+                <span>차량 및 장비</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             
