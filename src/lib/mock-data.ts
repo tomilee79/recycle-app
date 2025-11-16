@@ -433,5 +433,3 @@ export const users: User[] = [
     { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
     { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];
-
-    
