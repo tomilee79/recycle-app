@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -286,7 +287,7 @@ export default function QuotesPanel() {
   const handleEmail = () => {
       if (!selectedQuote) return;
       const customer = customers.find(c => c.id === selectedQuote.customerId);
-      const customerEmail = customer ? `${customer.contactPerson.toLowerCase()}@example.com` : '';
+      const customerEmail = customer ? `${customer.contactPerson.toLowerCase().replace(' ', '.')}@example.com` : '';
       const subject = `[리사이클] 견적서 (${selectedQuote.id}) 송부의 건`;
       const body = `
 안녕하세요, ${customer?.name || ''} ${customer?.contactPerson || ''}님.
@@ -329,7 +330,7 @@ export default function QuotesPanel() {
             name: file.name,
             size: file.size,
             type: file.type,
-            url: URL.createObjectURL(file) // For preview, in real app this would be an upload URL
+            url: URL.createObjectURL(file)
         });
     }
   }
@@ -632,5 +633,3 @@ export default function QuotesPanel() {
     </>
   );
 }
-
-    
