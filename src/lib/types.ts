@@ -168,5 +168,54 @@ export type Quote = {
     items: QuoteItem[];
     subtotal: number;
     tax: number;
-...
-```
+    total: number;
+    notes?: string;
+    attachments?: Attachment[];
+};
+
+export type ContractStatus = 'Active' | 'Expiring' | 'Terminated';
+
+export type ContractItem = {
+    id: string;
+    materialType: string;
+    unitPrice: number;
+}
+
+export type Contract = {
+    id: string;
+    customerId: string;
+    contractNumber: string;
+    startDate: string;
+    endDate: string;
+    status: ContractStatus;
+    items: ContractItem[];
+    notes?: string;
+    attachments?: Attachment[];
+    comments?: Comment[];
+}
+
+export type ExpenseCategory = '유류비' | '정비비' | '통행료' | '기타';
+export type ExpenseStatus = 'Pending' | 'Paid';
+
+export type Expense = {
+    id: string;
+    date: string;
+    category: ExpenseCategory;
+    description: string;
+    amount: number;
+    vehicleId?: string;
+    status: ExpenseStatus;
+}
+
+export type UserRole = 'Super Admin' | 'Manager Admin' | 'User';
+export type UserStatus = 'Active' | 'Disabled';
+
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+    status: UserStatus;
+    createdAt: string;
+    avatarUrl?: string;
+}

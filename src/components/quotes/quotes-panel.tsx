@@ -338,7 +338,7 @@ export default function QuotesPanel() {
   return (
     <>
     <Card className="shadow-lg">
-      <Tabs defaultValue="list">
+      <Tabs defaultValue="dashboard">
         <CardHeader>
             <div className="flex justify-between items-center">
               <div>
