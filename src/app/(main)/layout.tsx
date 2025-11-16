@@ -14,11 +14,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarInset,
-  SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -60,51 +55,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'contact';
 
-const CollapsibleSidebarMenu = ({
-  title,
-  icon,
-  activeView,
-  children,
-  defaultOpen = false,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  activeView: View;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) => {
-  const { state } = useSidebar();
-  const isActive = React.Children.toArray(children).some(child => 
-      React.isValidElement(child) && child.props.isActive
-  );
-
-  return (
-    <Collapsible defaultOpen={defaultOpen || isActive}>
-      <CollapsibleTrigger asChild>
-        <SidebarMenuButton 
-            isActive={isActive && state === 'expanded'}
-            className="justify-between"
-            tooltip={{children: title}}
-        >
-          <div className="flex items-center gap-2">
-            {icon}
-            <span>{title}</span>
-          </div>
-          <ChevronDown className={cn("transition-transform duration-200", "group-data-[state=open]:rotate-180")} />
-        </SidebarMenuButton>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <SidebarMenuSub>{children}</SidebarMenuSub>
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -238,6 +192,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <Link href="/customers"><Users2 /><span>고객 목록</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton
+                    isActive={activeView === 'drivers'}
+                    tooltip={{ children: '직원 목록' }}
+                    asChild
+                >
+                    <Link href="/drivers"><Users /><span>직원 목록</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton
                     isActive={activeView === 'notifications'}
@@ -284,21 +247,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/predict"><Bot /><span>AI 예측</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <SidebarMenuItem>
-              <CollapsibleSidebarMenu
-                title="관리"
-                icon={<Users />}
-                activeView={activeView}
-                defaultOpen={['users', 'driver-performance'].includes(activeView)}
-              >
-                <SidebarMenuSubButton isActive={activeView === 'users'} asChild>
+                <SidebarMenuButton isActive={activeView === 'users'} asChild>
                     <Link href="/users"><Users /><span>사용자 관리</span></Link>
-                </SidebarMenuSubButton>
-                <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeView === 'driver-performance'} asChild>
                     <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
-                </SidebarMenuSubButton>
-              </CollapsibleSidebarMenu>
+                </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
@@ -382,5 +340,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
-
-    

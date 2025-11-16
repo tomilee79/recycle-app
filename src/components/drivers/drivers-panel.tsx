@@ -17,21 +17,17 @@ export default function DriversPanel() {
     <div className="space-y-4">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>직원 목록</CardTitle>
-          <CardDescription>
-            직원(사용자)의 생성, 역할 부여, 정보 수정 등 모든 관리는 '사용자 관리' 메뉴에서 통합하여 진행할 수 있습니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => router.push('/users')}>
-            사용자 관리 메뉴로 이동 <ArrowRight className="ml-2"/>
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>현재 배차 가능한 운전자</CardTitle>
-          <CardDescription>현재 운행중이 아니며, 배차가 가능한 운전자 목록입니다.</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>직원 목록</CardTitle>
+              <CardDescription>
+                시스템 계정(로그인) 관리는 '사용자 관리' 메뉴에서, 직원의 성과 분석은 '성과 대시보드'에서 확인하세요.
+              </CardDescription>
+            </div>
+            <Button onClick={() => router.push('/driver-performance')}>
+              성과 대시보드로 이동 <ArrowRight className="ml-2"/>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -43,13 +39,13 @@ export default function DriversPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {drivers.filter(d => d.isAvailable).map((driver) => (
+              {drivers.map((driver) => (
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium">{driver.name}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
                   <TableCell>
-                    <Badge variant={driver.isAvailable ? 'default' : 'secondary'} className={cn(driver.isAvailable ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600")}>
-                      {driver.isAvailable ? '가능' : '불가능'}
+                    <Badge variant={driver.isAvailable ? 'default' : 'secondary'} className={cn(driver.isAvailable ? "bg-green-500 hover:bg-green-600" : "bg-yellow-500 hover:bg-yellow-600")}>
+                      {driver.isAvailable ? '가능' : '배차중'}
                     </Badge>
                   </TableCell>
                 </TableRow>
