@@ -329,7 +329,3 @@ export default function ContractsPanel() {
     </>
   );
 }
-
-    
-
-    
