@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 
 const settlementStatusMap: { [key in SettlementStatus]: string } = {
   'Pending': '청구 대기',
@@ -71,6 +73,20 @@ export default function BillingPanel() {
   const [expensesData, setExpensesData] = useState<Expense[]>(initialExpensesData);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const { toast } = useToast();
+
+  const {
+    currentPage: settlementCurrentPage,
+    setCurrentPage: setSettlementCurrentPage,
+    paginatedData: paginatedSettlementData,
+    totalPages: settlementTotalPages,
+  } = usePagination(settlementData, 8);
+
+  const {
+    currentPage: expenseCurrentPage,
+    setCurrentPage: setExpenseCurrentPage,
+    paginatedData: paginatedExpenseData,
+    totalPages: expenseTotalPages,
+  } = usePagination(expensesData, 8);
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -179,7 +195,7 @@ export default function BillingPanel() {
                 <Table>
                     <TableHeader><TableRow><TableHead>정산 월</TableHead><TableHead>고객사</TableHead><TableHead>수거 횟수</TableHead><TableHead>총 수거량(kg)</TableHead><TableHead>정산 금액(원)</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
                     <TableBody>
-                    {settlementData.map((item) => (
+                    {paginatedSettlementData.map((item) => (
                         <TableRow key={item.id}>
                         <TableCell>{item.month}</TableCell>
                         <TableCell className="font-medium">{item.customerName}</TableCell>
@@ -201,6 +217,25 @@ export default function BillingPanel() {
                     </TableBody>
                 </Table>
                 </CardContent>
+                <CardFooter>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setSettlementCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={settlementCurrentPage === 1}/>
+                            </PaginationItem>
+                            {Array.from({ length: settlementTotalPages }, (_, i) => i + 1).map(page => (
+                            <PaginationItem key={page}>
+                                <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setSettlementCurrentPage(page); }} isActive={settlementCurrentPage === page}>
+                                {page}
+                                </PaginationLink>
+                            </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setSettlementCurrentPage(prev => Math.min(settlementTotalPages, prev + 1)); }} disabled={settlementCurrentPage === settlementTotalPages}/>
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </CardFooter>
             </Card>
         </TabsContent>
         <TabsContent value="expenses" className="space-y-6 mt-6">
@@ -216,7 +251,7 @@ export default function BillingPanel() {
                     <Table>
                         <TableHeader><TableRow><TableHead>지출일</TableHead><TableHead>항목</TableHead><TableHead>내용</TableHead><TableHead>차량</TableHead><TableHead>금액</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {expensesData.map((item) => {
+                            {paginatedExpenseData.map((item) => {
                                 const CategoryIcon = expenseCategoryMap[item.category].icon;
                                 return (
                                     <TableRow key={item.id}>
@@ -241,6 +276,25 @@ export default function BillingPanel() {
                         </TableBody>
                     </Table>
                 </CardContent>
+                 <CardFooter>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setExpenseCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={expenseCurrentPage === 1}/>
+                            </PaginationItem>
+                            {Array.from({ length: expenseTotalPages }, (_, i) => i + 1).map(page => (
+                            <PaginationItem key={page}>
+                                <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setExpenseCurrentPage(page); }} isActive={expenseCurrentPage === page}>
+                                {page}
+                                </PaginationLink>
+                            </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setExpenseCurrentPage(prev => Math.min(expenseTotalPages, prev + 1)); }} disabled={expenseCurrentPage === expenseTotalPages}/>
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </CardFooter>
             </Card>
         </TabsContent>
 
@@ -289,3 +343,5 @@ export default function BillingPanel() {
     </Tabs>
   );
 }
+
+    

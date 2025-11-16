@@ -19,6 +19,9 @@ import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, UserRole, UserStatus } from '@/lib/types';
 import { format } from 'date-fns';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+
 
 const roleMap: { [key in UserRole]: { label: string; icon: React.ElementType, variant: "default" | "secondary" | "outline" } } = {
   'Super Admin': { label: '최고 관리자', icon: ShieldCheck, variant: 'default' },
@@ -56,6 +59,22 @@ export default function UsersPanel() {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
   });
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const roleMatch = filters.role === 'All' || user.role === filters.role;
+      const statusMatch = filters.status === 'All' || user.status === filters.status;
+      const searchMatch = user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
+      return roleMatch && statusMatch && searchMatch;
+    });
+  }, [users, filters, search]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData: paginatedUsers,
+    totalPages,
+  } = usePagination(filteredUsers, 7);
 
   const openSheet = (user: User | null) => {
     setSelectedUser(user);
@@ -106,16 +125,6 @@ export default function UsersPanel() {
     closeSheet();
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const roleMatch = filters.role === 'All' || user.role === filters.role;
-      const statusMatch = filters.status === 'All' || user.status === filters.status;
-      const searchMatch = user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
-      return roleMatch && statusMatch && searchMatch;
-    });
-  }, [users, filters, search]);
-  
-
   return (
     <>
       <Card className="shadow-lg">
@@ -156,7 +165,7 @@ export default function UsersPanel() {
           <Table>
             <TableHeader><TableRow><TableHead>이름</TableHead><TableHead>이메일</TableHead><TableHead>역할</TableHead><TableHead>상태</TableHead><TableHead>등록일</TableHead></TableRow></TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <TableRow key={user.id} onClick={() => openSheet(user)} className="cursor-pointer">
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -173,6 +182,25 @@ export default function UsersPanel() {
             </TableBody>
           </Table>
         </CardContent>
+         <CardFooter>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/>
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}>
+                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
+                        {page}
+                        </PaginationLink>
+                    </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/>
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </CardFooter>
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -228,3 +256,5 @@ export default function UsersPanel() {
     </>
   );
 }
+
+    

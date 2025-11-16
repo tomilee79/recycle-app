@@ -22,6 +22,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+
 
 const statusMap: { [key: string]: string } = {
   'On Route': '운행중',
@@ -76,6 +79,34 @@ export default function VehiclesPanel() {
       driverId: ''
     }
   });
+
+  const filteredVehicles = useMemo(() => 
+    vehicles.filter(vehicle => 
+      vehicle.name.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+      vehicle.driver.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+      vehicle.id.toLowerCase().includes(vehicleSearch.toLowerCase())
+    ), [vehicles, vehicleSearch]);
+
+  const filteredEquipments = useMemo(() =>
+    equipments.filter(equipment =>
+      equipment.id.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+      equipment.location.toLowerCase().includes(equipmentSearch.toLowerCase())
+    ), [equipments, equipmentSearch]);
+
+  const {
+    currentPage: vehicleCurrentPage,
+    setCurrentPage: setVehicleCurrentPage,
+    paginatedData: paginatedVehicles,
+    totalPages: vehicleTotalPages,
+  } = usePagination(filteredVehicles, 5);
+
+  const {
+    currentPage: equipmentCurrentPage,
+    setCurrentPage: setEquipmentCurrentPage,
+    paginatedData: paginatedEquipments,
+    totalPages: equipmentTotalPages,
+  } = usePagination(filteredEquipments, 5);
+
   
   const handleVehicleClick = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
@@ -178,19 +209,6 @@ export default function VehiclesPanel() {
   };
   
   const availableDrivers = useMemo(() => drivers.filter(d => d.isAvailable), [drivers]);
-
-  const filteredVehicles = useMemo(() => 
-    vehicles.filter(vehicle => 
-      vehicle.name.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
-      vehicle.driver.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
-      vehicle.id.toLowerCase().includes(vehicleSearch.toLowerCase())
-    ), [vehicles, vehicleSearch]);
-
-  const filteredEquipments = useMemo(() =>
-    equipments.filter(equipment =>
-      equipment.id.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
-      equipment.location.toLowerCase().includes(equipmentSearch.toLowerCase())
-    ), [equipments, equipmentSearch]);
 
   return (
     <>
@@ -312,7 +330,7 @@ export default function VehiclesPanel() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredVehicles.map((vehicle) => (
+                  {paginatedVehicles.map((vehicle) => (
                     <TableRow key={vehicle.id} onClick={() => handleVehicleClick(vehicle)} className="cursor-pointer">
                       <TableCell className="font-medium">{vehicle.name}</TableCell>
                       <TableCell>{typeMap[vehicle.type]}</TableCell>
@@ -359,6 +377,23 @@ export default function VehiclesPanel() {
                   ))}
                 </TableBody>
               </Table>
+              <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={vehicleCurrentPage === 1}/>
+                    </PaginationItem>
+                    {Array.from({ length: vehicleTotalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}>
+                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(page); }} isActive={vehicleCurrentPage === page}>
+                        {page}
+                        </PaginationLink>
+                    </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.min(vehicleTotalPages, prev + 1)); }} disabled={vehicleCurrentPage === vehicleTotalPages}/>
+                    </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </TabsContent>
             <TabsContent value="equipment" className="space-y-4">
               <div className="relative mt-4">
@@ -381,7 +416,7 @@ export default function VehiclesPanel() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEquipments.map((item: Equipment) => (
+                  {paginatedEquipments.map((item: Equipment) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.id}</TableCell>
                       <TableCell>{equipmentTypeMap[item.type]}</TableCell>
@@ -400,6 +435,23 @@ export default function VehiclesPanel() {
                   ))}
                 </TableBody>
               </Table>
+              <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={equipmentCurrentPage === 1}/>
+                    </PaginationItem>
+                    {Array.from({ length: equipmentTotalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}>
+                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(page); }} isActive={equipmentCurrentPage === page}>
+                        {page}
+                        </PaginationLink>
+                    </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.min(equipmentTotalPages, prev + 1)); }} disabled={equipmentCurrentPage === equipmentTotalPages}/>
+                    </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </TabsContent>
           </Tabs>
         </CardContent>

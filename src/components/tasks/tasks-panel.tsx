@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { collectionTasks as initialCollectionTasks, customers, vehicles, drivers } from "@/lib/mock-data";
@@ -18,6 +18,9 @@ import { placeholderImages } from '@/lib/placeholder-images';
 import type { CollectionTask, TaskStatus, Vehicle, Driver } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+
 
 const statusMap: { [key in TaskStatus]: string } = {
   'Pending': '대기중',
@@ -98,6 +101,13 @@ export default function TasksPanel() {
       return statusMatch && searchMatch;
     }).sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime());
   }, [tasks, statusFilter, search]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData: paginatedTasks,
+    totalPages,
+  } = usePagination(filteredTasks, 10);
   
   const handleSelectRow = (id: string) => {
       setSelectedRowKeys(prev => {
@@ -175,7 +185,7 @@ export default function TasksPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTasks.map((task) => (
+              {paginatedTasks.map((task) => (
                 <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
                    <TableCell><Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/></TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.scheduledDate}</TableCell>
@@ -206,6 +216,25 @@ export default function TasksPanel() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/>
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}>
+                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
+                        {page}
+                        </PaginationLink>
+                    </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/>
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </CardFooter>
       </Card>
 
       <Sheet open={!!selectedTask} onOpenChange={(open) => !open && handleSheetClose()}>
@@ -321,3 +350,5 @@ function AssignVehicleForm({ taskId, onAssign }: { taskId: string; onAssign: (ta
         </div>
     )
 }
+
+    

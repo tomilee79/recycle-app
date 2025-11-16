@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
   'Active': '활성',
@@ -66,6 +68,24 @@ export default function ContractsPanel() {
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
   });
+  
+  const filteredContractsMemo = useMemo(() => {
+    return contracts.filter(c => {
+        const customerName = getCustomerName(c.customerId).toLowerCase();
+        const searchTerm = search.toLowerCase();
+        const statusMatch = filter === 'All' || c.status === filter;
+        const searchMatch = customerName.includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
+        return statusMatch && searchMatch;
+    });
+  }, [contracts, filter, search]);
+  
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData: paginatedContracts,
+    totalPages,
+  } = usePagination(filteredContractsMemo, 10);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -116,15 +136,6 @@ export default function ContractsPanel() {
   
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
   
-  const filteredContracts = useMemo(() => {
-    return contracts.filter(c => {
-        const customerName = getCustomerName(c.customerId).toLowerCase();
-        const searchTerm = search.toLowerCase();
-        const statusMatch = filter === 'All' || c.status === filter;
-        const searchMatch = customerName.includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
-        return statusMatch && searchMatch;
-    });
-  }, [contracts, filter, search]);
 
   return (
     <>
@@ -169,7 +180,7 @@ export default function ContractsPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContracts.map((contract) => (
+              {paginatedContracts.map((contract) => (
                 <TableRow key={contract.id} onClick={() => openDialog(contract)} className="cursor-pointer">
                   <TableCell className="font-medium">{contract.contractNumber}</TableCell>
                   <TableCell>{getCustomerName(contract.customerId)}</TableCell>
@@ -185,6 +196,25 @@ export default function ContractsPanel() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/>
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}>
+                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
+                        {page}
+                        </PaginationLink>
+                    </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/>
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </CardFooter>
       </Card>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -299,3 +329,5 @@ export default function ContractsPanel() {
     </>
   );
 }
+
+    
