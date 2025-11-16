@@ -76,11 +76,11 @@ export default function ReportsPanel() {
                   />}
                 />
                 <Legend />
-                <Bar dataKey="plastic" stackId="a" fill="var(--color-plastic)" radius={[0, 0, 0, 0]} barSize={30}/>
-                <Bar dataKey="glass" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} barSize={30}/>
-                <Bar dataKey="paper" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} barSize={30}/>
-                <Bar dataKey="metal" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} barSize={30}/>
-                <Bar dataKey="mixed" stackId="a" fill="var(--color-mixed)" radius={[4, 4, 0, 0]} barSize={30}/>
+                <Bar dataKey="plastic" yAxisId="left" stackId="a" fill="var(--color-plastic)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="glass" yAxisId="left" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="paper" yAxisId="left" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="metal" yAxisId="left" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="mixed" yAxisId="left" stackId="a" fill="var(--color-mixed)" radius={[4, 4, 0, 0]} barSize={30}/>
                 <Line type="monotone" dataKey="revenue" stroke="var(--color-revenue)" strokeWidth={2} yAxisId="right" />
               </ComposedChart>
             </ResponsiveContainer>
