@@ -54,13 +54,17 @@ export default function TodosPanel() {
     <div className="max-w-3xl mx-auto">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-headline">
-            <CheckSquare className="text-primary"/>
-            할일 관리
-          </CardTitle>
-          <CardDescription>
-            개인적인 할 일이나 팀의 작은 업무들을 관리하세요.
-          </CardDescription>
+          <div className="flex items-start gap-4">
+              <div className="p-2 bg-primary/10 rounded-full border">
+                  <CheckSquare className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                  <CardTitle className="font-headline text-2xl">할일 관리</CardTitle>
+                  <CardDescription>
+                      개인적인 할 일이나 팀의 작은 업무들을 관리하세요.
+                  </CardDescription>
+              </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex w-full items-center space-x-2 mb-6">
