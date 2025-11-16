@@ -1,5 +1,5 @@
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
