@@ -167,7 +167,7 @@ export const collectionTasks: CollectionTask[] = [
   },
    {
     id: 'T08',
-    vehicleId: '',
+    vehicleId: 'V002',
     customerId: 'C005',
     materialType: 'Glass',
     address: '서울시 용산구 이태원로 29',
