@@ -319,6 +319,7 @@ export function MainLayout() {
                     onClick={() => setActiveView('drivers')}
                     isActive={activeView === 'drivers'}
                   >
+                    <ClipboardList />
                     <span>직원 목록</span>
                   </SidebarMenuSubButton>
                   <SidebarMenuSubButton
