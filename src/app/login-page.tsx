@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { EcoTrackLogo } from '@/components/icons';
 import { useAuth } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
@@ -43,9 +43,8 @@ export default function LoginPage() {
 
     if (data.email === MOCK_ADMIN_EMAIL && data.password === MOCK_ADMIN_PASSWORD) {
       try {
-        // We use a real firebase auth function but with mock credentials check before.
-        // In a real app, you would not check credentials on the client.
-        initiateEmailSignIn(auth, data.email, data.password);
+        // We use anonymous sign-in to simulate a logged-in state without a real user
+        initiateAnonymousSignIn(auth);
         // The useUser hook will detect the auth change and redirect.
       } catch (e: any) {
         setError("Login failed. Please try again.");
