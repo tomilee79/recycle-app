@@ -12,7 +12,7 @@ import { reportData, settlementData as initialSettlementData, expensesData as in
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -81,6 +81,59 @@ const expenseFormSchema = z.object({
   vehicleId: z.string().optional(),
 });
 type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
+
+const RevenueSummary = ({ data }: { data: SettlementData[] }) => {
+    const summary = useMemo(() => {
+        const totalAmount = data.reduce((sum, item) => sum + item.amount, 0);
+        const paidAmount = data.filter(item => item.status === 'Paid').reduce((sum, item) => sum + item.amount, 0);
+        const pendingAmount = data.filter(item => item.status === 'Pending').reduce((sum, item) => sum + item.amount, 0);
+        return { totalAmount, paidAmount, pendingAmount };
+    }, [data]);
+
+    return (
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">총 정산액</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.totalAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">수납 완료액</CardTitle><HandCoins className="h-4 w-4 text-green-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.paidAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">청구 대기액</CardTitle><CircleDotDashed className="h-4 w-4 text-yellow-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.pendingAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+        </div>
+    )
+}
+
+const ExpensesSummary = ({ data }: { data: Expense[] }) => {
+    const summary = useMemo(() => {
+        const totalAmount = data.reduce((sum, item) => sum + item.amount, 0);
+        const paidAmount = data.filter(item => item.status === 'Paid').reduce((sum, item) => sum + item.amount, 0);
+        const pendingAmount = data.filter(item => item.status === 'Pending').reduce((sum, item) => sum + item.amount, 0);
+        return { totalAmount, paidAmount, pendingAmount };
+    }, [data]);
+    
+    return (
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">총 지출액</CardTitle><Banknote className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.totalAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">지급 완료액</CardTitle><HandCoins className="h-4 w-4 text-green-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.paidAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">처리 대기액</CardTitle><CircleDotDashed className="h-4 w-4 text-yellow-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.pendingAmount.toLocaleString()}원</div></CardContent>
+            </Card>
+        </div>
+    )
+}
+
 
 export default function BillingPanel() {
   const [settlementData, setSettlementData] = useState<SettlementData[]>(initialSettlementData);
@@ -249,6 +302,7 @@ export default function BillingPanel() {
             <TabsTrigger value="expenses">비용 (지출) 관리</TabsTrigger>
         </TabsList>
         <TabsContent value="revenue" className="space-y-6 mt-6">
+            <RevenueSummary data={settlementData} />
             <Card className="shadow-lg">
                 <CardHeader>
                 <CardTitle>월별 수거 및 매출 현황</CardTitle>
@@ -321,6 +375,7 @@ export default function BillingPanel() {
             </Card>
         </TabsContent>
         <TabsContent value="expenses" className="space-y-6 mt-6">
+             <ExpensesSummary data={expensesData} />
             <Card className="shadow-lg">
                 <CardHeader className="flex-row justify-between items-center">
                     <div>
@@ -423,5 +478,3 @@ export default function BillingPanel() {
     </Tabs>
   );
 }
-
-    
