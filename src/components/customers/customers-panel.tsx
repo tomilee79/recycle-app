@@ -113,12 +113,10 @@ export default function CustomersPanel() {
       manager: '관리자' // Mock manager
     };
     
-    setCustomers(prev => prev.map(c => 
-      c.id === selectedCustomer.id 
-        ? { ...c, activityHistory: [newActivity, ...c.activityHistory] } 
-        : c
-    ));
-    setSelectedCustomer(prev => prev ? { ...prev, activityHistory: [newActivity, ...prev.activityHistory] } : null);
+    const updatedCustomer = { ...selectedCustomer, activityHistory: [newActivity, ...selectedCustomer.activityHistory] };
+
+    setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? updatedCustomer : c));
+    setSelectedCustomer(updatedCustomer);
     
     toast({
       title: "활동 기록 추가 완료",
@@ -208,15 +206,11 @@ export default function CustomersPanel() {
                 <PaginationContent>
                     <PaginationItem>
                         <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}>
-                            <ChevronLeft className="h-4 w-4" />
-                            <span>이전</span>
                         </PaginationPrevious>
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
                     <PaginationItem>
                         <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}>
-                             <span>다음</span>
-                            <ChevronRight className="h-4 w-4" />
                         </PaginationNext>
                     </PaginationItem>
                 </PaginationContent>
@@ -247,7 +241,7 @@ export default function CustomersPanel() {
                                 {customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 <Save className="mr-2"/>저장
                             </Button>
-                            <Button type="button" variant="ghost" onClick={() => setIsEditingCustomer(false)}><X className="mr-2"/>취소</Button>
+                            <Button type="button" variant="ghost" onClick={() => selectedCustomer ? setIsEditingCustomer(false) : handleSheetClose()}><X className="mr-2"/>취소</Button>
                         </div>
                     </form>
                 </Form>
@@ -257,12 +251,21 @@ export default function CustomersPanel() {
                     <div className="flex justify-between items-start">
                         <div>
                             <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
-                            <SheetDescription className="flex items-center gap-4 pt-1">
-                                <span className="flex items-center gap-1.5"><User className="size-4"/> {selectedCustomer.contactPerson}</span>
-                                <span className="flex items-center gap-1.5"><Building className="size-4"/> {selectedCustomer.address}</span>
+                            <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
+                                <span className="flex items-center gap-1.5"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
+                                <span className="flex items-center gap-1.5"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
                             </SheetDescription>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => setIsEditingCustomer(true)}><Edit className="mr-2"/>수정</Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingCustomer(true)}><Edit className="mr-2"/>수정</Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2"/>삭제</Button></AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>정말로 이 고객을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 고객과 관련된 모든 활동 이력이 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCustomer}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                     </div>
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100%-8rem)] mt-6 pr-6">
@@ -283,13 +286,16 @@ export default function CustomersPanel() {
                     <Card>
                         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText/> 활동 이력</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="space-y-6">
+                            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
                             {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => (
-                                <div key={activity.id} className="relative pl-6">
-                                    <div className={`absolute left-0 top-1.5 h-3 w-3 rounded-full ${activityTypeMap[activity.type]}`}></div>
-                                    <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
-                                    <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
-                                    <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
+                                <div key={activity.id} className="relative">
+                                    <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full ${activityTypeMap[activity.type]} flex items-center justify-center ring-8 ring-background`}>
+                                    </div>
+                                    <div className="pl-8">
+                                      <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
+                                      <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
+                                      <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
+                                    </div>
                                 </div>
                             )) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
                             </div>
@@ -297,15 +303,6 @@ export default function CustomersPanel() {
                     </Card>
                 </div>
                 </ScrollArea>
-                <div className="absolute bottom-6 right-6">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>고객 삭제</Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>정말로 이 고객을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 고객과 관련된 모든 활동 이력이 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCustomer}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
                 </>
             )}
         </SheetContent>
