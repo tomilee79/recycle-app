@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -8,11 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { reportData, settlementData as initialSettlementData, expensesData as initialExpensesData, vehicles, drivers } from "@/lib/mock-data";
+import { reportData, settlementData as initialSettlementData, expensesData as initialExpensesData, vehicles } from "@/lib/mock-data";
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2 } from 'lucide-react';
+import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +28,8 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+
 
 const settlementStatusMap: { [key in SettlementStatus]: string } = {
   'Pending': '청구 대기',
@@ -72,6 +74,7 @@ export default function BillingPanel() {
   const [settlementData, setSettlementData] = useState<SettlementData[]>(initialSettlementData);
   const [expensesData, setExpensesData] = useState<Expense[]>(initialExpensesData);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const { toast } = useToast();
 
   const {
@@ -90,13 +93,26 @@ export default function BillingPanel() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
-    defaultValues: {
-      date: new Date(),
-      category: '유류비',
-      amount: 0,
-      description: '',
-    },
   });
+
+  const openExpenseDialog = useCallback((expense: Expense | null) => {
+    setEditingExpense(expense);
+    if (expense) {
+      expenseForm.reset({
+        ...expense,
+        date: parseISO(expense.date),
+      });
+    } else {
+      expenseForm.reset({
+        date: new Date(),
+        category: '유류비',
+        amount: 0,
+        description: '',
+        vehicleId: '',
+      });
+    }
+    setIsExpenseModalOpen(true);
+  }, [expenseForm]);
 
   const handleSettlementStatusChange = (id: string, newStatus: SettlementStatus) => {
     setSettlementData(prevData =>
@@ -123,20 +139,40 @@ export default function BillingPanel() {
   };
 
   const onExpenseSubmit: SubmitHandler<ExpenseFormValues> = (data) => {
-    const newExpense: Expense = {
-      id: `EXP${String(expensesData.length + 1).padStart(3, '0')}`,
-      date: format(data.date, 'yyyy-MM-dd'),
-      category: data.category as ExpenseCategory,
-      description: data.description,
-      amount: data.amount,
-      vehicleId: data.vehicleId,
-      status: 'Pending',
-    };
-    setExpensesData([newExpense, ...expensesData]);
-    toast({ title: "비용 등록됨", description: "새로운 비용 항목이 성공적으로 등록되었습니다." });
+    if (editingExpense) {
+      // Update existing expense
+      const updatedExpense = { ...editingExpense, ...data, date: format(data.date, 'yyyy-MM-dd') };
+      setExpensesData(prev => prev.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      toast({ title: "비용 수정됨", description: "비용 항목이 성공적으로 수정되었습니다." });
+    } else {
+      // Create new expense
+      const newExpense: Expense = {
+        id: `EXP${String(expensesData.length + 1).padStart(3, '0')}`,
+        date: format(data.date, 'yyyy-MM-dd'),
+        category: data.category as ExpenseCategory,
+        description: data.description,
+        amount: data.amount,
+        vehicleId: data.vehicleId,
+        status: 'Pending',
+      };
+      setExpensesData([newExpense, ...expensesData]);
+      toast({ title: "비용 등록됨", description: "새로운 비용 항목이 성공적으로 등록되었습니다." });
+    }
     setIsExpenseModalOpen(false);
-    expenseForm.reset();
+    setEditingExpense(null);
   };
+  
+  const handleDeleteExpense = () => {
+    if (!editingExpense) return;
+    setExpensesData(prev => prev.filter(e => e.id !== editingExpense.id));
+    toast({
+      title: "비용 삭제됨",
+      description: "비용 항목이 삭제되었습니다.",
+      variant: "destructive"
+    });
+    setIsExpenseModalOpen(false);
+    setEditingExpense(null);
+  }
 
   const chartConfig = {
     plastic: { label: "플라스틱", color: "hsl(var(--chart-1))" },
@@ -245,7 +281,7 @@ export default function BillingPanel() {
                         <CardTitle>비용 (지출) 내역</CardTitle>
                         <CardDescription>차량 유류비, 정비비 등 모든 지출 내역을 관리합니다.</CardDescription>
                     </div>
-                    <Button onClick={() => setIsExpenseModalOpen(true)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
+                    <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -254,13 +290,13 @@ export default function BillingPanel() {
                             {paginatedExpenseData.map((item) => {
                                 const CategoryIcon = expenseCategoryMap[item.category].icon;
                                 return (
-                                    <TableRow key={item.id}>
+                                    <TableRow key={item.id} onClick={() => openExpenseDialog(item)} className="cursor-pointer">
                                         <TableCell>{item.date}</TableCell>
                                         <TableCell><div className="flex items-center gap-2"><CategoryIcon className="size-4 text-muted-foreground"/> {item.category}</div></TableCell>
                                         <TableCell className="font-medium">{item.description}</TableCell>
                                         <TableCell>{item.vehicleId || '-'}</TableCell>
                                         <TableCell>{item.amount.toLocaleString()} 원</TableCell>
-                                        <TableCell>
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button variant="ghost" className="h-auto p-0 font-normal"><Badge variant={expenseStatusVariant[item.status]} className="cursor-pointer">{expenseStatusMap[item.status]}</Badge></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
@@ -301,8 +337,8 @@ export default function BillingPanel() {
         <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>새 비용 등록</DialogTitle>
-                    <DialogDescription>새로운 지출 내역을 입력합니다.</DialogDescription>
+                    <DialogTitle>{editingExpense ? '비용 수정' : '새 비용 등록'}</DialogTitle>
+                    <DialogDescription>{editingExpense ? '비용 내역을 수정합니다.' : '새로운 지출 내역을 입력합니다.'}</DialogDescription>
                 </DialogHeader>
                 <Form {...expenseForm}>
                 <form onSubmit={expenseForm.handleSubmit(onExpenseSubmit)} className="space-y-4 mt-4">
@@ -316,7 +352,7 @@ export default function BillingPanel() {
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={expenseForm.control} name="category" render={({ field }) => (
                             <FormItem><FormLabel>비용 항목</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="항목을 선택하세요" /></SelectTrigger></FormControl>
                                     <SelectContent>{(Object.keys(expenseCategoryMap) as ExpenseCategory[]).map(cat => <SelectItem key={cat} value={cat}>{expenseCategoryMap[cat].label}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage />
@@ -327,14 +363,38 @@ export default function BillingPanel() {
                     <FormField control={expenseForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>상세 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={expenseForm.control} name="vehicleId" render={({ field }) => (
                         <FormItem><FormLabel>관련 차량 (선택)</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="관련 차량을 선택하세요" /></SelectTrigger></FormControl>
-                                <SelectContent>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                                <SelectContent>
+                                    <SelectItem value="">없음</SelectItem>
+                                    {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                                </SelectContent>
                             </Select><FormMessage />
                         </FormItem>
                     )}/>
-                    <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={expenseForm.formState.isSubmitting}>{expenseForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}비용 등록</Button>
+                    <DialogFooter className="pt-4 flex justify-between">
+                         {editingExpense ? (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive">
+                                        <Trash2 className="mr-2" /> 삭제
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            이 작업은 되돌릴 수 없습니다. 이 비용 항목은 영구적으로 삭제됩니다.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>취소</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteExpense}>삭제 확인</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        ) : <div></div>}
+                        <Button type="submit" disabled={expenseForm.formState.isSubmitting}>{expenseForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingExpense ? '저장' : '비용 등록'}</Button>
                     </DialogFooter>
                 </form>
                 </Form>
