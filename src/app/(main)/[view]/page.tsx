@@ -13,7 +13,7 @@ import PredictPanel from '@/components/predict/predict-panel';
 import QuotesPanel from '@/components/quotes/quotes-panel';
 import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import SchedulePanel from '@/components/schedule/schedule-panel';
-import SettingsPanel from '@/components/settings/settings-panel';
+import MyPagePanel from '@/components/mypage/my-page-panel';
 import TasksPanel from '@/components/tasks/tasks-panel';
 import TodosPanel from '@/components/todos/todos-panel';
 import UsersPanel from '@/components/users/users-panel';
@@ -57,8 +57,8 @@ export default function ViewPage() {
       return <QuotesPanel />;
     case 'users':
       return <UsersPanel />;
-    case 'settings':
-      return <SettingsPanel />;
+    case 'mypage':
+      return <MyPagePanel />;
     case 'contact':
         return <ContactPanel />;
     default:

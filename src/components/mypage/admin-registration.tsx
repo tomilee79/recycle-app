@@ -79,7 +79,7 @@ export default function AdminRegistration() {
   };
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-lg">
+    <Card className="shadow-lg">
       <CardHeader>
           <div className="flex items-center gap-3">
              <div className="p-2 bg-primary/10 rounded-full border">

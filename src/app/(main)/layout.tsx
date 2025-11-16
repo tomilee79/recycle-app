@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -41,6 +42,7 @@ import {
   Receipt,
   ClipboardList,
   Info,
+  User,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -62,7 +64,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'settings' | 'todos' | 'quotes' | 'users' | 'contact';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'contact';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -136,7 +138,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
     tasks: '작업 관리',
-    settings: '설정',
+    mypage: '마이페이지',
     todos: '할일 관리',
     quotes: '견적 관리',
     users: '사용자 관리',
@@ -209,7 +211,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/quotes"><FileText /><span>견적 관리</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeView === 'contracts'}
                 tooltip={{ children: '계약 관리' }}
@@ -288,7 +290,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 title="관리"
                 icon={<Users />}
                 activeView={activeView}
-                defaultOpen={['users', 'drivers', 'driver-performance'].includes(activeView)}
+                defaultOpen={['users', 'driver-performance'].includes(activeView)}
               >
                 <SidebarMenuSubButton isActive={activeView === 'users'} asChild>
                     <Link href="/users"><Users /><span>사용자 관리</span></Link>
@@ -301,11 +303,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={activeView === 'settings'}
-                tooltip={{ children: '설정' }}
+                isActive={activeView === 'mypage'}
+                tooltip={{ children: '마이페이지' }}
                 asChild
               >
-                <Link href="/settings"><Settings /><span>설정</span></Link>
+                <Link href="/mypage"><User /><span>마이페이지</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
