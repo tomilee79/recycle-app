@@ -99,7 +99,8 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.5759, lng: 126.9768 },
     status: 'In Progress',
     scheduledDate: format(today, 'yyyy-MM-dd'),
-    collectedWeight: 1200,
+    collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T02',
@@ -111,7 +112,8 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.5014, lng: 127.0396 },
     status: 'In Progress',
     scheduledDate: format(today, 'yyyy-MM-dd'),
-    collectedWeight: 850,
+    collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T03',
@@ -123,6 +125,7 @@ export const collectionTasks: CollectionTask[] = [
     status: 'Pending',
     scheduledDate: format(addDays(today, 1), 'yyyy-MM-dd'),
     collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T04',
@@ -136,6 +139,12 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
     completedTime: '09:45',
     collectedWeight: 2100,
+    report: {
+        reportDate: format(subDays(today, 1), 'yyyy-MM-dd'),
+        collectedWeight: 2100,
+        notes: '지정된 장소 외 추가 수거 요청 있었음.',
+        photoUrl: 'https://images.unsplash.com/photo-1574974671999-d57e5e059344?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    }
   },
    {
     id: 'T05',
@@ -149,6 +158,12 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(subDays(today, 2), 'yyyy-MM-dd'),
     completedTime: '11:30',
     collectedWeight: 1500,
+    report: {
+        reportDate: format(subDays(today, 2), 'yyyy-MM-dd'),
+        collectedWeight: 1500,
+        notes: '수거량 예상보다 많음.',
+        photoUrl: 'https://images.unsplash.com/photo-1611284446314-60a58ac08048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    }
   },
   {
     id: 'T06',
@@ -162,6 +177,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(startOfThisMonth, 3), 'yyyy-MM-dd'),
     completedTime: '12:45',
     collectedWeight: 3000,
+    report: null,
   },
   {
     id: 'T07',
@@ -175,6 +191,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(startOfThisMonth, 5), 'yyyy-MM-dd'),
     completedTime: '13:30',
     collectedWeight: 1800,
+    report: null,
   },
    {
     id: 'T08',
@@ -186,6 +203,7 @@ export const collectionTasks: CollectionTask[] = [
     status: 'Pending',
     scheduledDate: format(addDays(today, 3), 'yyyy-MM-dd'),
     collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T09',
@@ -197,6 +215,7 @@ export const collectionTasks: CollectionTask[] = [
     status: 'Pending',
     scheduledDate: format(addDays(startOfNextMonth, 5), 'yyyy-MM-dd'),
     collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T10',
@@ -210,6 +229,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(startOfLastMonth, 10), 'yyyy-MM-dd'),
     completedTime: '14:30',
     collectedWeight: 2200,
+    report: null,
   },
   {
     id: 'T11',
@@ -222,6 +242,7 @@ export const collectionTasks: CollectionTask[] = [
     status: 'Pending',
     scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 0,
+    report: null,
   },
   {
     id: 'T12',
@@ -233,6 +254,7 @@ export const collectionTasks: CollectionTask[] = [
     status: 'Cancelled',
     scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
     collectedWeight: 0,
+    report: null,
   },
 ];
 
@@ -438,5 +460,3 @@ export const users: User[] = [
     { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
     { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];
-
-    

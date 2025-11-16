@@ -33,6 +33,13 @@ export type Equipment = {
 
 export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
 
+export type TaskReport = {
+    reportDate: string;
+    collectedWeight: number;
+    notes?: string;
+    photoUrl?: string;
+}
+
 export type CollectionTask = {
   id: string;
   vehicleId: string;
@@ -48,6 +55,7 @@ export type CollectionTask = {
   scheduledDate: string; // YYYY-MM-DD
   completedTime?: string;
   collectedWeight: number;
+  report: TaskReport | null;
 };
 
 export type ReportData = {
