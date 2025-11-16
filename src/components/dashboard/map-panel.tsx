@@ -1,143 +1,110 @@
-
 'use client';
-import React, { useEffect, useMemo } from 'react';
-import { APIProvider, Map, AdvancedMarker, Pin, useMap, MapCameraChangedEvent, CameraState } from '@vis.gl/react-google-maps';
+import React from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { vehicles } from '@/lib/mock-data';
 import { Truck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Vehicle } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface MapPanelProps {
   selectedVehicle: Vehicle | null;
   onVehicleSelect: (vehicle: Vehicle | null) => void;
-  cameraState: Partial<CameraState>;
+  // cameraState is no longer used but kept for props compatibility
+  cameraState: any;
 }
 
-const MapController = ({ cameraState }: { cameraState: Partial<CameraState> }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (!map || !cameraState.center) return;
-    map.moveCamera(cameraState);
-  }, [map, cameraState]);
+// Map image dimensions
+const MAP_WIDTH = 1280;
+const MAP_HEIGHT = 960;
 
-  return null;
+// Geo bounds of the map image (approximate for Seoul/Gyeonggi area)
+const MAP_BOUNDS = {
+  north: 37.8,
+  south: 36.9,
+  west: 126.5,
+  east: 127.5,
+};
+
+function convertLatLngToPixels(lat: number, lng: number) {
+  const latRatio = (lat - MAP_BOUNDS.south) / (MAP_BOUNDS.north - MAP_BOUNDS.south);
+  const lngRatio = (lng - MAP_BOUNDS.west) / (MAP_BOUNDS.east - MAP_BOUNDS.west);
+
+  return {
+    x: lngRatio * MAP_WIDTH,
+    y: (1 - latRatio) * MAP_HEIGHT,
+  };
 }
 
-export default function MapPanel({ selectedVehicle, onVehicleSelect, cameraState }: MapPanelProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
-    return (
-      <Card className="h-full flex items-center justify-center bg-muted">
-        <div className="text-center text-muted-foreground p-4">
-          <h3 className="font-semibold text-lg mb-2">Google Maps API Key가 필요합니다</h3>
-          <p className="text-sm">
-            1. Google Cloud 프로젝트에서 유효한 API 키를 생성해주세요.
-          </p>
-          <p className="text-sm">
-            2. <strong>.env</strong> 파일에 <strong>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</strong> 형식으로 키를 추가해주세요.
-          </p>
-          <p className="text-xs mt-4">
-            <strong>참고:</strong> API를 활성화하고, 프로젝트에 <strong>결제 계정이 연결</strong>되어 있어야 지도가 표시됩니다.
-          </p>
-        </div>
-      </Card>
-    );
-  }
+export default function MapPanel({ selectedVehicle, onVehicleSelect }: MapPanelProps) {
 
   const getPinStyling = (status: string, isSelected: boolean) => {
-    let background = 'hsl(var(--muted-foreground))';
-    let borderColor = 'hsl(var(--background))';
-    let glyphColor = 'hsl(var(--background))';
+    let color = 'text-muted-foreground';
 
     switch (status) {
       case 'On Route':
-        background = 'hsl(var(--primary))';
-        borderColor = 'hsl(var(--primary-foreground))';
-        glyphColor = 'hsl(var(--primary-foreground))';
+        color = 'text-primary';
         break;
       case 'Completed':
-        background = 'hsl(var(--chart-2))';
-        borderColor = 'hsl(var(--primary-foreground))';
-        glyphColor = 'hsl(var(--primary-foreground))';
+        color = 'text-green-600';
         break;
       case 'Maintenance':
-        background = 'hsl(var(--destructive))';
-        borderColor = 'hsl(var(--destructive-foreground))';
-        glyphColor = 'hsl(var(--destructive-foreground))';
-        break;
-      default: // Idle
+        color = 'text-destructive';
         break;
     }
     
     if (isSelected) {
-      background = 'hsl(var(--accent))';
-      borderColor = 'hsl(var(--accent-foreground))';
-      glyphColor = 'hsl(var(--accent-foreground))';
+      return {
+        color: 'text-accent-foreground',
+        bgColor: 'bg-accent/80',
+        size: 'h-8 w-8',
+      };
     }
 
-    return { background, borderColor, glyphColor };
+    return { color, bgColor: 'bg-background/60', size: 'h-7 w-7' };
   };
 
   return (
-    <APIProvider apiKey={apiKey}>
-      <Card className="h-full w-full overflow-hidden shadow-lg">
-        <Map
-          key={JSON.stringify(cameraState)} // Re-mount map on camera state change to ensure controller works
-          defaultCenter={cameraState.center}
-          defaultZoom={cameraState.zoom}
-          mapId="ecotrack-map"
-          className="h-full w-full"
-          gestureHandling={'greedy'}
-          disableDefaultUI={true}
-          mapTypeId='roadmap'
-          styles={[
-            { "featureType": "all", "elementType": "labels.text.fill", "stylers": [ { "color": "#7c93a3" }, { "lightness": "-10" } ] },
-            { "featureType": "administrative.country", "elementType": "geometry", "stylers": [ { "visibility": "on" } ] },
-            { "featureType": "administrative.country", "elementType": "geometry.stroke", "stylers": [ { "color": "#a0a4a5" } ] },
-            { "featureType": "administrative.province", "elementType": "geometry.stroke", "stylers": [ { "color": "#62838e" } ] },
-            { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [ { "color": "#dde3e3" } ] },
-            { "featureType": "landscape.man_made", "elementType": "geometry.stroke", "stylers": [ { "color": "#3f4a51" }, { "weight": "0.30" } ] },
-            { "featureType": "poi", "elementType": "all", "stylers": [ { "visibility": "simplified" } ] },
-            { "featureType": "poi.attraction", "elementType": "all", "stylers": [ { "visibility": "on" } ] },
-            { "featureType": "poi.business", "elementType": "all", "stylers": [ { "visibility": "off" } ] },
-            { "featureType": "poi.government", "elementType": "all", "stylers": [ { "visibility": "on" } ] },
-            { "featureType": "poi.park", "elementType": "geometry.fill", "stylers": [ { "color": "#a5b0b3" } ] },
-            { "featureType": "road", "elementType": "geometry.fill", "stylers": [ { "color": "#FFFFFF" } ] },
-            { "featureType": "road", "elementType": "geometry.stroke", "stylers": [ { "color": "#a0a4a5" } ] },
-            { "featureType": "water", "elementType": "geometry.fill", "stylers": [ { "color": "#a2daf2" } ] }
-          ]}
-        >
-          <MapController cameraState={cameraState} />
-          <TooltipProvider>
-            {vehicles.map((vehicle) => {
-              const isSelected = selectedVehicle?.id === vehicle.id;
-              const { background, borderColor, glyphColor } = getPinStyling(vehicle.status, isSelected);
-              
-              return (
-                <Tooltip key={vehicle.id}>
-                  <TooltipTrigger asChild>
-                    <AdvancedMarker 
-                      position={vehicle.location} 
-                      title={vehicle.name}
-                      onClick={() => onVehicleSelect(vehicle)}
-                    >
-                       <Pin background={background} borderColor={borderColor} glyphColor={glyphColor} scale={isSelected ? 1.2 : 1}>
-                        <Truck />
-                      </Pin>
-                    </AdvancedMarker>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className='font-bold'>{vehicle.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </TooltipProvider>
-        </Map>
-      </Card>
-    </APIProvider>
+    <Card className="h-full w-full overflow-hidden shadow-lg relative">
+      <TooltipProvider>
+        <Image
+          src="/map-background.png"
+          alt="Map of Seoul and Gyeonggi area"
+          width={MAP_WIDTH}
+          height={MAP_HEIGHT}
+          className="object-cover w-full h-full"
+          priority
+        />
+        
+        {vehicles.map((vehicle) => {
+          const isSelected = selectedVehicle?.id === vehicle.id;
+          const { color, bgColor, size } = getPinStyling(vehicle.status, isSelected);
+          const { x, y } = convertLatLngToPixels(vehicle.location.lat, vehicle.location.lng);
+
+          return (
+             <Tooltip key={vehicle.id}>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    'absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-lg',
+                    bgColor,
+                    size
+                  )}
+                  style={{ left: `${x}px`, top: `${y}px`, zIndex: isSelected ? 10 : 1 }}
+                  onClick={() => onVehicleSelect(vehicle)}
+                >
+                  <Truck className={cn('h-4 w-4', color)} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className='font-bold'>{vehicle.name}</p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </TooltipProvider>
+    </Card>
   );
 }

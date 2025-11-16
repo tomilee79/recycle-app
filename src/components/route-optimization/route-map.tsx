@@ -1,169 +1,113 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { APIProvider, Map, useMap, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { useMemo } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
-import { Route } from 'lucide-react';
+import { Route, MapPin } from 'lucide-react';
 import type { OptimizeRouteLocation, OptimizeRouteOutput } from '@/ai/flows/schemas';
 import type { CollectionTask } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
+
 interface RouteMapProps {
-  apiKey: string;
+  apiKey: string; // No longer used, but kept for compatibility
   pendingTasks: CollectionTask[];
   selectedTasks: OptimizeRouteLocation[];
   optimizedRoute: OptimizeRouteOutput | null;
   onTaskSelect: (task: OptimizeRouteLocation, selected: boolean) => void;
 }
 
-const Directions = ({ route }: { route: OptimizeRouteOutput }) => {
-  const map = useMap();
-  const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!map) return;
-    const renderer = new google.maps.DirectionsRenderer({
-        suppressMarkers: true, // We will use our own markers
-        polylineOptions: {
-            strokeColor: 'hsl(var(--primary))',
-            strokeOpacity: 0.8,
-            strokeWeight: 6,
-        },
-    });
-    renderer.setMap(map);
-    setDirectionsRenderer(renderer);
-    return () => {
-      renderer.setMap(null);
-    };
-  }, [map]);
-
-  useEffect(() => {
-    if (!directionsRenderer || !route || route.optimizedRoute.length < 2) {
-      directionsRenderer?.setDirections({routes: []}); // Clear previous route
-      return;
-    };
-
-    const directionsService = new google.maps.DirectionsService();
-    
-    // The AI flow now includes the start point in the optimized route.
-    const origin = route.optimizedRoute[0].address;
-    const destination = route.optimizedRoute[route.optimizedRoute.length - 1].address;
-    const waypoints = route.optimizedRoute.slice(1, -1).map(loc => ({
-      location: loc.address,
-      stopover: true,
-    }));
-
-    directionsService.route(
-      {
-        origin,
-        destination,
-        waypoints,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK) {
-          setError(null);
-          directionsRenderer.setDirections(result);
-          
-          if (result && result.routes && result.routes[0]) {
-            const bounds = result.routes[0].bounds;
-            if (bounds) {
-              map?.fitBounds(bounds, 100); // Add padding
-            }
-          }
-          
-        } else {
-          setError(`경로를 찾을 수 없습니다: ${status}`);
-          console.error(`Directions request failed due to ${status}`);
-        }
-      }
-    );
-
-  }, [directionsRenderer, route, map]);
-
-  if (error) {
-    return (
-        <div className="absolute top-4 left-4 z-10">
-            <Alert variant="destructive">
-                <Route className="h-4 w-4" />
-                <AlertTitle>경로 계산 오류</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-            </Alert>
-        </div>
-    );
-  }
-
-  return null;
+const MAP_WIDTH = 1280;
+const MAP_HEIGHT = 960;
+const MAP_BOUNDS = {
+  north: 37.8,
+  south: 36.9,
+  west: 126.5,
+  east: 127.5,
 };
 
-export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, onTaskSelect }: RouteMapProps) {
-  const center = useMemo(() => {
-    if (pendingTasks.length === 0) return { lat: 37.5665, lng: 126.9780 }; // 서울 중심
-    const avgLat = pendingTasks.reduce((sum, task) => sum + task.location.lat, 0) / pendingTasks.length;
-    const avgLng = pendingTasks.reduce((sum, task) => sum + task.location.lng, 0) / pendingTasks.length;
-    return { lat: avgLat, lng: avgLng };
-  }, [pendingTasks]);
+function convertLatLngToPixels(lat: number, lng: number) {
+  const latRatio = (lat - MAP_BOUNDS.south) / (MAP_BOUNDS.north - MAP_BOUNDS.south);
+  const lngRatio = (lng - MAP_BOUNDS.west) / (MAP_BOUNDS.east - MAP_BOUNDS.west);
+
+  return {
+    x: lngRatio * MAP_WIDTH,
+    y: (1 - latRatio) * MAP_HEIGHT,
+  };
+}
 
 
-  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+const RouteLines = ({ route, pendingTasks, startPointLocation }: { route: OptimizeRouteOutput, pendingTasks: CollectionTask[], startPointLocation: {lat: number, lng: number} }) => {
+    const points = useMemo(() => {
+        return route.optimizedRoute.map(task => {
+            const location = task.id === 'start_end' 
+                ? startPointLocation 
+                : pendingTasks.find(p => p.id === task.id)?.location;
+            
+            if (!location) return null;
+            return convertLatLngToPixels(location.lat, location.lng);
+        }).filter(p => p !== null) as {x: number, y: number}[];
+    }, [route, pendingTasks, startPointLocation]);
+
+    if (points.length < 2) return null;
+
     return (
-      <Card className="h-full flex items-center justify-center bg-muted">
-        <div className="text-center text-muted-foreground p-4">
-          <h3 className="font-semibold text-lg mb-2">Google Maps API Key가 필요합니다</h3>
-          <p className="text-sm">
-            1. Google Cloud 프로젝트에서 유효한 API 키를 생성해주세요.
-          </p>
-          <p className="text-sm">
-            2. <strong>.env</strong> 파일에 <strong>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</strong> 형식으로 키를 추가해주세요.
-          </p>
-          <p className="text-xs mt-4">
-            <strong>참고:</strong> API를 활성화하고, 프로젝트에 <strong>결제 계정이 연결</strong>되어 있어야 지도가 표시됩니다.
-          </p>
-        </div>
-      </Card>
-    );
-  }
+        <svg width={MAP_WIDTH} height={MAP_HEIGHT} className="absolute top-0 left-0 pointer-events-none">
+            <polyline
+                points={points.map(p => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="4"
+                strokeOpacity="0.7"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+            />
+        </svg>
+    )
+}
 
+export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSelect }: RouteMapProps) {
   const selectedTaskIds = new Set(selectedTasks.map(t => t.id));
   const optimizedTaskIdsInOrder = optimizedRoute ? optimizedRoute.optimizedRoute.map(t => t.id) : [];
 
   const startPointLocation = { lat: 37.508, lng: 127.06 }; // 강남구 본사 차고지 (가상)
 
   return (
-    <APIProvider apiKey={apiKey}>
-      <Map
-        defaultCenter={center}
-        defaultZoom={12}
-        mapId="ecotrack-route-map"
-        className="h-full w-full"
-        gestureHandling={'greedy'}
-        disableDefaultUI={true}
-      >
-        {optimizedRoute && <Directions route={optimizedRoute} />}
+    <Card className="h-full w-full overflow-hidden shadow-lg relative">
+        <Image
+          src="/map-background.png"
+          alt="Map of Seoul and Gyeonggi area"
+          width={MAP_WIDTH}
+          height={MAP_HEIGHT}
+          className="object-cover w-full h-full"
+          priority
+        />
         
-        {/* Render markers for pending tasks */}
+        {optimizedRoute && <RouteLines route={optimizedRoute} pendingTasks={pendingTasks} startPointLocation={startPointLocation}/>}
+        
+        {/* Render markers for pending tasks not in optimized route */}
         {pendingTasks.map((task) => {
             const isSelected = selectedTaskIds.has(task.id);
-            const optimizedIndex = optimizedTaskIdsInOrder.indexOf(task.id);
-            const isInOptimizedRoute = optimizedIndex !== -1;
+            const isInOptimizedRoute = optimizedTaskIdsInOrder.includes(task.id);
             
-            // Do not render if it's part of the optimized route, it will be rendered by the next block
             if(isInOptimizedRoute) return null;
 
+            const { x, y } = convertLatLngToPixels(task.location.lat, task.location.lng);
+
             return (
-              <AdvancedMarker
+              <div
                 key={task.id}
-                position={task.location}
+                className={cn(
+                    'absolute -translate-x-1/2 -translate-y-1/2 p-1 rounded-full cursor-pointer transition-all shadow-md',
+                    isSelected ? 'bg-primary' : 'bg-muted-foreground'
+                )}
+                style={{ left: `${x}px`, top: `${y}px` }}
                 onClick={() => onTaskSelect({ id: task.id, address: task.address }, !isSelected)}
               >
-                  <Pin
-                    background={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'}
-                    glyphColor={isSelected ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted))'}
-                    borderColor={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'}
-                  />
-              </AdvancedMarker>
+                <MapPin className={cn('size-5', isSelected ? 'text-primary-foreground' : 'text-muted')} />
+              </div>
             );
         })}
         
@@ -173,31 +117,25 @@ export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, 
             const location = task.id === 'start_end' ? startPointLocation : collectionTask?.location;
             
             if (!location) return null;
+            
+            const { x, y } = convertLatLngToPixels(location.lat, location.lng);
 
-            // First item is start/end point, don't make it clickable to deselect
-            if (index === 0) {
+            if (index === 0) { // Start/End Point
               return (
-                 <AdvancedMarker key={`optimized-${task.id}`} position={location}>
-                    <Pin background={'hsl(var(--accent))'} borderColor={'hsl(var(--accent))'} glyphColor={'hsl(var(--accent-foreground))'}>
-                      <Route/>
-                    </Pin>
-                  </AdvancedMarker>
+                 <div key={`optimized-${task.id}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}px`, top: `${y}px` }}>
+                    <div className="p-2 bg-accent rounded-full shadow-lg">
+                      <Route className="size-5 text-accent-foreground"/>
+                    </div>
+                  </div>
               )
             }
 
             return (
-              <AdvancedMarker
-                key={`optimized-${task.id}`}
-                position={location}
-              >
-                <Pin background={'hsl(var(--primary))'} borderColor={'hsl(var(--primary))'} glyphColor={'hsl(var(--primary-foreground))'}>
-                    {index}
-                </Pin>
-              </AdvancedMarker>
+                <div key={`optimized-${task.id}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}px`, top: `${y}px` }}>
+                    <div className="h-8 w-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full font-bold text-sm shadow-lg border-2 border-white">
+                        {index}
+                    </div>
+                </div>
             );
         })}
-
-      </Map>
-    </APIProvider>
-  );
-}
+    
