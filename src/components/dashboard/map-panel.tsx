@@ -1,8 +1,12 @@
 'use client';
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { Card } from '@/components/ui/card';
 import { vehicles } from '@/lib/mock-data';
 import { Truck } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
+
 
 export default function MapPanel() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -18,6 +22,20 @@ export default function MapPanel() {
       </Card>
     );
   }
+
+  const getPinStyling = (status: string) => {
+    switch (status) {
+      case 'On Route':
+        return { background: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary-foreground))', glyphColor: 'hsl(var(--primary-foreground))' };
+      case 'Completed':
+        return { background: 'hsl(var(--chart-2))', borderColor: 'hsl(var(--primary-foreground))', glyphColor: 'hsl(var(--primary-foreground))' };
+      case 'Maintenance':
+        return { background: 'hsl(var(--destructive))', borderColor: 'hsl(var(--destructive-foreground))', glyphColor: 'hsl(var(--destructive-foreground))' };
+      case 'Idle':
+      default:
+        return { background: 'hsl(var(--muted-foreground))', borderColor: 'hsl(var(--background))', glyphColor: 'hsl(var(--background))' };
+    }
+  };
 
   return (
     <APIProvider apiKey={apiKey}>
@@ -133,13 +151,25 @@ export default function MapPanel() {
             }
           ]}
         >
-          {vehicles.map((vehicle) => (
-            <AdvancedMarker key={vehicle.id} position={vehicle.location} title={vehicle.name}>
-                <div className="p-2 bg-primary rounded-full shadow-lg transition-transform hover:scale-110">
-                    <Truck className="text-primary-foreground size-5"/>
-                </div>
-            </AdvancedMarker>
-          ))}
+        <TooltipProvider>
+          {vehicles.map((vehicle) => {
+            const { background, borderColor, glyphColor } = getPinStyling(vehicle.status);
+            return (
+              <Tooltip key={vehicle.id}>
+                <TooltipTrigger asChild>
+                  <AdvancedMarker position={vehicle.location} title={vehicle.name}>
+                    <Pin background={background} borderColor={borderColor} glyphColor={glyphColor}>
+                      <Truck />
+                    </Pin>
+                  </AdvancedMarker>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className='font-bold'>{vehicle.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+          </TooltipProvider>
         </Map>
       </Card>
     </APIProvider>
