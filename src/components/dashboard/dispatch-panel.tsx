@@ -1,6 +1,6 @@
+
 'use client';
 
-import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { vehicles, collectionTasks } from "@/lib/mock-data";
@@ -26,17 +26,18 @@ const statusMap: { [key: string]: string } = {
   'Idle': '대기중'
 };
 
-export default function DispatchPanel() {
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  
+interface DispatchPanelProps {
+  selectedVehicle: Vehicle | null;
+  onVehicleSelect: (vehicle: Vehicle | null) => void;
+}
+
+export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: DispatchPanelProps) {
   const sitePhoto = placeholderImages.find(p => p.id === 'collection-site');
 
-  const handleVehicleClick = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-  };
-
-  const handleSheetClose = () => {
-    setSelectedVehicle(null);
+  const handleSheetClose = (open: boolean) => {
+    if (!open) {
+      onVehicleSelect(null);
+    }
   };
   
   const selectedTask = collectionTasks.find(task => task.vehicleId === selectedVehicle?.id);
@@ -53,8 +54,11 @@ export default function DispatchPanel() {
               {vehicles.map((vehicle) => (
                 <Card 
                   key={vehicle.id} 
-                  className="bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleVehicleClick(vehicle)}
+                  className={cn(
+                    "bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer",
+                    selectedVehicle?.id === vehicle.id && "ring-2 ring-primary bg-muted/50"
+                  )}
+                  onClick={() => onVehicleSelect(vehicle)}
                 >
                   <CardHeader className="p-4">
                     <div className="flex justify-between items-start">
@@ -91,7 +95,7 @@ export default function DispatchPanel() {
         </CardContent>
       </Card>
 
-      <Sheet open={!!selectedVehicle} onOpenChange={(open) => !open && handleSheetClose()}>
+      <Sheet open={!!selectedVehicle} onOpenChange={handleSheetClose}>
         <SheetContent className="sm:max-w-lg w-full">
           {selectedVehicle && (
             <>
