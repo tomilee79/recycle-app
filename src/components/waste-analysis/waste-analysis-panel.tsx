@@ -25,46 +25,63 @@ const materialTypeColors: { [key: string]: string } = {
     '혼합': 'hsl(var(--chart-5))'
 };
 
+type WasteByCustomerByType = {
+  name: string;
+  total: number;
+} & { [key: string]: number };
+
+
 export default function WasteAnalysisPanel() {
-  const { wasteByType, wasteByCustomer, wasteByTime } = useMemo(() => {
-    const wasteByType = collectionTasks.reduce((acc, task) => {
-      if (task.status === 'Completed') {
-        const key = materialTypeMap[task.materialType] || task.materialType;
-        acc[key] = (acc[key] || 0) + task.collectedWeight;
-      }
-      return acc;
-    }, {} as { [key: string]: number });
+  const { wasteByType, wasteByCustomer, wasteByTime, wasteByCustomerByType } = useMemo(() => {
+    const wasteByType: { [key: string]: number } = {};
+    const wasteByCustomer: { [key: string]: number } = {};
+    const wasteByTime: {[key: string]: {total: number, plastic: number, glass: number, paper: number, metal: number, mixed: number}} = {};
+    const wasteByCustomerByType: { [key: string]: WasteByCustomerByType } = {};
 
-    const wasteByCustomer = collectionTasks.reduce((acc, task) => {
-        if (task.status === 'Completed' && task.customerId) {
-          const customer = customers.find(c => c.id === task.customerId);
-          const customerName = customer ? customer.name : '알 수 없음';
-          acc[customerName] = (acc[customerName] || 0) + task.collectedWeight;
+
+    for (const task of collectionTasks) {
+        if (task.status !== 'Completed') continue;
+
+        const materialKey = materialTypeMap[task.materialType] || task.materialType;
+        const weight = task.collectedWeight;
+        const materialLower = task.materialType.toLowerCase() as 'plastic' | 'glass' | 'paper' | 'metal' | 'mixed';
+        const customer = customers.find(c => c.id === task.customerId);
+        const customerName = customer ? customer.name : '알 수 없음';
+
+
+        // 1. By Type
+        wasteByType[materialKey] = (wasteByType[materialKey] || 0) + weight;
+
+        // 2. By Customer (Total)
+        wasteByCustomer[customerName] = (wasteByCustomer[customerName] || 0) + weight;
+        
+        // 3. By Customer and Type
+        if (!wasteByCustomerByType[customerName]) {
+            wasteByCustomerByType[customerName] = { name: customerName, total: 0, 플라스틱: 0, 유리: 0, 종이: 0, 금속: 0, 혼합: 0 };
         }
-        return acc;
-      }, {} as { [key: string]: number });
+        wasteByCustomerByType[customerName][materialKey] = (wasteByCustomerByType[customerName][materialKey] || 0) + weight;
+        wasteByCustomerByType[customerName].total += weight;
 
-    const wasteByTime = collectionTasks.reduce((acc, task) => {
-        if (task.status === 'Completed' && task.completedTime) {
+
+        // 4. By Time
+        if (task.completedTime) {
             const hour = parseInt(task.completedTime.split(':')[0], 10);
             const hourKey = `${String(hour).padStart(2, '0')}:00`;
-            if (!acc[hourKey]) {
-                acc[hourKey] = { total: 0, plastic: 0, glass: 0, paper: 0, metal: 0, mixed: 0 };
+            if (!wasteByTime[hourKey]) {
+                wasteByTime[hourKey] = { total: 0, plastic: 0, glass: 0, paper: 0, metal: 0, mixed: 0 };
             }
-            acc[hourKey].total += task.collectedWeight;
-            
-            const materialKey = task.materialType.toLowerCase() as 'plastic' | 'glass' | 'paper' | 'metal' | 'mixed';
-            if (materialKey in acc[hourKey]) {
-              acc[hourKey][materialKey] += task.collectedWeight;
+            wasteByTime[hourKey].total += weight;
+            if (materialLower in wasteByTime[hourKey]) {
+              wasteByTime[hourKey][materialLower] += weight;
             }
         }
-        return acc;
-    }, {} as {[key: string]: {total: number, plastic: number, glass: number, paper: number, metal: number, mixed: number}});
+    }
 
 
     return { 
         wasteByType: Object.entries(wasteByType).map(([name, value]) => ({ name, value })),
         wasteByCustomer: Object.entries(wasteByCustomer).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 10),
+        wasteByCustomerByType: Object.values(wasteByCustomerByType).sort((a,b) => b.total - a.total).slice(0,10),
         wasteByTime: Object.entries(wasteByTime).map(([hour, values]) => ({ hour, ...values })).sort((a, b) => a.hour.localeCompare(b.hour))
     };
   }, []);
@@ -78,6 +95,11 @@ export default function WasteAnalysisPanel() {
     value: { label: "수거량 (kg)", color: "hsl(var(--primary))" }
   };
   
+  const chartConfigCustomerType = {
+    ...chartConfigWasteType,
+    total: { label: "총 수거량", color: "hsl(var(--primary))" }
+  }
+
   const chartConfigTime = {
     total: { label: "총 수거량", color: "hsl(var(--primary))" },
     plastic: { label: "플라스틱", color: materialTypeColors['플라스틱'] },
@@ -122,11 +144,11 @@ export default function WasteAnalysisPanel() {
             </Card>
         </TabsContent>
 
-        <TabsContent value="customer">
+        <TabsContent value="customer" className="space-y-6">
             <Card className="shadow-lg">
                 <CardHeader>
-                    <CardTitle>고객사별 수거량</CardTitle>
-                    <CardDescription>상위 10개 고객사의 총 수거량(kg)입니다.</CardDescription>
+                    <CardTitle>고객사별 총 수거량</CardTitle>
+                    <CardDescription>상위 10개 고객사의 총 수거량(kg) 순위입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfigCustomer} className="h-[400px] w-full">
@@ -141,6 +163,34 @@ export default function WasteAnalysisPanel() {
                             />
                             <Bar dataKey="value" fill="var(--color-value)" radius={4} />
                         </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+             <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>고객사별 폐기물 구성</CardTitle>
+                    <CardDescription>상위 10개 고객사의 폐기물 종류별 구성 비율입니다.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfigCustomerType} className="h-[400px] w-full">
+                        <ResponsiveContainer>
+                            <BarChart data={wasteByCustomerByType} layout="vertical" stackOffset="expand" margin={{ left: 10, right: 30 }}>
+                                <CartesianGrid horizontal={false} />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={80} interval={0} />
+                                <XAxis type="number" tickFormatter={(value) => `${value * 100}%`} />
+                                <ChartTooltip content={<ChartTooltipContent formatter={(value, name, props) => {
+                                  const total = props.payload.total;
+                                  const percentage = (value as number / total * 100).toFixed(1);
+                                  return `${(value as number).toLocaleString()} kg (${percentage}%)`;
+                                }} />} />
+                                <Legend />
+                                <Bar dataKey="플라스틱" stackId="a" fill="var(--color-플라스틱)" />
+                                <Bar dataKey="유리" stackId="a" fill="var(--color-유리)" />
+                                <Bar dataKey="종이" stackId="a" fill="var(--color-종이)" />
+                                <Bar dataKey="금속" stackId="a" fill="var(--color-금속)" />
+                                <Bar dataKey="혼합" stackId="a" fill="var(--color-혼합)" radius={[0, 4, 4, 0]}/>
+                            </BarChart>
                         </ResponsiveContainer>
                     </ChartContainer>
                 </CardContent>
@@ -177,3 +227,5 @@ export default function WasteAnalysisPanel() {
     </Tabs>
   );
 }
+
+    
