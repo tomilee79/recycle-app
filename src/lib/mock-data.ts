@@ -256,9 +256,9 @@ export const settlementData: SettlementData[] = [
 ]
 
 export const drivers: Driver[] = [
-  { id: 'D001', name: '김민준', email: 'minjun.kim@example.com', contact: '010-1234-5678', isAvailable: true },
+  { id: 'D001', name: '김민준', email: 'minjun.kim@example.com', contact: '010-1234-5678', isAvailable: false },
   { id: 'D002', name: '이서아', email: 'seoa.lee@example.com', contact: '010-2345-6789', isAvailable: true },
-  { id: 'D003', name: '박도윤', email: 'doyun.park@example.com', contact: '010-3456-7890', isAvailable: true },
+  { id: 'D003', name: '박도윤', email: 'doyun.park@example.com', contact: '010-3456-7890', isAvailable: false },
   { id: 'D004', name: '최지우', email: 'jiwoo.choi@example.com', contact: '010-4567-8901', isAvailable: true },
   { id: 'D005', name: '정하은', email: 'haeun.jeong@example.com', contact: '010-5678-9012', isAvailable: true },
   { id: 'D006', name: '강현우', email: 'hyeonwoo.kang@example.com', contact: '010-6789-0123', isAvailable: true },
@@ -438,3 +438,5 @@ export const users: User[] = [
     { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
     { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];
+
+    

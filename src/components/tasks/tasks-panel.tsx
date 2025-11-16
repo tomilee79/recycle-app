@@ -77,11 +77,18 @@ export default function TasksPanel() {
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (taskIds.includes(task.id)) {
-          // If task is completed or cancelled, make the driver available again
-          if ((newStatus === 'Completed' || newStatus === 'Cancelled') && task.driver) {
+          const oldStatus = task.status;
+          // If task is completed or cancelled, make the driver available again if they were assigned
+          if ((newStatus === 'Completed' || newStatus === 'Cancelled') && oldStatus === 'In Progress' && task.driver) {
             const driverNameToUpdate = task.driver;
             setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverNameToUpdate ? {...d, isAvailable: true} : d));
             setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverNameToUpdate ? {...v, status: 'Idle'} : v));
+          }
+          // If task is moved to in progress, make driver unavailable
+          if (newStatus === 'In Progress' && task.driver) {
+            const driverNameToUpdate = task.driver;
+            setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverNameToUpdate ? {...d, isAvailable: false} : d));
+            setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverNameToUpdate ? {...v, status: 'On Route'} : v));
           }
           return { ...task, status: newStatus };
         }
@@ -107,7 +114,7 @@ export default function TasksPanel() {
   
   const handleAssignVehicle = useCallback((taskId: string, vehicleId: string) => {
     const vehicleToAssign = vehicles.find(v => v.id === vehicleId);
-    if (!vehicleToAssign) return;
+    if (!vehicleToAssign || !vehicleToAssign.driver) return;
     
     setTasks(prevTasks => prevTasks.map(task => 
       task.id === taskId ? { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress' } : task
@@ -163,7 +170,11 @@ export default function TasksPanel() {
       }
   };
   
-  const availableVehicles = useMemo(() => vehicles.filter(v => v.status === 'Idle'), [vehicles]);
+  const availableVehicles = useMemo(() => vehicles.filter(v => {
+    const driver = drivers.find(d => d.name === v.driver);
+    return driver ? driver.isAvailable : false;
+  }), [vehicles, drivers]);
+
 
   return (
     <>
@@ -275,7 +286,7 @@ export default function TasksPanel() {
                       </DropdownMenu>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-auto p-0 font-normal">
@@ -462,3 +473,5 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
+
+    
