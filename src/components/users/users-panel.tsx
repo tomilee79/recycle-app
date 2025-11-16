@@ -14,13 +14,15 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, Trash2, UserPlus, Users, ShieldCheck, Shield, UserCog, ArrowDown, ArrowUp } from 'lucide-react';
+import { Loader2, UserPlus, Users, ShieldCheck, Shield, UserCog, ArrowDown, ArrowUp, Upload, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, UserRole, UserStatus } from '@/lib/types';
 import { format } from 'date-fns';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Trash2 } from 'lucide-react';
 
 
 const roleMap: { [key in UserRole]: { label: string; icon: React.ElementType, variant: "default" | "secondary" | "outline" } } = {
@@ -158,6 +160,26 @@ export default function UsersPanel() {
     return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Name", "Email", "Role", "Status", "CreatedAt"];
+    const csvContent = [
+      headers.join(','),
+      ...sortedAndFilteredUsers.map(u => [u.id, u.name, u.email, u.role, u.status, u.createdAt].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.href) {
+        URL.revokeObjectURL(link.href);
+    }
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', `users_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <>
       <Card className="shadow-lg">
@@ -167,9 +189,30 @@ export default function UsersPanel() {
               <CardTitle>사용자 관리</CardTitle>
               <CardDescription>모든 사용자를 생성, 조회, 수정 및 관리합니다.</CardDescription>
             </div>
-            <Button onClick={() => openSheet(null)}>
-              <UserPlus className="mr-2"/>새 사용자 추가
-            </Button>
+            <div className="flex gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>CSV 파일에서 사용자 가져오기</DialogTitle>
+                      <DialogDescription>
+                        CSV 파일을 업로드하여 여러 사용자를 한 번에 추가합니다. 파일은 'name', 'email', 'role' 열을 포함해야 합니다.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input type="file" accept=".csv" />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline">취소</Button>
+                        <Button>가져오기</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Button variant="outline" onClick={handleExport}><Download className="mr-2"/>내보내기</Button>
+                <Button onClick={() => openSheet(null)}><UserPlus className="mr-2"/>새 사용자 추가</Button>
+            </div>
           </div>
           <div className="flex items-center justify-between gap-2 pt-4">
             <div className="flex gap-2">
@@ -304,4 +347,5 @@ export default function UsersPanel() {
       </Sheet>
     </>
   );
-}
+
+    
