@@ -15,11 +15,11 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, MessageSquare, FileText, X } from 'lucide-react';
+import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, MessageSquare, FileText, X, TrendingUp, FileCheck, CircleDotDashed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Contract, ContractItem, ContractStatus, Comment, User, Attachment } from '@/lib/types';
-import { format, addYears, addDays, formatISO } from 'date-fns';
+import { format, addYears, addDays, formatISO, subMonths, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
@@ -31,6 +31,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Checkbox } from '../ui/checkbox';
 import { Comments } from '../tasks/comments';
 import { ScrollArea } from '../ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart as RechartsBarChart, PieChart as RechartsPieChart, Bar, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
@@ -94,6 +97,36 @@ export default function ContractsPanel() {
   const { toast } = useToast();
 
   const getCustomerInfo = useCallback((customerId: string) => customers.find(c => c.id === customerId) || { name: '알수없음', address: '알수없음'}, []);
+
+  const dashboardData = useMemo(() => {
+    const totalContracts = contracts.length;
+    const activeContracts = contracts.filter(c => c.status === 'Active').length;
+    const expiringContracts = contracts.filter(c => c.status === 'Expiring').length;
+    
+    const monthlyData = Array.from({ length: 6 }).map((_, i) => {
+      const month = subMonths(new Date(), 5 - i);
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const monthLabel = format(month, 'yyyy-MM');
+      
+      const newContracts = contracts.filter(c => isWithinInterval(parseISO(c.startDate), { start: monthStart, end: monthEnd })).length;
+      return { name: monthLabel, "신규 계약": newContracts };
+    });
+
+    const statusDistribution = contracts.reduce((acc, q) => {
+        const statusLabel = contractStatusMap[q.status];
+        acc[statusLabel] = (acc[statusLabel] || 0) + 1;
+        return acc;
+    }, {} as {[key: string]: number});
+
+    return {
+      totalContracts,
+      activeContracts,
+      expiringContracts,
+      monthlyChartData: monthlyData,
+      statusChartData: Object.entries(statusDistribution).map(([name, value]) => ({ name, value })),
+    };
+  }, [contracts]);
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -310,152 +343,212 @@ export default function ContractsPanel() {
   return (
     <>
       <Card className="shadow-lg">
+      <Tabs defaultValue="dashboard">
         <CardHeader>
-            <CardTitle>계약 관리</CardTitle>
-            <CardDescription>모든 고객 계약을 생성, 조회, 수정 및 관리합니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                    {(['All', 'Active', 'Expiring', 'Terminated'] as const).map(f => (
-                        <Button key={f} variant={filter === f ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f)}>
-                            {f === 'All' ? '전체' : contractStatusMap[f]}
-                        </Button>
-                    ))}
-                    {selectedRowKeys.size > 0 && (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    선택 삭제 ({selectedRowKeys.size})
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 계약이 영구적으로 삭제됩니다.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>취소</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    )}
-                </div>
-                <div className="flex gap-2">
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="고객사명, 계약번호 검색..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9"
-                        />
-                    </div>
-                    <Button onClick={openSheetForNew}>
-                        <PlusCircle className="mr-2"/>
-                        신규 계약
-                    </Button>
-                </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>계약 관리</CardTitle>
+                <CardDescription>계약 현황 대시보드 및 상세 목록을 관리합니다.</CardDescription>
+              </div>
+              <TabsList>
+                  <TabsTrigger value="dashboard">대시보드</TabsTrigger>
+                  <TabsTrigger value="list">목록</TabsTrigger>
+              </TabsList>
             </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox 
-                    checked={paginatedContracts.length > 0 && selectedRowKeys.size === paginatedContracts.length}
-                    onCheckedChange={(checked) => handleSelectAllRows(!!checked)}
-                  />
-                </TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('contractNumber')}>계약번호{getSortIcon('contractNumber')}</Button></TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('customerName')}>고객사{getSortIcon('customerName')}</Button></TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('startDate')}>시작일{getSortIcon('startDate')}</Button></TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('endDate')}>종료일{getSortIcon('endDate')}</Button></TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>상태{getSortIcon('status')}</Button></TableHead>
-                <TableHead className="text-right w-16">작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedContracts.map((contract) => (
-                <TableRow key={contract.id} data-state={selectedRowKeys.has(contract.id) && "selected"}>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                        checked={selectedRowKeys.has(contract.id)}
-                        onCheckedChange={() => handleSelectRow(contract.id)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.contractNumber}</TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{getCustomerInfo(contract.customerId).name}</TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.startDate}</TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.endDate}</TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>
-                    <Badge variant={contractStatusVariant[contract.status]}>
-                      {contractStatusMap[contract.status]}
-                    </Badge>
-                  </TableCell>
-                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <AlertDialog>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => handleCloneContract(contract)}>
-                                  <Copy className="mr-2 h-4 w-4" />
-                                  <span>복제</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>삭제</span>
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  이 작업은 되돌릴 수 없습니다. {contract.contractNumber} 계약이 영구적으로 삭제됩니다.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>취소</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete([contract.id])}>삭제 확인</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <CardFooter>
-            <Pagination>
-                <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/>
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <PaginationItem key={page}>
-                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
-                        {page}
-                        </PaginationLink>
-                    </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/>
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
-        </CardFooter>
+        </CardHeader>
+        <TabsContent value="dashboard">
+            <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">총 계약 수</CardTitle><FileText className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{dashboardData.totalContracts}</div><p className="text-xs text-muted-foreground">시스템에 등록된 모든 계약</p></CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">활성 계약</CardTitle><FileCheck className="h-4 w-4 text-green-500"/></CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{dashboardData.activeContracts}</div><p className="text-xs text-muted-foreground">현재 유효한 계약</p></CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">만료 예정 계약</CardTitle><CircleDotDashed className="h-4 w-4 text-yellow-500"/></CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{dashboardData.expiringContracts}</div><p className="text-xs text-muted-foreground">30일 내 만료 예정</p></CardContent>
+                    </Card>
+                </div>
+                 <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                        <CardHeader><CardTitle>월별 신규 계약 추이</CardTitle><CardDescription>지난 6개월간의 신규 계약 체결 추이입니다.</CardDescription></CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{ "신규 계약": { label: '신규 계약', color: 'hsl(var(--primary))' } }} className="h-64 w-full">
+                                <RechartsBarChart data={dashboardData.monthlyChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} fontSize={12} />
+                                    <YAxis />
+                                    <RechartsTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="신규 계약" fill="var(--color-신규 계약)" radius={4} />
+                                </RechartsBarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle>계약 상태 분포</CardTitle><CardDescription>현재 모든 계약의 상태 분포입니다.</CardDescription></CardHeader>
+                        <CardContent>
+                             <ChartContainer config={Object.fromEntries(Object.entries(contractStatusMap).map(([k,v]) => [v, {label: v, color: `hsl(var(--${contractStatusVariant[k as ContractStatus]}))`}] )) } className="h-64 w-full">
+                                <RechartsPieChart>
+                                    <RechartsTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                    <Pie data={dashboardData.statusChartData} dataKey="value" nameKey="name" innerRadius={50}>
+                                        {dashboardData.statusChartData.map(entry => <Cell key={entry.name} fill={ `var(--color-${entry.name})` } />)}
+                                    </Pie>
+                                    <Legend/>
+                                </RechartsPieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </CardContent>
+        </TabsContent>
+        <TabsContent value="list">
+            <CardContent>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                        {(['All', 'Active', 'Expiring', 'Terminated'] as const).map(f => (
+                            <Button key={f} variant={filter === f ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f)}>
+                                {f === 'All' ? '전체' : contractStatusMap[f]}
+                            </Button>
+                        ))}
+                        {selectedRowKeys.size > 0 && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        선택 삭제 ({selectedRowKeys.size})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 계약이 영구적으로 삭제됩니다.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>취소</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="relative w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="고객사명, 계약번호 검색..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <Button onClick={openSheetForNew}>
+                            <PlusCircle className="mr-2"/>
+                            신규 계약
+                        </Button>
+                    </div>
+                </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={paginatedContracts.length > 0 && selectedRowKeys.size === paginatedContracts.length}
+                        onCheckedChange={(checked) => handleSelectAllRows(!!checked)}
+                      />
+                    </TableHead>
+                    <TableHead><Button variant="ghost" onClick={() => requestSort('contractNumber')}>계약번호{getSortIcon('contractNumber')}</Button></TableHead>
+                    <TableHead><Button variant="ghost" onClick={() => requestSort('customerName')}>고객사{getSortIcon('customerName')}</Button></TableHead>
+                    <TableHead><Button variant="ghost" onClick={() => requestSort('startDate')}>시작일{getSortIcon('startDate')}</Button></TableHead>
+                    <TableHead><Button variant="ghost" onClick={() => requestSort('endDate')}>종료일{getSortIcon('endDate')}</Button></TableHead>
+                    <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>상태{getSortIcon('status')}</Button></TableHead>
+                    <TableHead className="text-right w-16">작업</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedContracts.map((contract) => (
+                    <TableRow key={contract.id} data-state={selectedRowKeys.has(contract.id) && "selected"}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                            checked={selectedRowKeys.has(contract.id)}
+                            onCheckedChange={() => handleSelectRow(contract.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.contractNumber}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{getCustomerInfo(contract.customerId).name}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.startDate}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.endDate}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>
+                        <Badge variant={contractStatusVariant[contract.status]}>
+                          {contractStatusMap[contract.status]}
+                        </Badge>
+                      </TableCell>
+                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <AlertDialog>
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={() => handleCloneContract(contract)}>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      <span>복제</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>삭제</span>
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      이 작업은 되돌릴 수 없습니다. {contract.contractNumber} 계약이 영구적으로 삭제됩니다.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete([contract.id])}>삭제 확인</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter>
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/>
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <PaginationItem key={page}>
+                            <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
+                            {page}
+                            </PaginationLink>
+                        </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                            <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/>
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            </CardFooter>
+        </TabsContent>
+      </Tabs>
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={closeSheet}>
