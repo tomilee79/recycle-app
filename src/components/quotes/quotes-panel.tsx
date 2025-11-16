@@ -86,7 +86,7 @@ export default function QuotesPanel() {
       if (name && (name.startsWith('items.') && (name.endsWith('.quantity') || name.endsWith('.unitPrice')))) {
         const items = form.getValues('items');
         items.forEach((item, index) => {
-          items[index].total = item.quantity * item.unitPrice;
+          items[index].total = (item.quantity || 0) * (item.unitPrice || 0);
         });
         form.setValue('items', items, { shouldValidate: true });
       }
@@ -250,7 +250,7 @@ export default function QuotesPanel() {
             </SheetHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4 h-full flex flex-col">
-              <div className="space-y-4 flex-1 overflow-y-auto pr-6">
+              <div className="flex-1 space-y-4 overflow-y-auto pr-6">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -354,7 +354,7 @@ export default function QuotesPanel() {
                         >
                             항목 추가
                         </Button>
-                         {form.formState.errors.items && <FormMessage>{form.formState.errors.items.message}</FormMessage>}
+                         {form.formState.errors.items && typeof form.formState.errors.items === 'object' && 'message' in form.formState.errors.items && <p className="text-sm font-medium text-destructive">{form.formState.errors.items.message}</p>}
                     </CardContent>
                 </Card>
 
@@ -382,7 +382,7 @@ export default function QuotesPanel() {
               </div>
               <div className="flex justify-between items-center pt-6">
                 <div>
-                  <Button type="submit">
+                  <Button type="submit" disabled={form.formState.isSubmitting || watchedStatus === 'Accepted'}>
                       {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {selectedQuote ? '견적 저장' : '견적 생성'}
                   </Button>
