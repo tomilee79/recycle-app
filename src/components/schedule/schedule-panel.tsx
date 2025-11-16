@@ -5,9 +5,9 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { collectionTasks as initialCollectionTasks, customers } from "@/lib/mock-data";
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { Badge } from '../ui/badge';
-import type { CollectionTask, Customer } from '@/lib/types';
+import type { CollectionTask } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 import { Calendar as CalendarIcon, MapPin, Trash2, CheckCircle, Clock, PlusCircle, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -62,17 +62,12 @@ export default function SchedulePanel() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [tasks, setTasks] = useState<CollectionTask[]>(initialCollectionTasks);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<CollectionTask | null>(null);
   const [customerFilter, setCustomerFilter] = useState('all');
   const { toast } = useToast();
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
-    defaultValues: {
-        customerId: '',
-        materialType: 'Plastic',
-        address: '',
-        scheduledDate: new Date(),
-    }
   });
 
   const watchedCustomerId = form.watch('customerId');
@@ -80,11 +75,29 @@ export default function SchedulePanel() {
   useEffect(() => {
     if (watchedCustomerId) {
       const customer = customers.find(c => c.id === watchedCustomerId);
-      if (customer) {
+      if (customer && !form.getValues('address')) { // Only autofill if address is empty
         form.setValue('address', customer.address, { shouldValidate: true });
       }
     }
   }, [watchedCustomerId, form]);
+
+  const openForm = (task: CollectionTask | null) => {
+    setEditingTask(task);
+    if (task) {
+        form.reset({
+            ...task,
+            scheduledDate: parseISO(task.scheduledDate),
+        });
+    } else {
+        form.reset({
+            customerId: '',
+            materialType: 'Plastic',
+            address: '',
+            scheduledDate: date || new Date(),
+        });
+    }
+    setIsFormOpen(true);
+  }
 
 
   const scheduledDays = useMemo(() => {
@@ -121,28 +134,33 @@ export default function SchedulePanel() {
   }, [toast]);
   
   const onScheduleSubmit: SubmitHandler<ScheduleFormValues> = (data) => {
-    const newTaskId = `T${String(tasks.length + 1).padStart(2, '0')}`;
-    
-    const newTask: CollectionTask = {
-        id: newTaskId,
-        vehicleId: '',
-        customerId: data.customerId,
-        materialType: data.materialType,
-        address: data.address,
-        location: { lat: 37.5665 + (Math.random() - 0.5) * 0.1, lng: 126.9780 + (Math.random() - 0.5) * 0.1 },
-        status: 'Pending',
-        scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
-        collectedWeight: 0,
-    };
-    setTasks(prev => [newTask, ...prev]);
-    toast({ title: "일정 등록됨", description: "새로운 수거 일정이 성공적으로 등록되었습니다." });
+      if (editingTask) {
+        // Update existing task
+        const updatedTask: CollectionTask = {
+            ...editingTask,
+            ...data,
+            scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
+        };
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
+        toast({ title: "일정 수정됨", description: "수거 일정이 성공적으로 수정되었습니다." });
+      } else {
+        // Create new task
+        const newTaskId = `T${String(tasks.length + 1).padStart(2, '0')}`;
+        const newTask: CollectionTask = {
+            id: newTaskId,
+            vehicleId: '',
+            ...data,
+            location: { lat: 37.5665 + (Math.random() - 0.5) * 0.1, lng: 126.9780 + (Math.random() - 0.5) * 0.1 },
+            status: 'Pending',
+            scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
+            collectedWeight: 0,
+        };
+        setTasks(prev => [newTask, ...prev]);
+        toast({ title: "일정 등록됨", description: "새로운 수거 일정이 성공적으로 등록되었습니다." });
+      }
+
     setIsFormOpen(false);
-    form.reset({
-      customerId: '',
-      materialType: 'Plastic',
-      address: '',
-      scheduledDate: new Date(),
-    });
+    setEditingTask(null);
   };
 
   const CustomDay: CalendarProps['components']['Day'] = (props: DayProps) => {
@@ -183,49 +201,7 @@ export default function SchedulePanel() {
                     </CardTitle>
                     <CardDescription>선택된 날짜의 수거 목록입니다.</CardDescription>
                 </div>
-                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                    <DialogTrigger asChild>
-                         <Button><PlusCircle className="mr-2"/>새 일정 추가</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>새 수거 일정 추가</DialogTitle>
-                            <DialogDescription>새로운 수거 일정 정보를 입력합니다.</DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onScheduleSubmit)} className="space-y-4">
-                                <FormField control={form.control} name="scheduledDate" render={({ field }) => (
-                                    <FormItem className="flex flex-col"><FormLabel>수거 예정일</FormLabel>
-                                        <Popover><PopoverTrigger asChild>
-                                            <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                                        </PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <FormField control={form.control} name="customerId" render={({ field }) => (
-                                    <FormItem><FormLabel>고객사</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl>
-                                            <SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                                        </Select><FormMessage />
-                                    </FormItem>
-                                )}/>
-                                 <FormField control={form.control} name="materialType" render={({ field }) => (
-                                    <FormItem><FormLabel>폐기물 종류</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl>
-                                            <SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent>
-                                        </Select><FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                
-                                <DialogFooter className="pt-4">
-                                    <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}일정 등록</Button>
-                                </DialogFooter>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                 <Button onClick={() => openForm(null)}><PlusCircle className="mr-2"/>새 일정 추가</Button>
             </div>
              <div className="mt-4">
                 <Select value={customerFilter} onValueChange={setCustomerFilter}>
@@ -244,25 +220,27 @@ export default function SchedulePanel() {
                 <div className="space-y-4 pr-4">
                 {selectedDayTasks.length > 0 ? (
                     selectedDayTasks.map(task => (
-                    <div key={task.id} className="p-3 border rounded-lg bg-muted/20">
+                    <div key={task.id} className="p-3 border rounded-lg bg-muted/20 cursor-pointer hover:bg-muted/40" onClick={() => openForm(task)}>
                         <div className="flex justify-between items-start mb-2">
                             <p className="font-semibold">{getCustomerName(task.customerId)}</p>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-auto p-0 font-normal">
-                                        <Badge variant={statusVariant[task.status]} className="cursor-pointer">
-                                            {statusMap[task.status]}
-                                        </Badge>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    {(Object.keys(statusMap) as Array<CollectionTask['status']>).filter(status => status !== task.status).map(status => (
-                                        <DropdownMenuItem key={status} onSelect={() => handleStatusChange(task.id, status)}>
-                                            {statusMap[status]}으로 변경
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                             <div onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-auto p-0 font-normal">
+                                            <Badge variant={statusVariant[task.status]} className="cursor-pointer">
+                                                {statusMap[task.status]}
+                                            </Badge>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {(Object.keys(statusMap) as Array<CollectionTask['status']>).filter(status => status !== task.status).map(status => (
+                                            <DropdownMenuItem key={status} onSelect={() => handleStatusChange(task.id, status)}>
+                                                {statusMap[status]}으로 변경
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
                         <div className="text-sm text-muted-foreground space-y-1">
                             <p className="flex items-center gap-2"><MapPin className="size-4"/> {task.address}</p>
@@ -284,10 +262,48 @@ export default function SchedulePanel() {
             </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Form Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) { setEditingTask(null); } setIsFormOpen(isOpen); }}>
+          <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                  <DialogTitle>{editingTask ? '일정 수정' : '새 수거 일정 추가'}</DialogTitle>
+                  <DialogDescription>{editingTask ? '수거 일정 정보를 수정합니다.' : '새로운 수거 일정 정보를 입력합니다.'}</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onScheduleSubmit)} className="space-y-4">
+                      <FormField control={form.control} name="scheduledDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><FormLabel>수거 예정일</FormLabel>
+                              <Popover><PopoverTrigger asChild>
+                                  <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                              </PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage />
+                          </FormItem>
+                      )}/>
+                      <FormField control={form.control} name="customerId" render={({ field }) => (
+                          <FormItem><FormLabel>고객사</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl>
+                                  <SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                              </Select><FormMessage />
+                          </FormItem>
+                      )}/>
+                       <FormField control={form.control} name="materialType" render={({ field }) => (
+                          <FormItem><FormLabel>폐기물 종류</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl>
+                                  <SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent>
+                              </Select><FormMessage />
+                          </FormItem>
+                      )}/>
+                      <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      
+                      <DialogFooter className="pt-4">
+                          <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingTask ? '저장' : '일정 등록'}</Button>
+                      </DialogFooter>
+                  </form>
+              </Form>
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-  
-
-    
