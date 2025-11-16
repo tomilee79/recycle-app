@@ -14,7 +14,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X, Search } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
@@ -72,6 +72,7 @@ export default function QuotesPanel() {
   });
 
   const watchItems = form.watch('items');
+  const watchedStatus = form.watch('status');
 
   const calculateTotals = useCallback((items: any[]) => {
     const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -162,6 +163,17 @@ export default function QuotesPanel() {
   }, [quotes, filter, search]);
 
   const { subtotal, tax, total } = useMemo(() => calculateTotals(watchItems || []), [watchItems, calculateTotals]);
+
+  const handleConvertToContract = () => {
+      if (!selectedQuote) return;
+      // In a real app, this would navigate to a new contract page with pre-filled data.
+      // For this mock-up, we just show a toast.
+      toast({
+          title: "계약 생성됨",
+          description: `${selectedQuote.id} 견적을 기반으로 신규 계약이 생성되었습니다.`,
+      });
+      setIsSheetOpen(false);
+  }
 
   return (
     <>
@@ -270,7 +282,7 @@ export default function QuotesPanel() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="상태를 선택하세요" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                              {(Object.keys(quoteStatusMap) as QuoteStatus[]).map(status => (
@@ -369,10 +381,18 @@ export default function QuotesPanel() {
 
               </div>
               <div className="flex justify-between items-center pt-6">
-                <Button type="submit">
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {selectedQuote ? '견적 저장' : '견적 생성'}
-                </Button>
+                <div>
+                  <Button type="submit">
+                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {selectedQuote ? '견적 저장' : '견적 생성'}
+                  </Button>
+                   {selectedQuote && watchedStatus === 'Accepted' && (
+                       <Button type="button" variant="secondary" onClick={handleConvertToContract} className="ml-2">
+                           <FileSignature className="mr-2" />
+                           계약으로 전환
+                       </Button>
+                   )}
+                </div>
                 {selectedQuote && (
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -403,5 +423,3 @@ export default function QuotesPanel() {
     </>
   );
 }
-
-    
