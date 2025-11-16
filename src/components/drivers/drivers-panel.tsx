@@ -118,7 +118,7 @@ export default function DriversPanel() {
     setDrivers(drivers.map(d => (d.id === id ? { ...d, isAvailable } : d)));
      toast({
       title: "상태 변경",
-      description: `직원의 배차 가능 상태가 변경되었습니다.`,
+      description: `직원의 배차 가능 상태가 ${isAvailable ? "'가능'" : "'배차중'"}으로 변경되었습니다.`,
     });
   }
 

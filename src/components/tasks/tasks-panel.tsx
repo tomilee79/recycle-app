@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { collectionTasks as initialCollectionTasks, customers, vehicles, drivers } from "@/lib/mock-data";
+import { collectionTasks as initialCollectionTasks, customers, vehicles as initialVehicles, drivers as initialDrivers } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +47,9 @@ const materialTypeMap: { [key: string]: string } = {
 
 export default function TasksPanel() {
   const [tasks, setTasks] = useState<CollectionTask[]>(initialCollectionTasks);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
+  const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
+
   const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -57,6 +60,10 @@ export default function TasksPanel() {
 
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
   const getVehicle = (vehicleId: string): Vehicle | undefined => vehicles.find(v => v.id === vehicleId);
+  const getDriverForVehicle = (vehicleId: string): Driver | undefined => {
+      const vehicle = getVehicle(vehicleId);
+      return vehicle ? drivers.find(d => d.name === vehicle.driver) : undefined;
+  };
   
   const handleRowClick = (task: CollectionTask) => {
     setSelectedTask(task);
@@ -68,9 +75,18 @@ export default function TasksPanel() {
 
   const handleStatusChange = useCallback((taskIds: string[], newStatus: TaskStatus) => {
     setTasks(prevTasks =>
-      prevTasks.map(task =>
-        taskIds.includes(task.id) ? { ...task, status: newStatus } : task
-      )
+      prevTasks.map(task => {
+        if (taskIds.includes(task.id)) {
+          // If task is completed or cancelled, make the driver available again
+          if ((newStatus === 'Completed' || newStatus === 'Cancelled') && task.driver) {
+            const driverNameToUpdate = task.driver;
+            setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverNameToUpdate ? {...d, isAvailable: true} : d));
+            setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverNameToUpdate ? {...v, status: 'Idle'} : v));
+          }
+          return { ...task, status: newStatus };
+        }
+        return task;
+      })
     );
     toast({
       title: '상태 변경 완료',
@@ -89,18 +105,26 @@ export default function TasksPanel() {
       setSelectedRowKeys(new Set());
   }, [toast]);
   
-  const handleAssignVehicle = useCallback((taskId: string, vehicleId: string, driver: string) => {
-      setTasks(prevTasks => prevTasks.map(task => 
-          task.id === taskId ? { ...task, vehicleId, driver, status: 'In Progress' } : task
-      ));
-      toast({
-          title: "차량 배정 완료",
-          description: `작업에 차량(${vehicleId}) 및 운전자(${driver})가 배정되었습니다.`,
-      })
-      if (selectedTask?.id === taskId) {
-        setSelectedTask(prev => prev ? {...prev, vehicleId, driver, status: 'In Progress'} : null);
-      }
-  }, [selectedTask, toast]);
+  const handleAssignVehicle = useCallback((taskId: string, vehicleId: string) => {
+    const vehicleToAssign = vehicles.find(v => v.id === vehicleId);
+    if (!vehicleToAssign) return;
+    
+    setTasks(prevTasks => prevTasks.map(task => 
+      task.id === taskId ? { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress' } : task
+    ));
+    setVehicles(prevVehicles => prevVehicles.map(v => v.id === vehicleId ? { ...v, status: 'On Route' } : v));
+    setDrivers(prevDrivers => prevDrivers.map(d => d.name === vehicleToAssign.driver ? { ...d, isAvailable: false } : d));
+
+    toast({
+      title: "차량 배정 완료",
+      description: `작업에 차량(${vehicleToAssign.name}) 및 운전자(${vehicleToAssign.driver})가 배정되었습니다.`,
+    });
+
+    if (selectedTask?.id === taskId) {
+      setSelectedTask(prev => prev ? {...prev, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress'} : null);
+    }
+  }, [vehicles, selectedTask, toast]);
+
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -138,6 +162,8 @@ export default function TasksPanel() {
           setSelectedRowKeys(new Set(paginatedTasks.map(t => t.id)));
       }
   };
+  
+  const availableVehicles = useMemo(() => vehicles.filter(v => v.status === 'Idle'), [vehicles]);
 
   return (
     <>
@@ -231,7 +257,24 @@ export default function TasksPanel() {
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
-                  <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {task.vehicleId ? (
+                      <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" className="h-auto p-1 font-normal text-blue-600">배정하기</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            {availableVehicles.length > 0 ? availableVehicles.map(v => (
+                                <DropdownMenuItem key={v.id} onSelect={() => handleAssignVehicle(task.id, v.id)}>
+                                    {v.name} ({v.driver})
+                                </DropdownMenuItem>
+                            )) : <DropdownMenuItem disabled>배정 가능한 차량 없음</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -286,7 +329,7 @@ export default function TasksPanel() {
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="justify-center">
             <Pagination>
                 <PaginationContent>
                     <PaginationItem>
@@ -374,7 +417,7 @@ export default function TasksPanel() {
                      <Card>
                         <CardHeader><CardTitle className="text-lg">차량 배정</CardTitle></CardHeader>
                         <CardContent>
-                           <AssignVehicleForm taskId={selectedTask.id} onAssign={handleAssignVehicle}/>
+                           <AssignVehicleForm taskId={selectedTask.id} onAssign={handleAssignVehicle} availableVehicles={availableVehicles}/>
                         </CardContent>
                      </Card>
                   )}
@@ -388,14 +431,13 @@ export default function TasksPanel() {
   );
 }
 
-function AssignVehicleForm({ taskId, onAssign }: { taskId: string; onAssign: (taskId: string, vehicleId: string, driver: string) => void }) {
+function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: string; onAssign: (taskId: string, vehicleId: string) => void; availableVehicles: Vehicle[] }) {
     const [selectedVehicleId, setSelectedVehicleId] = useState('');
-    const availableVehicles = useMemo(() => vehicles.filter(v => v.status === 'Idle'), []);
     const selectedVehicle = useMemo(() => availableVehicles.find(v => v.id === selectedVehicleId), [availableVehicles, selectedVehicleId]);
 
     const handleSubmit = () => {
         if (selectedVehicle) {
-            onAssign(taskId, selectedVehicle.id, selectedVehicle.driver);
+            onAssign(taskId, selectedVehicle.id);
         }
     }
     
@@ -420,5 +462,3 @@ function AssignVehicleForm({ taskId, onAssign }: { taskId: string; onAssign: (ta
         </div>
     )
 }
-
-    
