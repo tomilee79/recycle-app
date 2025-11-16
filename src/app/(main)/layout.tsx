@@ -165,7 +165,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/quotes"><FileText /><span>견적 관리</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeView === 'contracts'}
                 tooltip={{ children: '계약 관리' }}

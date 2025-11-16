@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight, PlusCircle, Search, MoreHorizontal, Trash2, Edit } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Trash2, Edit } from "lucide-react";
 import type { Driver } from '@/lib/types';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -22,12 +22,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Switch } from '../ui/switch';
 
 
 const driverFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, "이름은 2자 이상이어야 합니다."),
   contact: z.string().regex(/^[0-9]{3}-[0-9]{3,4}-[0-9]{4}$/, "010-1234-5678 형식으로 입력해주세요."),
+  isAvailable: z.boolean(),
 });
 
 type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -67,9 +69,10 @@ export default function DriversPanel() {
         id: driver.id,
         name: driver.name,
         contact: driver.contact,
+        isAvailable: driver.isAvailable,
       });
     } else {
-      form.reset({ id: undefined, name: '', contact: '' });
+      form.reset({ id: undefined, name: '', contact: '', isAvailable: true });
     }
     setIsSheetOpen(true);
   };
@@ -88,7 +91,7 @@ export default function DriversPanel() {
         id: `D${String(drivers.length + 1).padStart(3, '0')}`,
         name: data.name,
         contact: data.contact,
-        isAvailable: true,
+        isAvailable: data.isAvailable,
       };
       setDrivers([newDriver, ...drivers]);
       toast({ title: "직원 추가 완료", description: `${data.name} 님이 새로운 직원으로 등록되었습니다.` });
@@ -96,9 +99,19 @@ export default function DriversPanel() {
     closeSheet();
   };
 
-  const handleDelete = (id: string) => {
-      setDrivers(drivers.filter(d => d.id !== id));
+  const handleDelete = () => {
+    if (!selectedDriver) return;
+      setDrivers(drivers.filter(d => d.id !== selectedDriver.id));
       toast({ title: "직원 삭제 완료", description: "직원 정보가 삭제되었습니다.", variant: "destructive" });
+      closeSheet();
+  }
+
+  const handleToggleAvailability = (id: string, isAvailable: boolean) => {
+    setDrivers(drivers.map(d => (d.id === id ? { ...d, isAvailable } : d)));
+     toast({
+      title: "상태 변경",
+      description: `직원의 배차 가능 상태가 변경되었습니다.`,
+    });
   }
 
   return (
@@ -138,7 +151,7 @@ export default function DriversPanel() {
               <TableRow>
                 <TableHead>이름</TableHead>
                 <TableHead>연락처</TableHead>
-                <TableHead>배차 가능 여부</TableHead>
+                <TableHead className="w-[120px]">배차 가능</TableHead>
                 <TableHead className="text-right">작업</TableHead>
               </TableRow>
             </TableHeader>
@@ -148,33 +161,21 @@ export default function DriversPanel() {
                   <TableCell className="font-medium">{driver.name}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
                   <TableCell>
-                    <Badge variant={driver.isAvailable ? 'default' : 'secondary'} className={cn(driver.isAvailable ? "bg-green-500 hover:bg-green-600" : "bg-yellow-500 hover:bg-yellow-600")}>
-                      {driver.isAvailable ? '가능' : '배차중'}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                       <Switch
+                        id={`available-${driver.id}`}
+                        checked={driver.isAvailable}
+                        onCheckedChange={(checked) => handleToggleAvailability(driver.id, checked)}
+                      />
+                      <Label htmlFor={`available-${driver.id}`} className={cn(driver.isAvailable ? 'text-green-600' : 'text-yellow-600')}>
+                        {driver.isAvailable ? '가능' : '배차중'}
+                      </Label>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openSheet(driver)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            이 작업은 되돌릴 수 없습니다. {driver.name} 직원의 정보가 영구적으로 삭제됩니다.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>취소</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(driver.id)}>삭제 확인</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -193,7 +194,7 @@ export default function DriversPanel() {
       </Card>
     </div>
 
-    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+    <Sheet open={isSheetOpen} onOpenChange={closeSheet}>
         <SheetContent className="sm:max-w-md">
             <SheetHeader>
                 <SheetTitle>{selectedDriver ? '직원 정보 수정' : '새 직원 추가'}</SheetTitle>
@@ -223,10 +224,51 @@ export default function DriversPanel() {
                     </FormItem>
                     )}
                 />
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {selectedDriver ? '저장' : '추가'}
-                </Button>
+                <FormField
+                    control={form.control}
+                    name="isAvailable"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                                <FormLabel>배차 가능</FormLabel>
+                                <FormMessage />
+                            </div>
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                <div className="flex justify-between items-center pt-4">
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {selectedDriver ? '저장' : '추가'}
+                  </Button>
+                   {selectedDriver && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive">
+                              <Trash2 className="mr-2"/>삭제
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                이 작업은 되돌릴 수 없습니다. {selectedDriver.name} 직원의 정보가 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                </div>
             </form>
             </Form>
         </SheetContent>
