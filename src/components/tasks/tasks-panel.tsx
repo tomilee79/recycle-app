@@ -79,6 +79,16 @@ export default function TasksPanel() {
     setSelectedRowKeys(new Set());
   }, [toast]);
   
+  const handleDeleteTasks = useCallback((taskIds: string[]) => {
+      setTasks(prevTasks => prevTasks.filter(task => !taskIds.includes(task.id)));
+      toast({
+          title: "작업 삭제 완료",
+          description: `${taskIds.length}개의 작업이 삭제되었습니다.`,
+          variant: "destructive",
+      });
+      setSelectedRowKeys(new Set());
+  }, [toast]);
+  
   const handleAssignVehicle = useCallback((taskId: string, vehicleId: string, driver: string) => {
       setTasks(prevTasks => prevTasks.map(task => 
           task.id === taskId ? { ...task, vehicleId, driver, status: 'Pending' } : task
@@ -152,15 +162,43 @@ export default function TasksPanel() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline">
-                            선택 항목 상태 변경 ({selectedRowKeys.size}) <ChevronDown className="ml-2 h-4 w-4" />
+                            일괄 작업 ({selectedRowKeys.size}) <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                        {statuses.map(status => (
-                            <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
-                                {statusMap[status]}으로 변경
+                        <DropdownMenuItem>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                     <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full">상태 변경<ChevronDown className="ml-auto h-4 w-4"/></div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {statuses.map(status => (
+                                        <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
+                                            {statusMap[status]}으로 변경
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                  <Trash2 className="mr-2 h-4 w-4"/>선택 항목 삭제
                             </DropdownMenuItem>
-                        ))}
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 작업이 영구적으로 삭제됩니다.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteTasks(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </DropdownMenuContent>
                 </DropdownMenu>
               )}
