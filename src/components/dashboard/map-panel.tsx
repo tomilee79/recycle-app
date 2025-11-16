@@ -28,12 +28,17 @@ const MapController = ({ cameraState }: { cameraState: Partial<CameraState> }) =
 export default function MapPanel({ selectedVehicle, onVehicleSelect, cameraState }: MapPanelProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  if (!apiKey) {
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
     return (
       <Card className="h-full flex items-center justify-center bg-muted">
         <div className="text-center text-muted-foreground p-4">
-          <h3 className="font-semibold text-lg mb-2">Google Maps API 키가 없습니다</h3>
-          <p className="text-sm">.env.local 파일에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY를 추가해주세요.</p>
+          <h3 className="font-semibold text-lg mb-2">Google Maps API Key가 필요합니다</h3>
+          <p className="text-sm">
+            .env.local 파일에 유효한 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY를 추가해주세요.
+          </p>
+          <p className="text-xs mt-2">
+            참고: API를 활성화한 후에도, Google Cloud 프로젝트에 결제 계정이 연결되어 있어야 지도가 표시됩니다.
+          </p>
         </div>
       </Card>
     );
