@@ -12,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 
 interface RouteMapProps {
-  apiKey: string; // No longer used, but kept for compatibility
   pendingTasks: CollectionTask[];
   selectedTasks: OptimizeRouteLocation[];
   optimizedRoute: OptimizeRouteOutput | null;

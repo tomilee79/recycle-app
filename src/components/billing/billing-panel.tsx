@@ -139,9 +139,14 @@ export default function BillingPanel() {
   };
 
   const onExpenseSubmit: SubmitHandler<ExpenseFormValues> = (data) => {
+    const expenseData = {
+        ...data,
+        vehicleId: data.vehicleId === 'none' ? undefined : data.vehicleId
+    };
+
     if (editingExpense) {
       // Update existing expense
-      const updatedExpense = { ...editingExpense, ...data, date: format(data.date, 'yyyy-MM-dd') };
+      const updatedExpense = { ...editingExpense, ...expenseData, date: format(data.date, 'yyyy-MM-dd') };
       setExpensesData(prev => prev.map(e => e.id === editingExpense.id ? updatedExpense : e));
       toast({ title: "비용 수정됨", description: "비용 항목이 성공적으로 수정되었습니다." });
     } else {
@@ -152,7 +157,7 @@ export default function BillingPanel() {
         category: data.category as ExpenseCategory,
         description: data.description,
         amount: data.amount,
-        vehicleId: data.vehicleId,
+        vehicleId: expenseData.vehicleId,
         status: 'Pending',
       };
       setExpensesData([newExpense, ...expensesData]);
@@ -363,10 +368,10 @@ export default function BillingPanel() {
                     <FormField control={expenseForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>상세 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={expenseForm.control} name="vehicleId" render={({ field }) => (
                         <FormItem><FormLabel>관련 차량 (선택)</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="관련 차량을 선택하세요" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="">없음</SelectItem>
+                                    <SelectItem value="none">없음</SelectItem>
                                     {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
                                 </SelectContent>
                             </Select><FormMessage />
@@ -403,5 +408,3 @@ export default function BillingPanel() {
     </Tabs>
   );
 }
-
-    

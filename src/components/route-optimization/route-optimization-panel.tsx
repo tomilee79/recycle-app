@@ -21,7 +21,6 @@ export default function RouteOptimizationPanel() {
     const [error, setError] = useState<string | null>(null);
     const [optimizedRoute, setOptimizedRoute] = useState<OptimizeRouteOutput | null>(null);
     
-    const apiKey = "";
     const startPoint = { id: "start_end", address: "서울시 강남구 본사 차고지" };
 
     const handleTaskSelection = (task: OptimizeRouteLocation, selected: boolean) => {
@@ -161,7 +160,6 @@ export default function RouteOptimizationPanel() {
                         </div>
                     )}
                     <RouteMap 
-                        apiKey={apiKey!}
                         pendingTasks={pendingTasks}
                         selectedTasks={selectedTasks}
                         optimizedRoute={optimizedRoute}
