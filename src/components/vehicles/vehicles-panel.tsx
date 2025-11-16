@@ -16,7 +16,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -255,6 +255,22 @@ export default function VehiclesPanel() {
   
   const availableDrivers = useMemo(() => drivers.filter(d => d.isAvailable), [drivers]);
 
+  const handleVehicleExport = () => {
+    const headers = ["ID", "차량명", "차종", "톤수(kg)", "운전자", "상태", "등록일"];
+    const csvContent = [
+      headers.join(','),
+      ...filteredVehicles.map(v => [v.id, v.name, typeMap[v.type], v.capacity, v.driver, statusMap[v.status], v.createdAt].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `vehicles_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <>
       <Card className="shadow-lg">
@@ -280,6 +296,25 @@ export default function VehiclesPanel() {
                   />
                 </div>
                 <div className="flex gap-2">
+                     <Dialog>
+                        <DialogTrigger asChild><Button variant="outline"><Upload className="mr-2"/>가져오기</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>CSV 파일에서 차량 가져오기</DialogTitle>
+                                <DialogDescription>
+                                    CSV 파일을 업로드하여 여러 차량을 한 번에 추가합니다. 파일은 'name', 'type', 'capacity' 열을 포함해야 합니다.
+                                </DialogDescription>
+                            </DialogHeader>
+                             <div className="space-y-4 py-4">
+                                <Input type="file" accept=".csv" />
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline">취소</Button>
+                                <Button>가져오기</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <Button variant="outline" onClick={handleVehicleExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
                         <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
                         <DialogContent>
@@ -460,4 +495,3 @@ export default function VehiclesPanel() {
     </>
   );
 }
-
