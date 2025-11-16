@@ -17,7 +17,7 @@ export default function MapPanel({ selectedVehicle, onVehicleSelect }: MapPanelP
         <div className="text-center text-muted-foreground">
             <Map className="mx-auto h-12 w-12 mb-4" />
             <h3 className="text-lg font-semibold">지도 화면</h3>
-            <p className="text-sm">이 부분은 지도 화면이고, 추후에 개발될 예정입니다.</p>
+            <p className="text-sm">지도 화면 이 부분은 지도 화면이고, 추후에 개발될 예정입니다.</p>
         </div>
     </Card>
   );
