@@ -479,7 +479,7 @@ export default function ContractsPanel() {
                         />
                       </TableCell>
                       <TableCell className="font-medium cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.contractNumber}</TableCell>
-                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{getCustomerInfo(contract.customerId).name}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.customerName}</TableCell>
                       <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.startDate}</TableCell>
                       <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.endDate}</TableCell>
                       <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>
