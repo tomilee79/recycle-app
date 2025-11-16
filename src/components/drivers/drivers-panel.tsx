@@ -161,16 +161,16 @@ export default function DriversPanel() {
                 <TableHead>이메일</TableHead>
                 <TableHead>연락처</TableHead>
                 <TableHead className="w-[120px]">배차 가능</TableHead>
-                <TableHead className="text-right">작업</TableHead>
+                <TableHead className="text-right w-[80px]">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedData.map((driver) => (
-                <TableRow key={driver.id}>
+                <TableRow key={driver.id} onClick={() => openSheet(driver)} className="cursor-pointer">
                   <TableCell className="font-medium">{driver.name}</TableCell>
                   <TableCell>{driver.email}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center space-x-2">
                        <Switch
                         id={`available-${driver.id}`}
@@ -182,7 +182,7 @@ export default function DriversPanel() {
                       </Label>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <AlertDialog>
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -191,10 +191,6 @@ export default function DriversPanel() {
                               </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => openSheet(driver)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>수정</span>
-                              </DropdownMenuItem>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem className="text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
