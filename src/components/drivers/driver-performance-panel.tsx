@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { drivers, vehicles, collectionTasks } from "@/lib/mock-data";
-import { Medal, Scale, Truck, CheckCircle } from 'lucide-react';
+import { Medal, Users, CheckCircle } from 'lucide-react';
 import type { Driver } from '@/lib/types';
 
 interface DriverStats extends Driver {
