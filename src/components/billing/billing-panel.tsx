@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { MonthPicker } from '../ui/month-picker';
 
 
 const settlementStatusMap: { [key in SettlementStatus]: string } = {
@@ -64,7 +65,7 @@ const expenseCategoryMap: { [key in ExpenseCategory]: { label: string; icon: Rea
 const expenseCategoryOptions = Object.keys(expenseCategoryMap) as ExpenseCategory[];
 
 const settlementFormSchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, "YYYY-MM 형식으로 입력해주세요."),
+  month: z.date({ required_error: "정산 월을 선택해주세요." }),
   customerName: z.string().min(1, "고객사를 선택해주세요."),
   collectionCount: z.coerce.number().min(0, "수거 횟수는 0 이상이어야 합니다."),
   totalWeight: z.coerce.number().min(0, "총 수거량은 0 이상이어야 합니다."),
@@ -115,10 +116,13 @@ export default function BillingPanel() {
   const openSettlementDialog = useCallback((settlement: SettlementData | null) => {
     setEditingSettlement(settlement);
     if (settlement) {
-      settlementForm.reset(settlement);
+      settlementForm.reset({
+        ...settlement,
+        month: new Date(settlement.month),
+      });
     } else {
       settlementForm.reset({
-        month: format(new Date(), 'yyyy-MM'),
+        month: new Date(),
         customerName: '',
         collectionCount: 0,
         totalWeight: 0,
@@ -141,7 +145,7 @@ export default function BillingPanel() {
         category: '유류비',
         amount: 0,
         description: '',
-        vehicleId: '',
+        vehicleId: 'none',
       });
     }
     setIsExpenseModalOpen(true);
@@ -149,13 +153,18 @@ export default function BillingPanel() {
 
   const onSettlementSubmit: SubmitHandler<SettlementFormValues> = (data) => {
     if (editingSettlement) {
-      const updatedSettlement = { ...editingSettlement, ...data };
+      const updatedSettlement: SettlementData = { 
+        ...editingSettlement,
+        ...data,
+        month: format(data.month, 'yyyy-MM'),
+      };
       setSettlementData(prev => prev.map(s => s.id === editingSettlement.id ? updatedSettlement : s));
       toast({ title: "정산 내역 수정됨", description: "정산 내역이 성공적으로 수정되었습니다." });
     } else {
       const newSettlement: SettlementData = {
         id: `S${String(settlementData.length + 1).padStart(3, '0')}`,
         ...data,
+        month: format(data.month, 'yyyy-MM'),
         status: 'Pending',
       };
       setSettlementData([newSettlement, ...settlementData]);
@@ -367,7 +376,7 @@ export default function BillingPanel() {
                 <Form {...settlementForm}>
                 <form onSubmit={settlementForm.handleSubmit(onSettlementSubmit)} className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={settlementForm.control} name="month" render={({ field }) => (<FormItem><FormLabel>정산 월</FormLabel><FormControl><Input placeholder="YYYY-MM" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={settlementForm.control} name="month" render={({ field }) => (<FormItem><FormLabel>정산 월</FormLabel><FormControl><MonthPicker date={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={settlementForm.control} name="customerName" render={({ field }) => (
                             <FormItem><FormLabel>고객사</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
@@ -402,7 +411,7 @@ export default function BillingPanel() {
                         <FormField control={expenseForm.control} name="amount" render={({ field }) => (<FormItem><FormLabel>금액 (원)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                     <FormField control={expenseForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>상세 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                    <FormField control={expenseForm.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>관련 차량 (선택)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="관련 차량을 선택하세요" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">없음</SelectItem>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                    <FormField control={expenseForm.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>관련 차량 (선택)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? 'none'}><FormControl><SelectTrigger><SelectValue placeholder="관련 차량을 선택하세요" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">없음</SelectItem>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
                     <DialogFooter className="pt-4 sm:justify-between">
                          {editingExpense ? (<AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2" /> 삭제</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteExpense}>삭제 확인</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>) : <div></div>}
                         <Button type="submit" disabled={expenseForm.formState.isSubmitting}>{expenseForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingExpense ? '저장' : '비용 등록'}</Button>
@@ -414,3 +423,5 @@ export default function BillingPanel() {
     </Tabs>
   );
 }
+
+    
