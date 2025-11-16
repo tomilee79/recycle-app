@@ -15,7 +15,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search, PlusCircle } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -24,22 +24,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@/components/ui/input';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 
-const statusMap: { [key: string]: string } = {
+const statusMap: { [key in Vehicle['status']]: string } = {
   'On Route': '운행중',
   'Completed': '완료',
   'Maintenance': '정비중',
   'Idle': '대기중'
 };
-
 const statusOptions: Vehicle['status'][] = ['On Route', 'Idle', 'Maintenance', 'Completed'];
 
-const typeMap: { [key: string]: string } = {
+const typeMap: { [key in Vehicle['type']]: string } = {
   'Truck': '트럭',
   'Van': '밴',
   'Electric': '전기차'
 };
+const typeOptions = Object.keys(typeMap) as Vehicle['type'][];
 
 const equipmentStatusMap: { [key: string]: string } = {
   'In Use': '사용중',
@@ -52,17 +54,26 @@ const equipmentTypeMap: { [key: string]: string } = {
   'Container': '컨테이너'
 };
 
-const formSchema = z.object({
+const dispatchFormSchema = z.object({
   customerId: z.string().min(1, "고객을 선택해주세요."),
   vehicleId: z.string().min(1, "차량을 선택해주세요."),
   driverId: z.string().min(1, "운전자를 선택해주세요."),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const vehicleFormSchema = z.object({
+    name: z.string().min(3, "차량 이름은 3자 이상이어야 합니다."),
+    type: z.enum(typeOptions),
+    capacity: z.coerce.number().min(100, "용량은 100kg 이상이어야 합니다."),
+});
+
+type DispatchFormValues = z.infer<typeof dispatchFormSchema>;
+type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+
 
 export default function VehiclesPanel() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isEditingVehicle, setIsEditingVehicle] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
@@ -71,49 +82,27 @@ export default function VehiclesPanel() {
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      customerId: '',
-      vehicleId: '',
-      driverId: ''
-    }
+  const dispatchForm = useForm<DispatchFormValues>({
+    resolver: zodResolver(dispatchFormSchema),
+    defaultValues: { customerId: '', vehicleId: '', driverId: '' }
   });
 
-  const filteredVehicles = useMemo(() => 
-    vehicles.filter(vehicle => 
-      vehicle.name.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
-      vehicle.driver.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
-      vehicle.id.toLowerCase().includes(vehicleSearch.toLowerCase())
-    ), [vehicles, vehicleSearch]);
+  const vehicleForm = useForm<VehicleFormValues>({
+    resolver: zodResolver(vehicleFormSchema),
+  });
 
-  const filteredEquipments = useMemo(() =>
-    equipments.filter(equipment =>
-      equipment.id.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
-      equipment.location.toLowerCase().includes(equipmentSearch.toLowerCase())
-    ), [equipments, equipmentSearch]);
-
-  const {
-    currentPage: vehicleCurrentPage,
-    setCurrentPage: setVehicleCurrentPage,
-    paginatedData: paginatedVehicles,
-    totalPages: vehicleTotalPages,
-  } = usePagination(filteredVehicles, 5);
-
-  const {
-    currentPage: equipmentCurrentPage,
-    setCurrentPage: setEquipmentCurrentPage,
-    paginatedData: paginatedEquipments,
-    totalPages: equipmentTotalPages,
-  } = usePagination(filteredEquipments, 5);
-
-  
   const handleVehicleClick = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
+    vehicleForm.reset({
+        name: vehicle.name,
+        type: vehicle.type,
+        capacity: vehicle.capacity,
+    });
   };
 
   const handleSheetClose = () => {
     setSelectedVehicle(null);
+    setIsEditingVehicle(false);
   };
   
   const handleDriverChange = useCallback((vehicleId: string, newDriverId: string) => {
@@ -182,31 +171,86 @@ export default function VehiclesPanel() {
     })
   }, [toast]);
 
-  const onSubmit: SubmitHandler<FormValues> = (data) => {
-    setIsSubmitting(true);
-    
+  const onDispatchSubmit: SubmitHandler<DispatchFormValues> = (data) => {
+    dispatchForm.formState.isSubmitting;
     setTimeout(() => {
-      // Logic to update vehicle and driver status based on the new dispatch
-      const selectedVehicle = vehicles.find(v => v.id === data.vehicleId);
+      const selectedVehicleData = vehicles.find(v => v.id === data.vehicleId);
       const selectedDriver = drivers.find(d => d.id === data.driverId);
 
-      if (selectedVehicle && selectedDriver) {
-        // Change the vehicle status to 'On Route'
+      if (selectedVehicleData && selectedDriver) {
         handleStatusChange(data.vehicleId, 'On Route');
-
-        // This will also make the new driver unavailable and old driver available (if any)
         handleDriverChange(data.vehicleId, data.driverId);
       }
 
-      toast({
-        title: "배차 등록 완료",
-        description: "새로운 배차 정보가 성공적으로 등록되었습니다.",
-      });
-      setIsSubmitting(false);
-      setIsModalOpen(false);
-      form.reset();
+      toast({ title: "배차 등록 완료", description: "새로운 배차 정보가 성공적으로 등록되었습니다." });
+      setIsDispatchModalOpen(false);
+      dispatchForm.reset();
     }, 1000);
   };
+  
+  const onVehicleSubmit: SubmitHandler<VehicleFormValues> = (data) => {
+    if (selectedVehicle && isEditingVehicle) { // Update vehicle
+        const updatedVehicle = { ...selectedVehicle, ...data };
+        setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? updatedVehicle : v));
+        setSelectedVehicle(updatedVehicle);
+        toast({ title: "차량 정보 수정됨", description: `${data.name} 정보가 성공적으로 수정되었습니다.` });
+        setIsEditingVehicle(false);
+    } else { // Create new vehicle
+        const newVehicle: Vehicle = {
+            id: `V${String(vehicles.length + 1).padStart(3, '0')}`,
+            name: data.name,
+            type: data.type,
+            capacity: data.capacity,
+            driver: '미배정',
+            status: 'Idle',
+            location: { lat: 37.5665, lng: 126.9780 },
+            load: 0,
+            maintenanceHistory: [],
+            createdAt: format(new Date(), 'yyyy-MM-dd'),
+        };
+        setVehicles([newVehicle, ...vehicles]);
+        toast({ title: "차량 등록됨", description: "새로운 차량이 시스템에 등록되었습니다." });
+        setIsVehicleModalOpen(false);
+    }
+  };
+
+  const handleDeleteVehicle = () => {
+    if (!selectedVehicle) return;
+    setVehicles(vehicles.filter(v => v.id !== selectedVehicle.id));
+    toast({
+      title: "차량 삭제됨",
+      description: `${selectedVehicle.name} 차량이 영구적으로 삭제되었습니다.`,
+      variant: 'destructive',
+    });
+    handleSheetClose();
+  }
+  
+  const filteredVehicles = useMemo(() => 
+    vehicles.filter(vehicle => 
+      vehicle.name.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+      vehicle.driver.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+      vehicle.id.toLowerCase().includes(vehicleSearch.toLowerCase())
+    ), [vehicles, vehicleSearch]);
+
+  const filteredEquipments = useMemo(() =>
+    equipments.filter(equipment =>
+      equipment.id.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+      equipment.location.toLowerCase().includes(equipmentSearch.toLowerCase())
+    ), [equipments, equipmentSearch]);
+
+  const {
+    currentPage: vehicleCurrentPage,
+    setCurrentPage: setVehicleCurrentPage,
+    paginatedData: paginatedVehicles,
+    totalPages: vehicleTotalPages,
+  } = usePagination(filteredVehicles, 5);
+
+  const {
+    currentPage: equipmentCurrentPage,
+    setCurrentPage: setEquipmentCurrentPage,
+    paginatedData: paginatedEquipments,
+    totalPages: equipmentTotalPages,
+  } = usePagination(filteredEquipments, 5);
   
   const availableDrivers = useMemo(() => drivers.filter(d => d.isAvailable), [drivers]);
 
@@ -234,101 +278,41 @@ export default function VehiclesPanel() {
                     className="pl-9"
                   />
                 </div>
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                        <PlusCircle className="mr-2"/>
-                        새 배차 등록
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>새 배차 등록</DialogTitle>
-                      <DialogDescription>새로운 배차 정보를 입력해주세요.</DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField
-                          control={form.control}
-                          name="customerId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>고객사</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="고객사를 선택하세요" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="vehicleId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>차량</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="배차할 차량을 선택하세요" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                         <FormField
-                          control={form.control}
-                          name="driverId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>운전자</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="담당 운전자를 선택하세요" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {availableDrivers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter>
-                          <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            배차 등록
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex gap-2">
+                    <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
+                        <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
+                        <DialogContent>
+                             <DialogHeader><DialogTitle>새 차량 등록</DialogTitle><DialogDescription>새로운 차량 자산을 시스템에 등록합니다.</DialogDescription></DialogHeader>
+                             <Form {...vehicleForm}>
+                                <form onSubmit={vehicleForm.handleSubmit(onVehicleSubmit)} className="space-y-4 py-4">
+                                    <FormField control={vehicleForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>차량 이름</FormLabel><FormControl><Input placeholder="예: 에코트럭 5호" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField control={vehicleForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>차종</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="차종 선택" /></SelectTrigger></FormControl><SelectContent>{typeOptions.map(t => <SelectItem key={t} value={t}>{typeMap[t]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                        <FormField control={vehicleForm.control} name="capacity" render={({ field }) => (<FormItem><FormLabel>용량 (kg)</FormLabel><FormControl><Input type="number" placeholder="예: 5000" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    </div>
+                                    <DialogFooter><Button type="submit" disabled={vehicleForm.formState.isSubmitting}>{vehicleForm.formState.isSubmitting && <Loader2 className="mr-2"/>}차량 등록</Button></DialogFooter>
+                                </form>
+                             </Form>
+                        </DialogContent>
+                    </Dialog>
+                    <Dialog open={isDispatchModalOpen} onOpenChange={setIsDispatchModalOpen}>
+                      <DialogTrigger asChild><Button><PlusCircle className="mr-2"/>새 배차 등록</Button></DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader><DialogTitle>새 배차 등록</DialogTitle><DialogDescription>새로운 배차 정보를 입력해주세요.</DialogDescription></DialogHeader>
+                        <Form {...dispatchForm}>
+                          <form onSubmit={dispatchForm.handleSubmit(onDispatchSubmit)} className="space-y-4 py-4">
+                            <FormField control={dispatchForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <FormField control={dispatchForm.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>차량</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="배차할 차량을 선택하세요" /></SelectTrigger></FormControl><SelectContent>{vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <FormField control={dispatchForm.control} name="driverId" render={({ field }) => (<FormItem><FormLabel>운전자</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="담당 운전자를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{availableDrivers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <DialogFooter><Button type="submit" disabled={dispatchForm.formState.isSubmitting}>{dispatchForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}배차 등록</Button></DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                </div>
               </div>
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>차량</TableHead>
-                    <TableHead>차종</TableHead>
-                    <TableHead>톤수 (kg)</TableHead>
-                    <TableHead>운전자</TableHead>
-                    <TableHead>상태</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <TableHeader><TableRow><TableHead>차량</TableHead><TableHead>차종</TableHead><TableHead>톤수 (kg)</TableHead><TableHead>운전자</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedVehicles.map((vehicle) => (
                     <TableRow key={vehicle.id} onClick={() => handleVehicleClick(vehicle)} className="cursor-pointer">
@@ -337,38 +321,20 @@ export default function VehiclesPanel() {
                       <TableCell>{vehicle.capacity.toLocaleString()}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-auto p-1 font-normal">
-                              {vehicle.driver}
-                            </Button>
-                          </DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" className="h-auto p-1 font-normal">{vehicle.driver}</Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="start">
                             {availableDrivers.map(driver => (
-                              <DropdownMenuItem key={driver.id} onSelect={() => handleDriverChange(vehicle.id, driver.id)}>
-                                {driver.name}
-                              </DropdownMenuItem>
+                              <DropdownMenuItem key={driver.id} onSelect={() => handleDriverChange(vehicle.id, driver.id)}>{driver.name}</DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-auto p-0">
-                              <Badge variant={
-                                vehicle.status === 'On Route' ? 'default' : 
-                                vehicle.status === 'Completed' ? 'secondary' : 
-                                vehicle.status === 'Maintenance' ? 'destructive' : 'outline'
-                              } className="cursor-pointer">
-                                {statusMap[vehicle.status]}
-                              </Badge>
-                            </Button>
-                          </DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" className="h-auto p-0"><Badge variant={vehicle.status === 'On Route' ? 'default' : vehicle.status === 'Completed' ? 'secondary' : vehicle.status === 'Maintenance' ? 'destructive' : 'outline'} className="cursor-pointer">{statusMap[vehicle.status]}</Badge></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {statusOptions.filter(s => s !== vehicle.status).map(status => (
-                              <DropdownMenuItem key={status} onSelect={() => handleStatusChange(vehicle.id, status)}>
-                                {statusMap[status]}으로 변경
-                              </DropdownMenuItem>
+                              <DropdownMenuItem key={status} onSelect={() => handleStatusChange(vehicle.id, status)}>{statusMap[status]}으로 변경</DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -379,77 +345,30 @@ export default function VehiclesPanel() {
               </Table>
               <Pagination>
                 <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={vehicleCurrentPage === 1}/>
-                    </PaginationItem>
-                    {Array.from({ length: vehicleTotalPages }, (_, i) => i + 1).map(page => (
-                    <PaginationItem key={page}>
-                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(page); }} isActive={vehicleCurrentPage === page}>
-                        {page}
-                        </PaginationLink>
-                    </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.min(vehicleTotalPages, prev + 1)); }} disabled={vehicleCurrentPage === vehicleTotalPages}/>
-                    </PaginationItem>
+                    <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={vehicleCurrentPage === 1}/></PaginationItem>
+                    {Array.from({ length: vehicleTotalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(page); }} isActive={vehicleCurrentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                    <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setVehicleCurrentPage(prev => Math.min(vehicleTotalPages, prev + 1)); }} disabled={vehicleCurrentPage === vehicleTotalPages}/></PaginationItem>
                 </PaginationContent>
               </Pagination>
             </TabsContent>
             <TabsContent value="equipment" className="space-y-4">
               <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="장비 ID 또는 위치로 검색..."
-                  value={equipmentSearch}
-                  onChange={(e) => setEquipmentSearch(e.target.value)}
-                  className="pl-9"
-                />
+                <Input placeholder="장비 ID 또는 위치로 검색..." value={equipmentSearch} onChange={(e) => setEquipmentSearch(e.target.value)} className="pl-9" />
               </div>
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>장비 ID</TableHead>
-                    <TableHead>종류</TableHead>
-                    <TableHead>상태</TableHead>
-                    <TableHead>현재 위치</TableHead>
-                    <TableHead className="text-right">최근 점검일</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <TableHeader><TableRow><TableHead>장비 ID</TableHead><TableHead>종류</TableHead><TableHead>상태</TableHead><TableHead>현재 위치</TableHead><TableHead className="text-right">최근 점검일</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedEquipments.map((item: Equipment) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.id}</TableCell>
-                      <TableCell>{equipmentTypeMap[item.type]}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                            item.status === 'In Use' ? 'default' :
-                            item.status === 'Available' ? 'secondary' :
-                            'destructive'
-                        }>
-                          {equipmentStatusMap[item.status]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{item.location}</TableCell>
-                      <TableCell className="text-right">{item.lastInspected}</TableCell>
-                    </TableRow>
+                    <TableRow key={item.id}><TableCell className="font-medium">{item.id}</TableCell><TableCell>{equipmentTypeMap[item.type]}</TableCell><TableCell><Badge variant={item.status === 'In Use' ? 'default' : item.status === 'Available' ? 'secondary' : 'destructive'}>{equipmentStatusMap[item.status]}</Badge></TableCell><TableCell>{item.location}</TableCell><TableCell className="text-right">{item.lastInspected}</TableCell></TableRow>
                   ))}
                 </TableBody>
               </Table>
               <Pagination>
                 <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={equipmentCurrentPage === 1}/>
-                    </PaginationItem>
-                    {Array.from({ length: equipmentTotalPages }, (_, i) => i + 1).map(page => (
-                    <PaginationItem key={page}>
-                        <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(page); }} isActive={equipmentCurrentPage === page}>
-                        {page}
-                        </PaginationLink>
-                    </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.min(equipmentTotalPages, prev + 1)); }} disabled={equipmentCurrentPage === equipmentTotalPages}/>
-                    </PaginationItem>
+                    <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={equipmentCurrentPage === 1}/></PaginationItem>
+                    {Array.from({ length: equipmentTotalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(page); }} isActive={equipmentCurrentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                    <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setEquipmentCurrentPage(prev => Math.min(equipmentTotalPages, prev + 1)); }} disabled={equipmentCurrentPage === equipmentTotalPages}/></PaginationItem>
                 </PaginationContent>
               </Pagination>
             </TabsContent>
@@ -462,85 +381,76 @@ export default function VehiclesPanel() {
           {selectedVehicle && (
             <>
               <SheetHeader>
-                <SheetTitle className="font-headline text-2xl flex items-center gap-2">
-                  <Truck className="text-primary"/> {selectedVehicle.name} - 차량 상세 정보
-                </SheetTitle>
-                <SheetDescription>
-                  {selectedVehicle.driver} 기사님 / {typeMap[selectedVehicle.type]} / {selectedVehicle.capacity}kg
-                </SheetDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Truck className="text-primary"/> {selectedVehicle.name}</SheetTitle>
+                        <SheetDescription>{selectedVehicle.driver} 기사님 / {typeMap[selectedVehicle.type]} / {selectedVehicle.capacity}kg</SheetDescription>
+                    </div>
+                    {isEditingVehicle ? (
+                        <div className="flex gap-2">
+                           <Button size="sm" onClick={vehicleForm.handleSubmit(onVehicleSubmit)} disabled={vehicleForm.formState.isSubmitting}>{vehicleForm.formState.isSubmitting ? <Loader2 className="mr-2 animate-spin"/> : <Save className="mr-2"/>} 저장</Button>
+                           <Button size="sm" variant="ghost" onClick={() => setIsEditingVehicle(false)}><X className="mr-2"/>취소</Button>
+                        </div>
+                    ) : (
+                       <Button size="sm" variant="outline" onClick={() => setIsEditingVehicle(true)}><Edit className="mr-2"/>정보 수정</Button>
+                    )}
+                </div>
               </SheetHeader>
               <div className="mt-6 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">현재 상태</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">상태</span>
-                      <Badge variant={
-                          selectedVehicle.status === 'On Route' ? 'default' : 
-                          selectedVehicle.status === 'Completed' ? 'secondary' : 
-                          selectedVehicle.status === 'Maintenance' ? 'destructive' : 'outline'
-                      }>
-                        {statusMap[selectedVehicle.status]}
-                      </Badge>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium">현재 적재량</span>
-                        <span>{selectedVehicle.load.toLocaleString()}kg / {selectedVehicle.capacity.toLocaleString()}kg</span>
-                      </div>
-                      <Progress value={(selectedVehicle.load / selectedVehicle.capacity) * 100} />
-                    </div>
-                  </CardContent>
-                </Card>
+                <Form {...vehicleForm}>
+                <form onSubmit={vehicleForm.handleSubmit(onVehicleSubmit)}>
+                    <Card>
+                        <CardHeader><CardTitle className="text-lg">차량 정보</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {isEditingVehicle ? (
+                                <>
+                                    <FormField control={vehicleForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>차량 이름</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={vehicleForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>차종</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{typeOptions.map(t=><SelectItem key={t} value={t}>{typeMap[t]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                    <FormField control={vehicleForm.control} name="capacity" render={({ field }) => (<FormItem><FormLabel>용량 (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">ID</span><span>{selectedVehicle.id}</span></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">상태</span><Badge variant={selectedVehicle.status === 'On Route' ? 'default' : selectedVehicle.status === 'Completed' ? 'secondary' : selectedVehicle.status === 'Maintenance' ? 'destructive' : 'outline'}>{statusMap[selectedVehicle.status]}</Badge></div>
+                                <div><div className="flex justify-between text-sm mb-2"><span className="font-medium">현재 적재량</span><span>{selectedVehicle.load.toLocaleString()}kg / {selectedVehicle.capacity.toLocaleString()}kg</span></div><Progress value={(selectedVehicle.load / selectedVehicle.capacity) * 100} /></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">등록일</span><span className="flex items-center gap-1"><CalendarDays className="size-4"/>{selectedVehicle.createdAt}</span></div>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                </form>
+                </Form>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Wrench />정비 이력</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Wrench />정비 이력</CardTitle></CardHeader>
                   <CardContent>
                     {selectedVehicle.maintenanceHistory.length > 0 ? (
                       <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>날짜</TableHead>
-                            <TableHead>내용</TableHead>
-                            <TableHead className="text-right">비용</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                        <TableHeader><TableRow><TableHead>날짜</TableHead><TableHead>내용</TableHead><TableHead className="text-right">비용</TableHead></TableRow></TableHeader>
                         <TableBody>
-                          {selectedVehicle.maintenanceHistory.map((record, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{record.date}</TableCell>
-                              <TableCell>{record.description}</TableCell>
-                              <TableCell className="text-right">{record.cost.toLocaleString()} 원</TableCell>
-                            </TableRow>
-                          ))}
+                          {selectedVehicle.maintenanceHistory.map((record, index) => (<TableRow key={index}><TableCell>{record.date}</TableCell><TableCell>{record.description}</TableCell><TableCell className="text-right">{record.cost.toLocaleString()} 원</TableCell></TableRow>))}
                         </TableBody>
                       </Table>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">정비 이력이 없습니다.</p>
-                    )}
+                    ) : ( <p className="text-sm text-muted-foreground">정비 이력이 없습니다.</p> )}
                   </CardContent>
                 </Card>
                  <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Package />배정된 장비</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Package />배정된 장비</CardTitle></CardHeader>
                   <CardContent>
-                    {equipments.filter(e => e.location === selectedVehicle.id).length > 0 ? (
-                        equipments.filter(e => e.location === selectedVehicle.id).map(eq => (
-                            <div key={eq.id} className="flex items-center justify-between p-2 rounded-md bg-muted">
-                                <span className="font-medium">{eq.id} - {equipmentTypeMap[eq.type]}</span>
-                                <Badge variant="secondary">{equipmentStatusMap[eq.status]}</Badge>
-                            </div>
-                        ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">배정된 장비가 없습니다.</p>
-                    )}
+                    {equipments.filter(e => e.location === selectedVehicle.id).length > 0 ? (equipments.filter(e => e.location === selectedVehicle.id).map(eq => (<div key={eq.id} className="flex items-center justify-between p-2 rounded-md bg-muted"><span className="font-medium">{eq.id} - {equipmentTypeMap[eq.type]}</span><Badge variant="secondary">{equipmentStatusMap[eq.status]}</Badge></div>))) : ( <p className="text-sm text-muted-foreground">배정된 장비가 없습니다.</p> )}
                   </CardContent>
                 </Card>
+                 { !isEditingVehicle && 
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="destructive" className="w-full"><Trash2 className="mr-2"/>차량 삭제</Button></AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>정말로 이 차량을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. '{selectedVehicle.name}' 차량 정보가 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteVehicle}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                 }
               </div>
             </>
           )}
@@ -549,5 +459,3 @@ export default function VehiclesPanel() {
     </>
   );
 }
-
-    

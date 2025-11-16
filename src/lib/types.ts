@@ -19,6 +19,7 @@ export type Vehicle = {
   load: number;
   type: 'Truck' | 'Van' | 'Electric';
   maintenanceHistory: MaintenanceRecord[];
+  createdAt: string; // YYYY-MM-DD
 };
 
 export type Equipment = {
@@ -27,6 +28,7 @@ export type Equipment = {
   status: 'In Use' | 'Available' | 'Maintenance';
   location: string; // Vehicle ID or Yard Name
   lastInspected: string; // YYYY-MM-DD
+  createdAt: string; // YYYY-MM-DD
 };
 
 export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';

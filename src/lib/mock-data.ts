@@ -17,6 +17,7 @@ export const vehicles: Vehicle[] = [
       { date: format(subMonths(new Date(), 1), 'yyyy-MM-dd'), description: '엔진 오일 교체', cost: 150000 },
       { date: format(subMonths(new Date(), 6), 'yyyy-MM-dd'), description: '타이어 교체', cost: 800000 },
     ],
+    createdAt: format(subMonths(new Date(), 12), 'yyyy-MM-dd'),
   },
   {
     id: 'V002',
@@ -30,6 +31,7 @@ export const vehicles: Vehicle[] = [
     maintenanceHistory: [
       { date: format(subMonths(new Date(), 2), 'yyyy-MM-dd'), description: '정기 점검', cost: 250000 },
     ],
+    createdAt: format(subMonths(new Date(), 10), 'yyyy-MM-dd'),
   },
   {
     id: 'V003',
@@ -41,6 +43,7 @@ export const vehicles: Vehicle[] = [
     load: 2800,
     type: 'Truck',
     maintenanceHistory: [],
+    createdAt: format(subMonths(new Date(), 8), 'yyyy-MM-dd'),
   },
   {
     id: 'V004',
@@ -53,7 +56,8 @@ export const vehicles: Vehicle[] = [
     type: 'Electric',
     maintenanceHistory: [
         { date: format(new Date(), 'yyyy-MM-dd'), description: '배터리 시스템 오류 점검', cost: 500000 },
-    ]
+    ],
+    createdAt: format(subMonths(new Date(), 5), 'yyyy-MM-dd'),
   },
   {
     id: 'V005',
@@ -66,16 +70,17 @@ export const vehicles: Vehicle[] = [
     type: 'Truck',
     maintenanceHistory: [
         { date: format(subMonths(new Date(), 3), 'yyyy-MM-dd'), description: '브레이크 패드 교체', cost: 300000 },
-    ]
+    ],
+    createdAt: format(subMonths(new Date(), 3), 'yyyy-MM-dd'),
   },
 ];
 
 export const equipments: Equipment[] = [
-    { id: 'E01', type: 'Roll-off Box', status: 'In Use', location: 'V001', lastInspected: format(subMonths(new Date(), 1), 'yyyy-MM-dd') },
-    { id: 'E02', type: 'Roll-off Box', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 2), 'yyyy-MM-dd') },
-    { id: 'E03', type: 'Container', status: 'Maintenance', location: '정비소', lastInspected: format(subMonths(new Date(), 12), 'yyyy-MM-dd') },
-    { id: 'E04', type: 'Roll-off Box', status: 'In Use', location: 'V003', lastInspected: format(subMonths(new Date(), 3), 'yyyy-MM-dd') },
-    { id: 'E05', type: 'Container', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 6), 'yyyy-MM-dd') },
+    { id: 'E01', type: 'Roll-off Box', status: 'In Use', location: 'V001', lastInspected: format(subMonths(new Date(), 1), 'yyyy-MM-dd'), createdAt: format(subMonths(new Date(), 12), 'yyyy-MM-dd') },
+    { id: 'E02', type: 'Roll-off Box', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 2), 'yyyy-MM-dd'), createdAt: format(subMonths(new Date(), 11), 'yyyy-MM-dd') },
+    { id: 'E03', type: 'Container', status: 'Maintenance', location: '정비소', lastInspected: format(subMonths(new Date(), 12), 'yyyy-MM-dd'), createdAt: format(subMonths(new Date(), 24), 'yyyy-MM-dd') },
+    { id: 'E04', type: 'Roll-off Box', status: 'In Use', location: 'V003', lastInspected: format(subMonths(new Date(), 3), 'yyyy-MM-dd'), createdAt: format(subMonths(new Date(), 9), 'yyyy-MM-dd') },
+    { id: 'E05', type: 'Container', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 6), 'yyyy-MM-dd'), createdAt: format(subMonths(new Date(), 7), 'yyyy-MM-dd') },
 ];
 
 const today = new Date();
