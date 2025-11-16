@@ -25,6 +25,7 @@ import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
   'Active': '활성',
@@ -118,6 +119,11 @@ export default function ContractsPanel() {
     }
     setIsSheetOpen(true);
   }
+  
+  const closeSheet = () => {
+    setIsSheetOpen(false);
+    setSelectedContract(null);
+  };
 
   const onSubmit: SubmitHandler<ContractFormValues> = (data) => {
     const newContract: Contract = {
@@ -133,8 +139,19 @@ export default function ContractsPanel() {
       setContracts([newContract, ...contracts]);
       toast({ title: "계약 생성됨", description: `${newContract.contractNumber} 계약이 성공적으로 생성되었습니다.` });
     }
-    setIsSheetOpen(false);
+    closeSheet();
   };
+  
+  const handleDelete = () => {
+      if (!selectedContract) return;
+      setContracts(contracts.filter(c => c.id !== selectedContract.id));
+      toast({
+          title: "계약 삭제됨",
+          description: `${selectedContract.contractNumber} 계약이 삭제되었습니다.`,
+          variant: 'destructive',
+      });
+      closeSheet();
+  }
   
 
   return (
@@ -217,8 +234,8 @@ export default function ContractsPanel() {
         </CardFooter>
       </Card>
       
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="sm:max-w-3xl w-full">
+      <Sheet open={isSheetOpen} onOpenChange={closeSheet}>
+        <SheetContent className="sm:max-w-3xl w-full flex flex-col">
             <SheetHeader>
                 <SheetTitle className="text-2xl flex items-center gap-2">
                     <FileSignature/> {selectedContract ? '계약 수정' : '신규 계약 작성'}
@@ -228,7 +245,8 @@ export default function ContractsPanel() {
                 </SheetDescription>
             </SheetHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 pb-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+              <div className="space-y-4 mt-4 overflow-y-auto pr-6 flex-1">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="customerId" render={({ field }) => (
                       <FormItem>
@@ -316,11 +334,33 @@ export default function ContractsPanel() {
                         <FormControl><Textarea placeholder="계약 관련 특이사항을 입력하세요..." {...field} /></FormControl>
                     </FormItem>
                  )}/>
-                <div className="pt-4 sticky bottom-0 bg-background py-4">
+                </div>
+                <div className="flex justify-between items-center pt-4 pr-6 mt-auto">
                     <Button type="submit">
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {selectedContract ? '계약 저장' : '계약 생성'}
                     </Button>
+                    {selectedContract && (
+                        <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive">
+                                <Trash2 className="mr-2"/>삭제
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>정말로 이 계약을 삭제하시겠습니까?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    이 작업은 되돌릴 수 없습니다. 이 계약은 영구적으로 삭제됩니다.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>취소</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                 </div>
             </form>
             </Form>
@@ -329,5 +369,3 @@ export default function ContractsPanel() {
     </>
   );
 }
-
-    
