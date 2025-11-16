@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { customers } from "@/lib/mock-data";
+import { customers, contracts } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, PlusCircle, Building, Calendar, User, FileText, Loader2 } from "lucide-react";
+import { AlertTriangle, PlusCircle, Building, Calendar, User, FileText, Loader2, Users2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { differenceInDays, parseISO, format } from 'date-fns';
-import type { Customer, SalesActivity } from '@/lib/types';
+import type { Customer, SalesActivity, Contract } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
@@ -21,18 +21,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
-
-const contractStatusMap: { [key: string]: string } = {
-  'Active': '활성',
-  'Inactive': '비활성',
-  'Pending': '대기'
-};
-
-const contractStatusVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
-    'Active': 'default',
-    'Inactive': 'destructive',
-    'Pending': 'secondary'
-};
 
 const activityTypeMap: { [key: string]: string } = {
     '상담': 'bg-blue-500',
@@ -62,13 +50,6 @@ export default function CustomersPanel() {
       content: '',
     },
   });
-
-  const isExpiryImminent = (expiryDate: string) => {
-    const today = new Date();
-    const date = parseISO(expiryDate);
-    const daysDifference = differenceInDays(date, today);
-    return daysDifference >= 0 && daysDifference <= 30;
-  };
   
   const handleRowClick = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -108,12 +89,16 @@ export default function CustomersPanel() {
     }, 1000);
   };
 
+  const getCustomerContract = (customerId: string): Contract | undefined => {
+    return contracts.find(c => c.customerId === customerId && c.status !== 'Terminated');
+  }
+
   return (
     <>
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>고객 관계 관리 (CRM)</CardTitle>
-          <CardDescription>전체 고객사 목록 및 계약, 활동 정보입니다.</CardDescription>
+          <CardTitle>고객 목록</CardTitle>
+          <CardDescription>전체 고객사 목록 및 기본 정보입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -121,39 +106,30 @@ export default function CustomersPanel() {
               <TableRow>
                 <TableHead>고객명</TableHead>
                 <TableHead>담당자</TableHead>
+                <TableHead>주소</TableHead>
                 <TableHead>계약 상태</TableHead>
-                <TableHead className="text-right">계약 만료일</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.contactPerson}</TableCell>
-                  <TableCell>
-                    <Badge variant={contractStatusVariant[customer.contractStatus]}>
-                      {contractStatusMap[customer.contractStatus]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {isExpiryImminent(customer.expiryDate) && (
-                         <TooltipProvider>
-                          <Tooltip>
-                              <TooltipTrigger>
-                                  <AlertTriangle className="size-4 text-destructive" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                  <p>계약 만료 30일 전</p>
-                              </TooltipContent>
-                          </Tooltip>
-                         </TooltipProvider>
+              {customers.map((customer) => {
+                const contract = getCustomerContract(customer.id);
+                return (
+                  <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.contactPerson}</TableCell>
+                    <TableCell>{customer.address}</TableCell>
+                    <TableCell>
+                      {contract ? (
+                        <Badge variant={contract.status === 'Active' ? 'default' : contract.status === 'Expiring' ? 'destructive' : 'secondary'}>
+                          {contract.status === 'Active' ? '활성' : '만료 예정'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">계약 없음</Badge>
                       )}
-                      <span>{customer.expiryDate}</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -165,11 +141,11 @@ export default function CustomersPanel() {
                 <>
                 <SheetHeader className="pr-12">
                     <SheetTitle className="font-headline text-2xl flex items-center gap-2">
-                        <Building/> {selectedCustomer.name}
+                        <Users2/> {selectedCustomer.name}
                     </SheetTitle>
                     <SheetDescription className="flex items-center gap-4 pt-1">
                         <span className="flex items-center gap-1.5"><User className="size-4"/> {selectedCustomer.contactPerson}</span>
-                        <span className="flex items-center gap-1.5"><Calendar className="size-4"/> 계약만료: {selectedCustomer.expiryDate}</span>
+                        <span className="flex items-center gap-1.5"><Building className="size-4"/> {selectedCustomer.address}</span>
                     </SheetDescription>
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100%-4rem)]">

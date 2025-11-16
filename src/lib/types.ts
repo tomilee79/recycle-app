@@ -86,9 +86,7 @@ export type Customer = {
   id: string;
   name: string;
   address: string;
-  contractStatus: 'Active' | 'Inactive' | 'Pending';
   contactPerson: string;
-  expiryDate: string; // YYYY-MM-DD
   activityHistory: SalesActivity[];
 };
 
@@ -127,5 +125,24 @@ export type Quote = {
     subtotal: number;
     tax: number;
     total: number;
+    notes?: string;
+};
+
+export type ContractStatus = 'Active' | 'Expiring' | 'Terminated';
+
+export type ContractItem = {
+    id: string;
+    materialType: string;
+    unitPrice: number;
+};
+
+export type Contract = {
+    id: string;
+    customerId: string;
+    contractNumber: string;
+    startDate: string;
+    endDate: string;
+    status: ContractStatus;
+    items: ContractItem[];
     notes?: string;
 };

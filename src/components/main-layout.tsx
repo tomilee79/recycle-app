@@ -36,6 +36,8 @@ import {
   Calendar,
   CheckSquare,
   FileText,
+  FileSignature,
+  Users2,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -43,6 +45,7 @@ import ReportsPanel from '@/components/reports/reports-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
 import CustomersPanel from '@/components/customers/customers-panel';
+import ContractsPanel from '@/components/contracts/contracts-panel';
 import SettingsPanel from '@/components/settings/settings-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
@@ -71,7 +74,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -131,7 +134,8 @@ export function MainLayout() {
     vehicles: '차량 관리',
     drivers: '직원 목록',
     'driver-performance': '운전자 성과',
-    customers: '고객 관리',
+    customers: '고객 목록',
+    contracts: '계약 관리',
     predict: 'AI 예측',
     'waste-analysis': '상세 폐기물 분석',
     'route-optimization': 'AI 경로 최적화',
@@ -158,6 +162,8 @@ export function MainLayout() {
         return <DriverPerformancePanel />;
       case 'customers':
         return <CustomersPanel />;
+      case 'contracts':
+        return <ContractsPanel />;
       case 'predict':
         return <PredictPanel />;
       case 'waste-analysis':
@@ -306,15 +312,30 @@ export function MainLayout() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setActiveView('customers')}
-                isActive={activeView === 'customers'}
-                tooltip={{ children: '고객 관리' }}
+              <CollapsibleSidebarMenu
+                title="고객 관리"
+                icon={<Building2 />}
+                activeView={activeView}
+                onTitleClick={() => setActiveView('customers')}
+                defaultOpen={['customers', 'contracts'].includes(activeView)}
               >
-                <Building2 />
-                <span>고객</span>
-              </SidebarMenuButton>
+                  <SidebarMenuSubButton
+                    onClick={() => setActiveView('customers')}
+                    isActive={activeView === 'customers'}
+                  >
+                    <Users2 />
+                    <span>고객 목록</span>
+                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton
+                    onClick={() => setActiveView('contracts')}
+                    isActive={activeView === 'contracts'}
+                  >
+                    <FileSignature/>
+                    <span>계약 관리</span>
+                  </SidebarMenuSubButton>
+              </CollapsibleSidebarMenu>
             </SidebarMenuItem>
+            
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('predict')}

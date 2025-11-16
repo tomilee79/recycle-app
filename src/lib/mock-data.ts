@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
@@ -235,9 +235,7 @@ export const customers: Customer[] = [
     id: 'C001', 
     name: 'BigBelly Inc.', 
     address: '123 Main St',
-    contractStatus: 'Active',
     contactPerson: '김철수',
-    expiryDate: format(addDays(new Date(), 150), 'yyyy-MM-dd'),
     activityHistory: [
         { id: 'A001', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), type: '상담', content: '신규 폐기물 처리 단가 문의', manager: '이영희' },
         { id: 'A002', date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), type: '계약', content: '2025년 재계약 완료', manager: '김철수' },
@@ -247,9 +245,7 @@ export const customers: Customer[] = [
     id: 'C002', 
     name: 'Recycle Corp', 
     address: '456 Market St',
-    contractStatus: 'Active',
     contactPerson: '이영희',
-    expiryDate: format(addDays(new Date(), 25), 'yyyy-MM-dd'), // Expires soon
     activityHistory: [
         { id: 'A003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), type: '클레임', content: '수거 지연에 대한 불만 제기', manager: '박민준' },
     ]
@@ -258,9 +254,7 @@ export const customers: Customer[] = [
     id: 'C003', 
     name: 'Green Solutions', 
     address: '789 Broadway',
-    contractStatus: 'Pending',
     contactPerson: '박민준',
-    expiryDate: format(addDays(new Date(), 300), 'yyyy-MM-dd'),
     activityHistory: [
         { id: 'A004', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), type: '영업 기회', content: '신규 계약 제안서 발송', manager: '김철수' },
     ]
@@ -269,18 +263,14 @@ export const customers: Customer[] = [
     id: 'C004', 
     name: 'Eco Services', 
     address: '101 Park Ave',
-    contractStatus: 'Inactive',
     contactPerson: '최지우',
-    expiryDate: format(addDays(new Date(), -90), 'yyyy-MM-dd'), // Expired
     activityHistory: []
   },
   { 
     id: 'C005', 
     name: '지구환경 주식회사',
     address: '서울시 강남구 테헤란로',
-    contractStatus: 'Active',
     contactPerson: '홍길동',
-    expiryDate: format(addDays(new Date(), 400), 'yyyy-MM-dd'),
     activityHistory: []
   },
 ];
@@ -367,4 +357,28 @@ export const quotes: Quote[] = [
     createQuote('Q-2024-003', 'C003', 'Draft', subDays(new Date(), 1)),
     createQuote('Q-2024-004', 'C004', 'Rejected', subDays(new Date(), 15)),
     createQuote('Q-2024-005', 'C005', 'Sent', subDays(new Date(), 10)),
+];
+
+const createContract = (id: string, customerId: string, status: ContractStatus, startDate: Date, endDate: Date): Contract => {
+  const contractNumber = `C${format(startDate, 'yyyyMMdd')}-${String(id).padStart(3, '0')}`;
+  return {
+    id,
+    customerId,
+    contractNumber,
+    startDate: format(startDate, 'yyyy-MM-dd'),
+    endDate: format(endDate, 'yyyy-MM-dd'),
+    status,
+    items: [
+      { id: 'ci-1', materialType: 'Plastic', unitPrice: 150 },
+      { id: 'ci-2', materialType: 'Paper', unitPrice: 80 },
+    ],
+    notes: '월 4회 정기 수거 조건',
+  };
+};
+
+export const contracts: Contract[] = [
+    createContract('CT001', 'C001', 'Active', subMonths(new Date(), 6), addMonths(new Date(), 6)),
+    createContract('CT002', 'C002', 'Expiring', subMonths(new Date(), 11), addDays(new Date(), 25)),
+    createContract('CT003', 'C004', 'Terminated', subMonths(new Date(), 18), subMonths(new Date(), 6)),
+    createContract('CT004', 'C005', 'Active', subDays(new Date(), 100), addMonths(new Date(), 14)),
 ];
