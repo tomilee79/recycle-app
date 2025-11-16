@@ -14,13 +14,17 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature, MoreHorizontal, Copy, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
-import { format, addDays } from 'date-fns';
+import { format, addDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -53,6 +57,7 @@ const quoteFormSchema = z.object({
 });
 
 type QuoteFormValues = z.infer<typeof quoteFormSchema>;
+type SortableField = 'id' | 'customerName' | 'quoteDate' | 'total' | 'status';
 
 export default function QuotesPanel() {
   const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
@@ -60,11 +65,48 @@ export default function QuotesPanel() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filter, setFilter] = useState<'All' | QuoteStatus>('All');
   const [search, setSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>(null);
   const { toast } = useToast();
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteFormSchema),
   });
+  
+  const getCustomerName = useCallback((customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음', []);
+
+  const sortedAndFilteredQuotes = useMemo(() => {
+    let filteredQuotes = quotes
+      .map(q => ({ ...q, customerName: getCustomerName(q.customerId) }))
+      .filter(q => {
+        const searchTerm = search.toLowerCase();
+        const statusMatch = filter === 'All' || q.status === filter;
+        const searchMatch = q.customerName.toLowerCase().includes(searchTerm) || q.id.toLowerCase().includes(searchTerm);
+        return statusMatch && searchMatch;
+      });
+
+    if (sortConfig !== null) {
+      filteredQuotes.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    } else {
+        filteredQuotes.sort((a, b) => new Date(b.quoteDate).getTime() - new Date(a.quoteDate).getTime());
+    }
+
+    return filteredQuotes;
+  }, [quotes, filter, search, sortConfig, getCustomerName]);
+  
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData,
+    totalPages,
+  } = usePagination(sortedAndFilteredQuotes, 10);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -72,6 +114,7 @@ export default function QuotesPanel() {
   });
 
   const watchItems = form.watch('items');
+  const watchedStatus = form.watch('status');
 
   const calculateTotals = useCallback((items: any[]) => {
     const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -92,6 +135,17 @@ export default function QuotesPanel() {
     });
     setIsSheetOpen(true);
   };
+  
+  const handleCloneQuote = (quoteToClone: Quote) => {
+    const newQuoteId = `Q-${format(new Date(), 'yyyy')}-${String(quotes.length + 1).padStart(3, '0')}`;
+    setSelectedQuote(null);
+    form.reset({
+      ...quoteToClone,
+      id: newQuoteId,
+      status: 'Draft',
+    });
+    setIsSheetOpen(true);
+  };
 
   const handleRowClick = (quote: Quote) => {
     setSelectedQuote(quote);
@@ -99,11 +153,23 @@ export default function QuotesPanel() {
       id: quote.id,
       customerId: quote.customerId,
       status: quote.status,
-      items: quote.items.map(item => ({...item})), // Deep copy to prevent mutation issues
+      items: quote.items.map(item => ({...item})),
       notes: quote.notes || '',
     });
     setIsSheetOpen(true);
   };
+
+  useEffect(() => {
+    if (!watchItems) return;
+    watchItems.forEach((item, index) => {
+      const quantity = item.quantity || 0;
+      const unitPrice = item.unitPrice || 0;
+      const newTotal = quantity * unitPrice;
+      if (item.total !== newTotal) {
+        form.setValue(`items.${index}.total`, newTotal);
+      }
+    });
+  }, [watchItems, form]);
 
   const onSubmit: SubmitHandler<QuoteFormValues> = (data) => {
     const { subtotal, tax, total } = calculateTotals(data.items);
@@ -126,30 +192,31 @@ export default function QuotesPanel() {
     setIsSheetOpen(false);
   };
   
-  const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
-  
-  const filteredQuotes = useMemo(() => {
-    return quotes.filter(q => {
-        const customerName = getCustomerName(q.customerId).toLowerCase();
-        const searchTerm = search.toLowerCase();
-        const statusMatch = filter === 'All' || q.status === filter;
-        const searchMatch = customerName.includes(searchTerm) || q.id.toLowerCase().includes(searchTerm);
-        return statusMatch && searchMatch;
-    }).sort((a, b) => new Date(b.quoteDate).getTime() - new Date(a.quoteDate).getTime());
-  }, [quotes, filter, search]);
-
   const { subtotal, tax, total } = useMemo(() => calculateTotals(watchItems || []), [watchItems, calculateTotals]);
 
   const handleConvertToContract = () => {
       if (!selectedQuote) return;
-      // In a real app, this would navigate to a new contract page with pre-filled data.
-      // For this mock-up, we just show a toast.
       toast({
           title: "계약 생성됨",
           description: `${selectedQuote.id} 견적을 기반으로 신규 계약이 생성되었습니다.`,
       });
       setIsSheetOpen(false);
   }
+  
+  const requestSort = (key: SortableField) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIcon = (key: SortableField) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
 
   return (
     <>
@@ -188,18 +255,19 @@ export default function QuotesPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>견적 번호</TableHead>
-                <TableHead>고객사</TableHead>
-                <TableHead>견적일</TableHead>
-                <TableHead>총액</TableHead>
-                <TableHead>상태</TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('id')}>견적 번호{getSortIcon('id')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('customerName')}>고객사{getSortIcon('customerName')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('quoteDate')}>견적일{getSortIcon('quoteDate')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('total')}>총액{getSortIcon('total')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>상태{getSortIcon('status')}</Button></TableHead>
+                <TableHead className="w-16">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredQuotes.map((quote) => (
+              {paginatedData.map((quote) => (
                 <TableRow key={quote.id} onClick={() => handleRowClick(quote)} className="cursor-pointer">
                   <TableCell className="font-medium">{quote.id}</TableCell>
-                  <TableCell>{getCustomerName(quote.customerId)}</TableCell>
+                  <TableCell>{quote.customerName}</TableCell>
                   <TableCell>{quote.quoteDate}</TableCell>
                   <TableCell>{quote.total.toLocaleString()}원</TableCell>
                   <TableCell>
@@ -207,15 +275,64 @@ export default function QuotesPanel() {
                       {quoteStatusMap[quote.status]}
                     </Badge>
                   </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                     <AlertDialog>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => handleCloneQuote(quote)}>
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  <span>복제</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator/>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>삭제</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  이 작업은 되돌릴 수 없습니다. {quote.id} 견적이 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => {
+                                      setQuotes(quotes.filter(q => q.id !== quote.id));
+                                      toast({ title: "견적 삭제됨", description: `${quote.id} 견적이 삭제되었습니다.`, variant: "destructive"});
+                                  }}>삭제 확인</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
+         <CardFooter>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/></PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                    <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/></PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </CardFooter>
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="sm:max-w-3xl w-full">
+          <div className="flex flex-col h-full">
             <SheetHeader>
                 <SheetTitle className="text-2xl flex items-center gap-2">
                     <FileText/> {selectedQuote ? `견적 수정: ${selectedQuote.id}` : '새 견적 작성'}
@@ -225,7 +342,8 @@ export default function QuotesPanel() {
                 </SheetDescription>
             </SheetHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+              <div className="space-y-6 mt-4 overflow-y-auto pr-6 flex-1">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -313,7 +431,7 @@ export default function QuotesPanel() {
                                 />
                                 <div className="w-32">
                                      <p className={cn("text-sm font-medium leading-none sr-only", index === 0 && "not-sr-only")}>합계</p>
-                                     <p className="p-2 h-10 flex items-center">{((watchItems?.[index]?.quantity || 0) * (watchItems?.[index]?.unitPrice || 0)).toLocaleString()}원</p>
+                                     <p className="p-2 h-10 flex items-center">{((watchItems?.[index]?.total || 0)).toLocaleString()}원</p>
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                     <Trash2 className="size-4 text-destructive"/>
@@ -353,14 +471,15 @@ export default function QuotesPanel() {
                         </FormItem>
                     )}
                  />
+              </div>
 
-                <div className="flex justify-between items-center pt-6">
+                <div className="flex justify-between items-center pt-6 pr-6">
                   <div>
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                    <Button type="submit" disabled={form.formState.isSubmitting || watchedStatus === 'Accepted'}>
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {selectedQuote ? '견적 저장' : '견적 생성'}
                     </Button>
-                     {selectedQuote && selectedQuote.status === 'Accepted' && (
+                     {selectedQuote && watchedStatus === 'Accepted' && (
                          <Button type="button" variant="secondary" onClick={handleConvertToContract} className="ml-2">
                              <FileSignature className="mr-2" />
                              계약으로 전환
@@ -370,7 +489,7 @@ export default function QuotesPanel() {
                   {selectedQuote && (
                       <AlertDialog>
                           <AlertDialogTrigger asChild>
-                              <Button variant="destructive">
+                              <Button type="button" variant="destructive">
                                   <Trash2 className="mr-2"/>
                                   삭제
                               </Button>
@@ -396,8 +515,11 @@ export default function QuotesPanel() {
                 </div>
             </form>
             </Form>
+           </div>
         </SheetContent>
       </Sheet>
     </>
   );
 }
+
+    
