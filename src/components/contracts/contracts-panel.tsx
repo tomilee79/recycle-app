@@ -93,7 +93,7 @@ export default function ContractsPanel() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
-  const getCustomerInfo = (customerId: string) => customers.find(c => c.id === customerId) || { name: '알수없음', address: '알수없음'};
+  const getCustomerInfo = useCallback((customerId: string) => customers.find(c => c.id === customerId) || { name: '알수없음', address: '알수없음'}, []);
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -124,7 +124,7 @@ export default function ContractsPanel() {
     }
     
     return filtered;
-  }, [contracts, filter, search, sortConfig]);
+  }, [contracts, filter, search, sortConfig, getCustomerInfo]);
   
   const {
     currentPage,
@@ -470,8 +470,8 @@ export default function ContractsPanel() {
             </SheetHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-              <ScrollArea className="flex-1 pr-6 -mr-6">
-              <div className="space-y-4 mt-4">
+              <ScrollArea className="flex-1 -mr-6">
+              <div className="space-y-4 mt-4 pr-6">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="customerId" render={({ field }) => (
                       <FormItem>
@@ -590,7 +590,7 @@ export default function ContractsPanel() {
 
                 </div>
                 </ScrollArea>
-                <div className="flex justify-between items-center pt-4 pr-6 mt-auto">
+                <div className="flex justify-between items-center pt-4 mt-auto">
                     <Button type="submit">
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {selectedContract ? '계약 저장' : '계약 생성'}
@@ -630,3 +630,6 @@ export default function ContractsPanel() {
     
 
 
+
+
+    
