@@ -6,14 +6,13 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Compos
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { reportData, settlementData as initialSettlementData, expensesData as initialExpensesData, vehicles, customers } from "@/lib/mock-data";
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -30,6 +29,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { MonthPicker } from '../ui/month-picker';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
 const settlementStatusMap: { [key in SettlementStatus]: string } = {
@@ -142,21 +142,42 @@ export default function BillingPanel() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [settlementFilters, setSettlementFilters] = useState({ customer: 'all', status: 'all', search: '' });
+  const [expenseFilters, setExpenseFilters] = useState({ category: 'all', status: 'all', search: '' });
   const { toast } = useToast();
+
+  const filteredSettlements = useMemo(() => {
+    return settlementData.filter(item => {
+      const customerMatch = settlementFilters.customer === 'all' || item.customerName === settlementFilters.customer;
+      const statusMatch = settlementFilters.status === 'all' || item.status === settlementFilters.status;
+      const searchMatch = item.customerName.toLowerCase().includes(settlementFilters.search.toLowerCase());
+      return customerMatch && statusMatch && searchMatch;
+    });
+  }, [settlementData, settlementFilters]);
+
+  const filteredExpenses = useMemo(() => {
+    return expensesData.filter(item => {
+      const categoryMatch = expenseFilters.category === 'all' || item.category === expenseFilters.category;
+      const statusMatch = expenseFilters.status === 'all' || item.status === expenseFilters.status;
+      const searchMatch = item.description.toLowerCase().includes(expenseFilters.search.toLowerCase()) || (item.vehicleId || '').toLowerCase().includes(expenseFilters.search.toLowerCase());
+      return categoryMatch && statusMatch && searchMatch;
+    });
+  }, [expensesData, expenseFilters]);
+
 
   const {
     currentPage: settlementCurrentPage,
     setCurrentPage: setSettlementCurrentPage,
     paginatedData: paginatedSettlementData,
     totalPages: settlementTotalPages,
-  } = usePagination(settlementData, 8);
+  } = usePagination(filteredSettlements, 8);
 
   const {
     currentPage: expenseCurrentPage,
     setCurrentPage: setExpenseCurrentPage,
     paginatedData: paginatedExpenseData,
     totalPages: expenseTotalPages,
-  } = usePagination(expensesData, 8);
+  } = usePagination(filteredExpenses, 8);
 
   const settlementForm = useForm<SettlementFormValues>({
     resolver: zodResolver(settlementFormSchema),
@@ -330,12 +351,36 @@ export default function BillingPanel() {
                 </CardContent>
             </Card>
             <Card className="shadow-lg">
-                <CardHeader className="flex-row justify-between items-center">
-                    <div>
-                        <CardTitle>월별 상세 정산 내역</CardTitle>
-                        <CardDescription>고객사별 정산 내역 및 청구 상태를 관리합니다.</CardDescription>
+                <CardHeader>
+                    <div className="flex-row justify-between items-center flex">
+                        <div>
+                            <CardTitle>월별 상세 정산 내역</CardTitle>
+                            <CardDescription>고객사별 정산 내역 및 청구 상태를 관리합니다.</CardDescription>
+                        </div>
+                        <Button onClick={() => openSettlementDialog(null)}><PlusCircle className="mr-2"/>새 정산 추가</Button>
                     </div>
-                     <Button onClick={() => openSettlementDialog(null)}><PlusCircle className="mr-2"/>새 정산 추가</Button>
+                    <div className="flex items-center justify-between gap-2 pt-4">
+                        <div className="flex gap-2">
+                          <Select value={settlementFilters.customer} onValueChange={(value) => setSettlementFilters(f => ({ ...f, customer: value }))}>
+                              <SelectTrigger className="w-[180px]"><SelectValue placeholder="고객사 필터" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">모든 고객사</SelectItem>
+                                  {customers.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                          <Select value={settlementFilters.status} onValueChange={(value) => setSettlementFilters(f => ({ ...f, status: value }))}>
+                              <SelectTrigger className="w-[150px]"><SelectValue placeholder="상태 필터" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">모든 상태</SelectItem>
+                                  {settlementStatusOptions.map(s => <SelectItem key={s} value={s}>{settlementStatusMap[s]}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="relative w-72">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="고객사명으로 검색..." value={settlementFilters.search} onChange={(e) => setSettlementFilters(f => ({ ...f, search: e.target.value }))} className="pl-9" />
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                 <Table>
@@ -377,12 +422,36 @@ export default function BillingPanel() {
         <TabsContent value="expenses" className="space-y-6 mt-6">
              <ExpensesSummary data={expensesData} />
             <Card className="shadow-lg">
-                <CardHeader className="flex-row justify-between items-center">
-                    <div>
-                        <CardTitle>비용 (지출) 내역</CardTitle>
-                        <CardDescription>차량 유류비, 정비비 등 모든 지출 내역을 관리합니다.</CardDescription>
+                <CardHeader>
+                  <div className="flex-row justify-between items-center flex">
+                      <div>
+                          <CardTitle>비용 (지출) 내역</CardTitle>
+                          <CardDescription>차량 유류비, 정비비 등 모든 지출 내역을 관리합니다.</CardDescription>
+                      </div>
+                      <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
+                  </div>
+                   <div className="flex items-center justify-between gap-2 pt-4">
+                        <div className="flex gap-2">
+                          <Select value={expenseFilters.category} onValueChange={(value) => setExpenseFilters(f => ({ ...f, category: value }))}>
+                              <SelectTrigger className="w-[180px]"><SelectValue placeholder="항목 필터" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">모든 항목</SelectItem>
+                                  {expenseCategoryOptions.map(c => <SelectItem key={c} value={c}>{expenseCategoryMap[c].label}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                          <Select value={expenseFilters.status} onValueChange={(value) => setExpenseFilters(f => ({ ...f, status: value }))}>
+                              <SelectTrigger className="w-[150px]"><SelectValue placeholder="상태 필터" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">모든 상태</SelectItem>
+                                  {expenseStatusOptions.map(s => <SelectItem key={s} value={s}>{expenseStatusMap[s]}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="relative w-72">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="내용, 차량ID로 검색..." value={expenseFilters.search} onChange={(e) => setExpenseFilters(f => ({ ...f, search: e.target.value }))} className="pl-9" />
+                        </div>
                     </div>
-                    <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
                 </CardHeader>
                 <CardContent>
                     <Table>
