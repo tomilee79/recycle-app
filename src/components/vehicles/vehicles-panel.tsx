@@ -204,7 +204,7 @@ export default function VehiclesPanel() {
 
     toast({
       title: '상태 변경 완료',
-      description: `차량의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
+      description: `차량의 상태가 '${statusMap[newStatus]}'(으)로 변경되었습니다.`,
     })
   }, [toast]);
 
@@ -698,3 +698,4 @@ export default function VehiclesPanel() {
     </>
   );
 }
+

@@ -538,4 +538,3 @@ export const expensesData: Expense[] = [
     { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: '리사이클 로버 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
 ];
 
-    
