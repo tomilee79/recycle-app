@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { customers as initialCustomers, contracts } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X } from "lucide-react";
+import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Customer, SalesActivity, Contract } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
@@ -206,9 +206,19 @@ export default function CustomersPanel() {
         <CardFooter>
             <Pagination>
                 <PaginationContent>
-                    <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/></PaginationItem>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}>
+                            <ChevronLeft className="h-4 w-4" />
+                            <span>이전</span>
+                        </PaginationPrevious>
+                    </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
-                    <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/></PaginationItem>
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}>
+                             <span>다음</span>
+                            <ChevronRight className="h-4 w-4" />
+                        </PaginationNext>
+                    </PaginationItem>
                 </PaginationContent>
             </Pagination>
         </CardFooter>
@@ -303,5 +313,3 @@ export default function CustomersPanel() {
     </>
   );
 }
-
-    
