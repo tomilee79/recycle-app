@@ -1,4 +1,4 @@
-import type { Vehicle, CollectionTask, ReportData } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver } from './types';
 
 export const vehicles: Vehicle[] = [
   {
@@ -100,4 +100,14 @@ export const reportData: ReportData[] = [
   { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80 },
   { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90 },
   { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100 },
+];
+
+export const drivers: Driver[] = [
+  { id: 'D001', name: 'John Doe', contact: '555-0101', isAvailable: false },
+  { id: 'D002', name: 'Jane Smith', contact: '555-0102', isAvailable: true },
+  { id: 'D003', name: 'Mike Johnson', contact: '555-0103', isAvailable: false },
+  { id: 'D004', name: 'Emily White', contact: '555-0104', isAvailable: true },
+  { id: 'D005', name: 'Chris Brown', contact: '555-0105', isAvailable: true },
+  { id: 'D006', name: 'Jessica Miller', contact: '555-0106', isAvailable: false },
+  { id: 'D007', name: 'David Wilson', contact: '555-0107', isAvailable: true },
 ];

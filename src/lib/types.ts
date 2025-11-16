@@ -31,3 +31,10 @@ export type ReportData = {
   metal: number;
   mixed: number;
 };
+
+export type Driver = {
+  id: string;
+  name: string;
+  contact: string;
+  isAvailable: boolean;
+};

@@ -21,11 +21,13 @@ import {
   Settings,
   Bot,
   LogOut,
+  Users,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
 import ReportsPanel from '@/components/reports/reports-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
+import DriversPanel from '@/components/drivers/drivers-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -44,7 +46,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'vehicles' | 'predict';
+type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'predict';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -63,6 +65,8 @@ export function MainLayout() {
         return <ReportsPanel />;
       case 'vehicles':
         return <VehiclesPanel />;
+      case 'drivers':
+        return <DriversPanel />;
       case 'predict':
         return <PredictPanel />;
       default:
@@ -111,6 +115,16 @@ export function MainLayout() {
               >
                 <Truck />
                 <span>Vehicles</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('drivers')}
+                isActive={activeView === 'drivers'}
+                tooltip={{ children: 'Drivers' }}
+              >
+                <Users />
+                <span>Drivers</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
