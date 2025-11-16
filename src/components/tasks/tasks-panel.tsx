@@ -128,7 +128,7 @@ export default function TasksPanel() {
       prevTasks.map(task => {
         if (taskIds.includes(task.id)) {
             const oldStatus = task.status;
-            if (oldStatus === 'In Progress' && (newStatus === 'Completed' || newStatus === 'Cancelled')) {
+            if ((oldStatus === 'In Progress' || oldStatus === 'On Route') && (newStatus === 'Completed' || newStatus === 'Cancelled' || newStatus === 'Idle')) {
                 const driverName = task.driver;
                 if (driverName) {
                     setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: true} : d));
@@ -492,8 +492,8 @@ export default function TasksPanel() {
                   <TableHead>고객사</TableHead>
                   <TableHead>주소</TableHead>
                   <TableHead>품목</TableHead>
-                  <TableHead>수거량</TableHead>
-                  <TableHead>배정 차량</TableHead>
+                  <TableHead className="text-center">수거량</TableHead>
+                  <TableHead className="text-center">배정 차량</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead className="text-right w-[80px]">작업</TableHead>
                 </TableRow>
@@ -508,8 +508,8 @@ export default function TasksPanel() {
                     <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
                     <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
                     <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer text-center">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                       {task.vehicleId ? (
                         <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
                       ) : (
@@ -767,3 +767,5 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
+
+    
