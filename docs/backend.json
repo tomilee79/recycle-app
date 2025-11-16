@@ -1,0 +1,238 @@
+{
+  "entities": {
+    "CollectionRoute": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CollectionRoute",
+      "type": "object",
+      "description": "Represents a recycling collection route.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the collection route."
+        },
+        "vehicleId": {
+          "type": "string",
+          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N CollectionRoute)"
+        },
+        "startDateTime": {
+          "type": "string",
+          "description": "The date and time the collection route started.",
+          "format": "date-time"
+        },
+        "endDateTime": {
+          "type": "string",
+          "description": "The date and time the collection route ended.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the collection route (e.g., 'Active', 'Completed', 'Pending')."
+        }
+      },
+      "required": [
+        "id",
+        "vehicleId",
+        "startDateTime",
+        "status"
+      ]
+    },
+    "Vehicle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle",
+      "type": "object",
+      "description": "Represents a recycling collection vehicle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vehicle."
+        },
+        "locationLatitude": {
+          "type": "number",
+          "description": "The current latitude of the vehicle."
+        },
+        "locationLongitude": {
+          "type": "number",
+          "description": "The current longitude of the vehicle."
+        },
+        "capacity": {
+          "type": "number",
+          "description": "The maximum capacity of the vehicle."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of vehicle (e.g., 'Truck', 'Van')."
+        }
+      },
+      "required": [
+        "id",
+        "locationLatitude",
+        "locationLongitude",
+        "capacity",
+        "type"
+      ]
+    },
+    "CollectionTask": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CollectionTask",
+      "type": "object",
+      "description": "Represents a task within a collection route.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the collection task."
+        },
+        "routeId": {
+          "type": "string",
+          "description": "Reference to CollectionRoute. (Relationship: CollectionRoute 1:N CollectionTask)"
+        },
+        "locationLatitude": {
+          "type": "number",
+          "description": "The latitude of the collection task location."
+        },
+        "locationLongitude": {
+          "type": "number",
+          "description": "The longitude of the collection task location."
+        },
+        "materialType": {
+          "type": "string",
+          "description": "The type of recyclable material to be collected."
+        },
+        "estimatedQuantity": {
+          "type": "number",
+          "description": "The estimated quantity of recyclable material to be collected."
+        },
+        "actualQuantity": {
+          "type": "number",
+          "description": "The actual quantity of recyclable material collected."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the collection task (e.g., 'Pending', 'Completed')."
+        }
+      },
+      "required": [
+        "id",
+        "routeId",
+        "locationLatitude",
+        "locationLongitude",
+        "materialType",
+        "estimatedQuantity",
+        "status"
+      ]
+    },
+    "SettlementReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SettlementReport",
+      "type": "object",
+      "description": "Represents a settlement report for recycling collections.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the settlement report."
+        },
+        "routeIds": {
+          "type": "array",
+          "description": "References to CollectionRoutes. (Relationship: CollectionRoute 1:N SettlementReport)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reportDate": {
+          "type": "string",
+          "description": "The date the settlement report was generated.",
+          "format": "date-time"
+        },
+        "totalVolume": {
+          "type": "number",
+          "description": "The total volume of recycled materials collected."
+        },
+        "totalValue": {
+          "type": "number",
+          "description": "The total value of recycled materials collected."
+        }
+      },
+      "required": [
+        "id",
+        "routeIds",
+        "reportDate",
+        "totalVolume",
+        "totalValue"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/vehicles/{vehicleId}",
+        "definition": {
+          "entityName": "Vehicle",
+          "schema": {
+            "$ref": "#/backend/entities/Vehicle"
+          },
+          "description": "Stores vehicle data, including location and capacity.",
+          "params": [
+            {
+              "name": "vehicleId",
+              "description": "Unique identifier for the vehicle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/collectionRoutes/{routeId}",
+        "definition": {
+          "entityName": "CollectionRoute",
+          "schema": {
+            "$ref": "#/backend/entities/CollectionRoute"
+          },
+          "description": "Stores collection route data, including start and end times, status, and vehicleId.",
+          "params": [
+            {
+              "name": "routeId",
+              "description": "Unique identifier for the collection route."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/collectionTasks/{taskId}",
+        "definition": {
+          "entityName": "CollectionTask",
+          "schema": {
+            "$ref": "#/backend/entities/CollectionTask"
+          },
+          "description": "Stores individual collection tasks associated with routes, including location, material type, and quantity.",
+          "params": [
+            {
+              "name": "taskId",
+              "description": "Unique identifier for the collection task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/settlementReports/{reportId}",
+        "definition": {
+          "entityName": "SettlementReport",
+          "schema": {
+            "$ref": "#/backend/entities/SettlementReport"
+          },
+          "description": "Stores settlement reports, referencing collection route IDs and containing total volume and value data.",
+          "params": [
+            {
+              "name": "reportId",
+              "description": "Unique identifier for the settlement report."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the EcoTrack UI Demo application, focusing on real-time dispatch, geospatial monitoring, and settlement report visualization. Given the requirement for a UI demo without backend logic, the structure prioritizes simplicity and ease of mocking data, while adhering to the principles of Authorization Independence (although not strictly enforced due to the demo nature). Since all auth providers are enabled (password and anonymous), the data will only be secured via security rules.\n\n*   **Vehicles Collection:** Stores vehicle data. This is kept separate for ease of querying and updating vehicle locations.\n*   **CollectionRoutes Collection:** Stores collection route data, including start and end times, status and a denormalized `vehicleId` for simple querying.\n*   **CollectionTasks Collection:** Stores individual collection tasks associated with routes. The `routeId` is denormalized for efficient task retrieval by route.\n*   **SettlementReports Collection:** Stores settlement reports, referencing `routeIds`. This allows for aggregating data and generating visualizations.\n\nThis structure facilitates the core features of the application:\n\n*   **Real-Time Dispatch Dashboard:** Achieved by querying the `Vehicles` and `CollectionRoutes` collections to display vehicle locations and route statuses.\n*   **Geospatial Monitoring:** Directly supported by the `locationLatitude` and `locationLongitude` fields in the `Vehicles` collection.\n*   **Settlement Report Visualization:** Enabled by the `SettlementReports` collection, allowing aggregation of data from associated `CollectionRoutes`.\n\nWhile not strictly required for a UI demo, a production system would require robust security rules. In such a system, we would consider the following:\n\n*   **Authorization Independence:** If access to a `CollectionRoute` depended on the vehicle's owner, we would denormalize the `ownerId` into the `CollectionRoute` document to avoid `get()` calls in security rules.\n*   **QAPs (Rules are not Filters):** The segregation of data into separate collections (`Vehicles`, `CollectionRoutes`, `CollectionTasks`, `SettlementReports`) allows for secure `list` operations based on role or ownership without filtering.\n\nSince there are no users or roles defined, all rules will be set to `allow read, write: if true`"
+  }
+}

@@ -1,0 +1,74 @@
+/**
+ * @file Firestore Security Rules for EcoTrack UI Demo
+ * @core_philosophy This ruleset provides completely open access to all data for demonstration purposes.
+ *   In a production environment, a much stricter security model would be required, likely based on
+ *   user roles and data ownership.
+ * @data_structure The data is organized into four top-level collections: `vehicles`, `collectionRoutes`,
+ *   `collectionTasks`, and `settlementReports`. Each collection stores data related to its respective entity.
+ * @key_security_decisions All read and write access is currently open. In a real application, this would
+ *   be restricted based on user authentication and authorization.  For example, listing operations would
+ *   likely be restricted to authenticated users, and write access would be limited to specific roles or owners.
+ * @denormalization_for_authorization N/A (no authorization is currently enforced)
+ * @structural_segregation N/A (no segregation is currently enforced)
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows anyone to read or write vehicle data. In a real application,
+     *   access would be restricted based on user roles or ownership.
+     * @path /vehicles/{vehicleId}
+     * @allow (get, list) Any user can read vehicle data.
+     * @allow (create, update, delete) Any user can modify vehicle data.
+     * @deny N/A (all access is allowed)
+     * @principle Open access for demonstration purposes.
+     */
+    match /vehicles/{vehicleId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    /**
+     * @description Allows anyone to read or write collection route data. In a real application,
+     *   access would be restricted based on user roles or ownership.
+     * @path /collectionRoutes/{routeId}
+     * @allow (get, list) Any user can read collection route data.
+     * @allow (create, update, delete) Any user can modify collection route data.
+     * @deny N/A (all access is allowed)
+     * @principle Open access for demonstration purposes.
+     */
+    match /collectionRoutes/{routeId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    /**
+     * @description Allows anyone to read or write collection task data. In a real application,
+     *   access would be restricted based on user roles or ownership.
+     * @path /collectionTasks/{taskId}
+     * @allow (get, list) Any user can read collection task data.
+     * @allow (create, update, delete) Any user can modify collection task data.
+     * @deny N/A (all access is allowed)
+     * @principle Open access for demonstration purposes.
+     */
+    match /collectionTasks/{taskId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    /**
+     * @description Allows anyone to read or write settlement report data. In a real application,
+     *   access would be restricted based on user roles or ownership.
+     * @path /settlementReports/{reportId}
+     * @allow (get, list) Any user can read settlement report data.
+     * @allow (create, update, delete) Any user can modify settlement report data.
+     * @deny N/A (all access is allowed)
+     * @principle Open access for demonstration purposes.
+     */
+    match /settlementReports/{reportId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+  }
+}
