@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { customers as initialCustomers, contracts } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, ChevronLeft, ChevronRight, MessageSquare, Handshake, ShieldAlert, CirclePlus, NotepadText } from "lucide-react";
 import type { Customer, SalesActivity, Contract } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
@@ -25,12 +25,13 @@ import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 
-const activityTypeMap: { [key: string]: string } = {
-    '상담': 'bg-blue-500',
-    '클레임': 'bg-red-500',
-    '영업 기회': 'bg-yellow-500',
-    '계약': 'bg-green-500',
+const activityTypeMap: { [key: string]: { icon: React.ElementType, color: string } } = {
+    '상담': { icon: MessageSquare, color: 'text-blue-500' },
+    '클레임': { icon: ShieldAlert, color: 'text-red-500' },
+    '영업 기회': { icon: Handshake, color: 'text-yellow-500' },
+    '계약': { icon: FileText, color: 'text-green-500' },
 };
+const activityTypes = Object.keys(activityTypeMap);
 
 const newActivitySchema = z.object({
     type: z.enum(['상담', '클레임', '영업 기회', '계약']),
@@ -51,6 +52,7 @@ export default function CustomersPanel() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [isAddingActivity, setIsAddingActivity] = useState(false);
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
@@ -79,6 +81,7 @@ export default function CustomersPanel() {
   const handleRowClick = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsEditingCustomer(false);
+    setIsAddingActivity(false);
     customerForm.reset({
         name: customer.name,
         address: customer.address,
@@ -90,6 +93,7 @@ export default function CustomersPanel() {
   const handleNewCustomerClick = () => {
     setSelectedCustomer(null);
     setIsEditingCustomer(true);
+    setIsAddingActivity(false);
     customerForm.reset({ name: '', address: '', contactPerson: '' });
     setIsSheetOpen(true);
   }
@@ -98,6 +102,7 @@ export default function CustomersPanel() {
     setIsSheetOpen(false);
     setSelectedCustomer(null);
     setIsEditingCustomer(false);
+    setIsAddingActivity(false);
     activityForm.reset();
     customerForm.reset();
   };
@@ -124,6 +129,7 @@ export default function CustomersPanel() {
     });
     
     activityForm.reset();
+    setIsAddingActivity(false);
   };
 
   const onCustomerSubmit: SubmitHandler<CustomerFormValues> = (data) => {
@@ -187,13 +193,24 @@ export default function CustomersPanel() {
             <TableBody>
               {paginatedCustomers.map((customer) => {
                 const contract = getCustomerContract(customer.id);
+                const statusConfig = {
+                    'Active': { text: '활성', variant: 'default', icon: FileText },
+                    'Expiring': { text: '만료 예정', variant: 'destructive', icon: ShieldAlert },
+                } as const;
+                const contractDisplay = contract ? statusConfig[contract.status as keyof typeof statusConfig] : null;
+
                 return (
                   <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
                     <TableCell className="font-medium">{customer.name}</TableCell>
                     <TableCell>{customer.contactPerson}</TableCell>
                     <TableCell>{customer.address}</TableCell>
                     <TableCell>
-                      {contract ? (<Badge variant={contract.status === 'Active' ? 'default' : contract.status === 'Expiring' ? 'destructive' : 'secondary'}>{contract.status === 'Active' ? '활성' : '만료 예정'}</Badge>) : (<Badge variant="outline">계약 없음</Badge>)}
+                      {contractDisplay ? (
+                        <Badge variant={contractDisplay.variant} className="gap-1">
+                          {React.createElement(contractDisplay.icon, { className: 'size-3' })}
+                          {contractDisplay.text}
+                        </Badge>
+                      ) : (<Badge variant="outline">계약 없음</Badge>)}
                     </TableCell>
                   </TableRow>
                 )
@@ -205,12 +222,12 @@ export default function CustomersPanel() {
             <Pagination>
                 <PaginationContent>
                     <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }}>
                         </PaginationPrevious>
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
                     <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}>
                         </PaginationNext>
                     </PaginationItem>
                 </PaginationContent>
@@ -252,8 +269,8 @@ export default function CustomersPanel() {
                         <div>
                             <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
                             <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
-                                <span className="flex items-center gap-1.5"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
-                                <span className="flex items-center gap-1.5"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
+                                <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
+                                <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
                             </SheetDescription>
                         </div>
                         <div className="flex gap-2">
@@ -270,26 +287,42 @@ export default function CustomersPanel() {
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100%-8rem)] mt-6 pr-6">
                 <div className="space-y-8">
-                    <Card>
-                        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><PlusCircle/> 새 활동 기록</CardTitle></CardHeader>
-                        <Form {...activityForm}>
-                            <form onSubmit={activityForm.handleSubmit(onActivitySubmit)}>
-                                <CardContent className="space-y-4">
-                                <FormField control={activityForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>활동 유형</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl><SelectContent><SelectItem value="상담">상담</SelectItem><SelectItem value="클레임">클레임</SelectItem><SelectItem value="영업 기회">영업 기회</SelectItem><SelectItem value="계약">계약</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                                <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                </CardContent>
-                                <CardFooter><Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록 추가</Button></CardFooter>
-                            </form>
-                        </Form>
-                    </Card>
-
-                    <Card>
-                        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText/> 활동 이력</CardTitle></CardHeader>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg flex items-center gap-2"><NotepadText/> 활동 이력</CardTitle>
+                            {!isAddingActivity && <Button size="sm" variant="outline" onClick={() => setIsAddingActivity(true)}><CirclePlus className="mr-2"/>기록 추가</Button>}
+                        </CardHeader>
                         <CardContent>
+                             {isAddingActivity && (
+                                <Form {...activityForm}>
+                                    <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="p-4 border rounded-md mb-6 space-y-4 bg-muted/50">
+                                        <FormField control={activityForm.control} name="type" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>활동 유형</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{activityTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}/>
+                                        <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <div className="flex justify-end gap-2">
+                                            <Button type="button" variant="ghost" onClick={() => setIsAddingActivity(false)}>취소</Button>
+                                            <Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록</Button>
+                                        </div>
+                                    </form>
+                                </Form>
+                            )}
+
                             <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
-                            {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => (
+                            {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => {
+                                const ActivityIcon = activityTypeMap[activity.type].icon;
+                                const iconColor = activityTypeMap[activity.type].color;
+                                return (
                                 <div key={activity.id} className="relative">
-                                    <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full ${activityTypeMap[activity.type]} flex items-center justify-center ring-8 ring-background`}>
+                                    <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background`}>
+                                      <ActivityIcon className={cn("size-5", iconColor)} />
                                     </div>
                                     <div className="pl-8">
                                       <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
@@ -297,7 +330,8 @@ export default function CustomersPanel() {
                                       <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
                                     </div>
                                 </div>
-                            )) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
+                                )
+                            }) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
                             </div>
                         </CardContent>
                     </Card>
@@ -310,3 +344,5 @@ export default function CustomersPanel() {
     </>
   );
 }
+
+    
