@@ -6,24 +6,35 @@ import { reportData } from "@/lib/mock-data";
 
 export default function ReportsPanel() {
   const chartConfig = {
-    plastic: { label: "Plastic", color: "hsl(var(--chart-1))" },
-    glass: { label: "Glass", color: "hsl(var(--chart-2))" },
-    paper: { label: "Paper", color: "hsl(var(--chart-3))" },
-    metal: { label: "Metal", color: "hsl(var(--chart-4))" },
-    mixed: { label: "Mixed", color: "hsl(var(--chart-5))" },
+    plastic: { label: "플라스틱", color: "hsl(var(--chart-1))" },
+    glass: { label: "유리", color: "hsl(var(--chart-2))" },
+    paper: { label: "종이", color: "hsl(var(--chart-3))" },
+    metal: { label: "금속", color: "hsl(var(--chart-4))" },
+    mixed: { label: "혼합", color: "hsl(var(--chart-5))" },
   } as const;
+
+  const monthNames: { [key: string]: string } = {
+    Jan: '1월',
+    Feb: '2월',
+    Mar: '3월',
+    Apr: '4월',
+    May: '5월',
+    Jun: '6월',
+  };
+
+  const localizedReportData = reportData.map(d => ({...d, month: monthNames[d.month] || d.month}));
 
   return (
     <div className="grid gap-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Monthly Collection Volume</CardTitle>
-          <CardDescription>Total weight (in tons) of recycled materials collected per month.</CardDescription>
+          <CardTitle>월별 수거량</CardTitle>
+          <CardDescription>매월 수거된 재활용품의 총 무게 (톤 단위)입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[400px] w-full">
             <ResponsiveContainer>
-              <BarChart data={reportData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+              <BarChart data={localizedReportData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis 
                   dataKey="month" 

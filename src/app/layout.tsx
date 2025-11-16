@@ -7,8 +7,8 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'EcoTrack UI Demo',
-  description: 'UI Demo for a recycling management system.',
+  title: '에코트랙 UI 데모',
+  description: '재활용 관리 시스템을 위한 UI 데모입니다.',
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning>
       <body className={`font-sans antialiased ${inter.variable}`}>
         <FirebaseClientProvider>
           {children}

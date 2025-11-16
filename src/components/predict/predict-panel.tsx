@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
 const formSchema = z.object({
-  location: z.string().min(3, "Location must be at least 3 characters."),
-  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter time in HH:MM format."),
+  location: z.string().min(3, "위치는 최소 3자 이상이어야 합니다."),
+  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "시간을 HH:MM 형식으로 입력해주세요."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -28,7 +28,7 @@ export default function PredictPanel() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      location: "Downtown residential area",
+      location: "도심 주거 지역",
       time: "09:30",
     },
   });
@@ -41,7 +41,7 @@ export default function PredictPanel() {
       const prediction = await predictMaterialType(data);
       setResult(prediction);
     } catch (e: any) {
-      setError("Failed to get prediction. Please try again.");
+      setError("예측을 가져오는데 실패했습니다. 다시 시도해주세요.");
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -57,8 +57,8 @@ export default function PredictPanel() {
                 <Bot className="h-6 w-6 text-primary" />
             </div>
             <div>
-                <CardTitle className="font-headline">Material Type Prediction</CardTitle>
-                <CardDescription>Predict material type based on location and time.</CardDescription>
+                <CardTitle className="font-headline">재료 유형 예측</CardTitle>
+                <CardDescription>위치와 시간을 기반으로 재료 유형을 예측합니다.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -70,9 +70,9 @@ export default function PredictPanel() {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>위치</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Downtown Residential Area" {...field} />
+                      <Input placeholder="예: 도심 주거 지역" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -83,9 +83,9 @@ export default function PredictPanel() {
                 name="time"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Time (24h format)</FormLabel>
+                    <FormLabel>시간 (24시간 형식)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 09:30" {...field} />
+                      <Input placeholder="예: 09:30" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,7 +95,7 @@ export default function PredictPanel() {
             <CardFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Predict Material
+                재료 예측
               </Button>
             </CardFooter>
           </form>
@@ -105,23 +105,23 @@ export default function PredictPanel() {
       {isLoading && (
         <div className="text-center mt-6 flex items-center justify-center space-x-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Generating prediction...</span>
+          <span>예측 생성 중...</span>
         </div>
       )}
 
       {result && (
         <Card className="mt-6 animate-in fade-in">
           <CardHeader>
-            <CardTitle className="text-lg font-headline">Prediction Result</CardTitle>
+            <CardTitle className="text-lg font-headline">예측 결과</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-                <p className="text-muted-foreground">Predicted Material</p>
+                <p className="text-muted-foreground">예측된 재료</p>
                 <Badge variant="secondary" className="text-base">{result.predictedMaterialType}</Badge>
             </div>
             <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                    <p className="text-muted-foreground">Confidence Level</p>
+                    <p className="text-muted-foreground">신뢰도</p>
                     <p className="font-semibold">{(result.confidenceLevel * 100).toFixed(0)}%</p>
                 </div>
                 <Progress value={result.confidenceLevel * 100} />

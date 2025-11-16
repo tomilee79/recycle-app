@@ -6,11 +6,18 @@ import { Progress } from "@/components/ui/progress";
 import { Truck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const statusMap: { [key: string]: string } = {
+  'On Route': '운행중',
+  'Completed': '완료',
+  'Maintenance': '정비중',
+  'Idle': '대기중'
+};
+
 export default function DispatchPanel() {
   return (
     <Card className="h-full flex flex-col shadow-lg">
       <CardHeader>
-        <CardTitle>Active Dispatch</CardTitle>
+        <CardTitle>실시간 배차 현황</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow p-0">
         <ScrollArea className="h-full">
@@ -28,7 +35,7 @@ export default function DispatchPanel() {
                         vehicle.status === 'Completed' ? 'secondary' : 
                         vehicle.status === 'Maintenance' ? 'destructive' : 'outline'
                     }>
-                      {vehicle.status}
+                      {statusMap[vehicle.status]}
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground flex items-center gap-2 pt-1">
@@ -39,7 +46,7 @@ export default function DispatchPanel() {
                 <CardContent className="p-4 pt-0">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">Current Load</span>
+                      <span className="font-medium">현재 적재량</span>
                       <span>{vehicle.load}kg / {vehicle.capacity}kg</span>
                     </div>
                     <Progress value={(vehicle.load / vehicle.capacity) * 100} />

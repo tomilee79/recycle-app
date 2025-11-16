@@ -15,8 +15,8 @@ import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
-  email: z.string().email("Invalid email address."),
-  password: z.string().min(6, "Password must be at least 6 characters."),
+  email: z.string().email("유효하지 않은 이메일 주소입니다."),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,14 +47,14 @@ export default function LoginPage() {
         initiateAnonymousSignIn(auth);
         // The useUser hook will detect the auth change and redirect.
       } catch (e: any) {
-        setError("Login failed. Please try again.");
+        setError("로그인에 실패했습니다. 다시 시도해주세요.");
         console.error(e);
         setIsLoading(false);
       }
     } else {
       // Simulate network delay
       setTimeout(() => {
-        setError("Invalid credentials. Please try again.");
+        setError("잘못된 정보입니다. 다시 시도해주세요.");
         setIsLoading(false);
       }, 500);
     }
@@ -65,8 +65,8 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center">
           <EcoTrackLogo className="mx-auto h-12 w-12 text-primary mb-2" />
-          <CardTitle className="font-headline">Welcome to EcoTrack</CardTitle>
-          <CardDescription>Enter your admin credentials to continue</CardDescription>
+          <CardTitle className="font-headline">에코트랙에 오신 것을 환영합니다</CardTitle>
+          <CardDescription>계속하려면 관리자 정보를 입력하세요</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>이메일</FormLabel>
                     <FormControl>
                       <Input placeholder="admin@ecotrack.com" {...field} />
                     </FormControl>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>비밀번호</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -100,7 +100,7 @@ export default function LoginPage() {
               {error && (
                 <Alert variant="destructive">
                   <ShieldAlert className="h-4 w-4" />
-                  <AlertTitle>Login Failed</AlertTitle>
+                  <AlertTitle>로그인 실패</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -108,7 +108,7 @@ export default function LoginPage() {
             <CardFooter>
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                로그인
               </Button>
             </CardFooter>
           </form>

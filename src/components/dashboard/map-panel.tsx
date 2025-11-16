@@ -12,8 +12,8 @@ export default function MapPanel() {
     return (
       <Card className="h-full flex items-center justify-center bg-muted">
         <div className="text-center text-muted-foreground p-4">
-          <h3 className="font-semibold text-lg mb-2">Google Maps API Key Missing</h3>
-          <p className="text-sm">Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your .env.local file.</p>
+          <h3 className="font-semibold text-lg mb-2">Google Maps API 키가 없습니다</h3>
+          <p className="text-sm">.env.local 파일에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY를 추가해주세요.</p>
         </div>
       </Card>
     );

@@ -8,16 +8,16 @@ export default function DriversPanel() {
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle>Driver Management</CardTitle>
-        <CardDescription>An overview of all drivers.</CardDescription>
+        <CardTitle>직원 관리</CardTitle>
+        <CardDescription>모든 직원의 개요입니다.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Availability</TableHead>
+              <TableHead>이름</TableHead>
+              <TableHead>연락처</TableHead>
+              <TableHead>배차 가능 여부</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -27,7 +27,7 @@ export default function DriversPanel() {
                 <TableCell>{driver.contact}</TableCell>
                 <TableCell>
                   <Badge variant={driver.isAvailable ? 'default' : 'secondary'} className={cn(driver.isAvailable ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600")}>
-                    {driver.isAvailable ? 'Available' : 'Unavailable'}
+                    {driver.isAvailable ? '가능' : '불가능'}
                   </Badge>
                 </TableCell>
               </TableRow>

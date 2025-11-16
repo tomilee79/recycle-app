@@ -56,6 +56,14 @@ export function MainLayout() {
     auth.signOut();
   };
 
+  const viewTitles: { [key in View]: string } = {
+    dashboard: '대시보드',
+    reports: '정산 보고서',
+    vehicles: '차량 관리',
+    drivers: '직원 관리',
+    predict: 'AI 예측',
+  };
+
 
   const renderContent = () => {
     switch (activeView) {
@@ -82,7 +90,7 @@ export function MainLayout() {
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <EcoTrackLogo className="size-8 text-primary" />
-            <span className="text-lg font-semibold text-sidebar-foreground">EcoTrack</span>
+            <span className="text-lg font-semibold text-sidebar-foreground">에코트랙</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -91,50 +99,50 @@ export function MainLayout() {
               <SidebarMenuButton
                 onClick={() => setActiveView('dashboard')}
                 isActive={activeView === 'dashboard'}
-                tooltip={{ children: 'Dashboard' }}
+                tooltip={{ children: '대시보드' }}
               >
                 <LayoutDashboard />
-                <span>Dashboard</span>
+                <span>대시보드</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('reports')}
                 isActive={activeView === 'reports'}
-                tooltip={{ children: 'Settlement Reports' }}
+                tooltip={{ children: '정산 보고서' }}
               >
                 <BarChart3 />
-                <span>Reports</span>
+                <span>보고서</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('vehicles')}
                 isActive={activeView === 'vehicles'}
-                tooltip={{ children: 'Vehicles' }}
+                tooltip={{ children: '차량 관리' }}
               >
                 <Truck />
-                <span>Vehicles</span>
+                <span>차량</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('drivers')}
                 isActive={activeView === 'drivers'}
-                tooltip={{ children: 'Drivers' }}
+                tooltip={{ children: '직원 관리' }}
               >
                 <Users />
-                <span>Drivers</span>
+                <span>직원</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('predict')}
                 isActive={activeView === 'predict'}
-                tooltip={{ children: 'AI Prediction' }}
+                tooltip={{ children: 'AI 예측' }}
               >
                 <Bot />
-                <span>AI Prediction</span>
+                <span>AI 예측</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -143,9 +151,9 @@ export function MainLayout() {
           <Separator className="my-2 bg-sidebar-border" />
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{ children: 'Settings' }}>
+              <SidebarMenuButton tooltip={{ children: '설정' }}>
                 <Settings />
-                <span>Settings</span>
+                <span>설정</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -153,10 +161,10 @@ export function MainLayout() {
                 <div className="flex w-full items-center gap-2">
                   <Avatar className="size-8">
                     <AvatarImage src={userAvatar?.imageUrl} alt="User" data-ai-hint={userAvatar?.imageHint}/>
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarFallback>관리자</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold">Admin</span>
+                    <span className="text-sm font-semibold">관리자</span>
                     <span className="text-xs text-sidebar-foreground/70">
                       Administrator
                     </span>
@@ -169,19 +177,19 @@ export function MainLayout() {
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
                     <LogOut />
-                    <span>Logout</span>
+                    <span>로그아웃</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                    <AlertDialogTitle>정말로 로그아웃 하시겠습니까?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      You will be returned to the login page.
+                      로그인 페이지로 돌아갑니다.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>로그아웃</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -195,7 +203,7 @@ export function MainLayout() {
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
             <h1 className="text-xl font-semibold font-headline">
-              {activeView.charAt(0).toUpperCase() + activeView.slice(1)}
+              {viewTitles[activeView]}
             </h1>
           </div>
         </header>
