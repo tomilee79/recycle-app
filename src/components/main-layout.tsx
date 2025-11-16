@@ -56,6 +56,7 @@ import RouteOptimizationPanel from '@/components/route-optimization/route-optimi
 import SchedulePanel from '@/components/schedule/schedule-panel';
 import TodosPanel from '@/components/todos/todos-panel';
 import QuotesPanel from '@/components/quotes/quotes-panel';
+import UsersPanel from '@/components/users/users-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -75,7 +76,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes' | 'users';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -144,6 +145,7 @@ export function MainLayout() {
     settings: '설정',
     todos: '할일 관리',
     quotes: '견적 관리',
+    users: '사용자 관리',
   };
 
 
@@ -177,6 +179,8 @@ export function MainLayout() {
         return <TodosPanel />;
       case 'quotes':
         return <QuotesPanel />;
+      case 'users':
+        return <UsersPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -345,6 +349,16 @@ export function MainLayout() {
               >
                 <Bot />
                 <span>AI 예측</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('users')}
+                isActive={activeView === 'users'}
+                tooltip={{ children: '사용자 관리' }}
+              >
+                <Users />
+                <span>사용자 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

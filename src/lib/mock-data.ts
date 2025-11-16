@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
@@ -411,4 +411,12 @@ export const expensesData: Expense[] = [
     { id: 'EXP003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), category: '통행료', description: '경부고속도로 통행료', amount: 15000, vehicleId: 'V003', status: 'Pending' },
     { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
     { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: 'RecycleRover 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
+];
+
+export const users: User[] = [
+    { id: 'U001', name: '김관리', email: 'admin@ecotrack.com', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
+    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.com', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
+    { id: 'U003', name: '박사원', email: 'user@ecotrack.com', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
+    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.com', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
+    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.com', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];
