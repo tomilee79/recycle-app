@@ -485,6 +485,23 @@ export const quotes: Quote[] = [
     createQuote('Q-2023-115', 'C002', 'Rejected', subMonths(new Date(), 4)),
 ];
 
+const contractComments: Comment[] = [
+    {
+        id: 'CCOM01',
+        authorId: 'U001',
+        text: '@이매니저, 이 계약 건 특이사항에 월 4회 정기 수거 조건 명시되어 있는데, 다음 달부터 월 5회로 증편 가능한지 확인 부탁드립니다.',
+        timestamp: formatISO(subDays(new Date(), 1)),
+        replies: [
+            {
+                id: 'CREPLY01',
+                authorId: 'U002',
+                text: '@김관리, 네, 확인했습니다. 고객사와 협의 후 다음 주까지 회신드리겠습니다.',
+                timestamp: formatISO(new Date()),
+            }
+        ]
+    }
+];
+
 const createContract = (id: string, customerId: string, status: ContractStatus, startDate: Date, endDate: Date): Contract => {
   const contractNumber = `C${format(startDate, 'yyyyMMdd')}-${String(id).padStart(3, '0')}`;
   return {
@@ -499,6 +516,10 @@ const createContract = (id: string, customerId: string, status: ContractStatus, 
       { id: 'ci-2', materialType: 'Paper', unitPrice: 80 },
     ],
     notes: '월 4회 정기 수거 조건',
+    attachments: [
+        { id: `contract-att-${id}`, name: '계약서_스캔본_최종.pdf', size: 1024 * 1200, type: 'application/pdf', url: '#' }
+    ],
+    comments: id === 'CT001' ? contractComments : [],
   };
 };
 

@@ -190,6 +190,8 @@ export type Contract = {
     status: ContractStatus;
     items: ContractItem[];
     notes?: string;
+    attachments?: Attachment[];
+    comments?: Comment[];
 };
 
 export type ExpenseCategory = '유류비' | '정비비' | '통행료' | '기타';

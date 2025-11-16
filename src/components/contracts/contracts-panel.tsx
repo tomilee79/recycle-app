@@ -1,11 +1,12 @@
 
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { customers, contracts as initialContracts } from "@/lib/mock-data";
+import { customers, contracts as initialContracts, users } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,11 +15,11 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, MessageSquare, FileText, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Contract, ContractItem, ContractStatus } from '@/lib/types';
-import { format, addYears, addDays } from 'date-fns';
+import type { Contract, ContractItem, ContractStatus, Comment, User, Attachment } from '@/lib/types';
+import { format, addYears, addDays, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
@@ -28,6 +29,8 @@ import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Checkbox } from '../ui/checkbox';
+import { Comments } from '../tasks/comments';
+import { ScrollArea } from '../ui/scroll-area';
 
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
@@ -48,6 +51,22 @@ const contractItemSchema = z.object({
     unitPrice: z.coerce.number().min(0, "단가는 0 이상이어야 합니다."),
 });
 
+const attachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  size: z.number(),
+  type: z.string(),
+  url: z.string(),
+});
+
+const commentSchema = z.object({
+    id: z.string(),
+    authorId: z.string(),
+    text: z.string(),
+    timestamp: z.string(),
+    replies: z.array(z.lazy(() => commentSchema)).optional(),
+});
+
 const contractFormSchema = z.object({
   id: z.string(),
   customerId: z.string().min(1, "고객사를 선택해주세요."),
@@ -57,6 +76,8 @@ const contractFormSchema = z.object({
   endDate: z.date({ required_error: "종료일을 선택해주세요." }),
   items: z.array(contractItemSchema).min(1, "최소 1개의 품목을 추가해야 합니다."),
   notes: z.string().optional(),
+  attachments: z.array(attachmentSchema).optional(),
+  comments: z.array(commentSchema).optional(),
 });
 
 type ContractFormValues = z.infer<typeof contractFormSchema>;
@@ -117,6 +138,11 @@ export default function ContractsPanel() {
     name: "items",
   });
 
+  const { fields: attachments, append: appendAttachment, remove: removeAttachment } = useFieldArray({
+    control: form.control,
+    name: "attachments",
+  });
+
   const openSheetForNew = () => {
     setSelectedContract(null);
     const newId = `CT${String(contracts.length + 1).padStart(3, '0')}`;
@@ -130,6 +156,8 @@ export default function ContractsPanel() {
         endDate: addYears(new Date(), 1),
         items: [{ id: `item-${Date.now()}`, materialType: '', unitPrice: 0 }],
         notes: '',
+        attachments: [],
+        comments: [],
     });
     setIsSheetOpen(true);
   }
@@ -155,6 +183,7 @@ export default function ContractsPanel() {
       status: 'Active',
       startDate: new Date(),
       endDate: addDays(new Date(), 365),
+      comments: [], // Comments are not cloned
     });
     setIsSheetOpen(true);
     toast({ title: "계약 복제됨", description: `기존 계약을 바탕으로 새 계약 초안이 생성되었습니다.` });
@@ -174,12 +203,13 @@ export default function ContractsPanel() {
 
     if (selectedContract) {
       setContracts(contracts.map(c => c.id === newContract.id ? newContract : c));
+      setSelectedContract(newContract);
       toast({ title: "계약 수정됨", description: `${newContract.contractNumber} 계약이 성공적으로 수정되었습니다.` });
     } else {
       setContracts([newContract, ...contracts]);
       toast({ title: "계약 생성됨", description: `${newContract.contractNumber} 계약이 성공적으로 생성되었습니다.` });
+      closeSheet();
     }
-    closeSheet();
   };
   
   const handleDelete = (contractIds: string[]) => {
@@ -228,6 +258,52 @@ export default function ContractsPanel() {
     } else {
       setSelectedRowKeys(new Set());
     }
+  };
+  
+  const handleFileDrop = (files: FileList | null) => {
+    if (!files) return;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        appendAttachment({
+            id: `att-${Date.now()}-${i}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            url: URL.createObjectURL(file)
+        });
+    }
+  };
+
+  const handleSaveComment = (contractId: string, comment: Comment) => {
+      const updatedContracts = contracts.map(c => {
+          if(c.id === contractId) {
+              return {...c, comments: [...(c.comments || []), comment]};
+          }
+          return c;
+      });
+      setContracts(updatedContracts);
+      if(selectedContract?.id === contractId) {
+          setSelectedContract(updatedContracts.find(c => c.id === contractId) || null);
+      }
+  };
+
+  const handleSaveReply = (contractId: string, commentId: string, reply: Comment) => {
+      const updatedContracts = contracts.map(c => {
+          if(c.id === contractId) {
+              const updatedComments = (c.comments || []).map(comment => {
+                  if(comment.id === commentId) {
+                      return {...comment, replies: [...(comment.replies || []), reply]};
+                  }
+                  return comment;
+              });
+              return {...c, comments: updatedComments};
+          }
+          return c;
+      });
+      setContracts(updatedContracts);
+       if(selectedContract?.id === contractId) {
+          setSelectedContract(updatedContracts.find(c => c.id === contractId) || null);
+      }
   };
 
 
@@ -394,7 +470,8 @@ export default function ContractsPanel() {
             </SheetHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-              <div className="space-y-4 mt-4 overflow-y-auto pr-6 flex-1">
+              <ScrollArea className="flex-1 pr-6 -mr-6">
+              <div className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="customerId" render={({ field }) => (
                       <FormItem>
@@ -482,7 +559,37 @@ export default function ContractsPanel() {
                         <FormControl><Textarea placeholder="계약 관련 특이사항을 입력하세요..." {...field} /></FormControl>
                     </FormItem>
                  )}/>
+
+                 <Card>
+                    <CardHeader><CardTitle className="text-base flex items-center gap-2"><Paperclip/>첨부 파일</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <label htmlFor="file-upload" onDrop={(e) => { e.preventDefault(); handleFileDrop(e.dataTransfer.files); }} onDragOver={(e) => e.preventDefault()} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"><div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 mb-4 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭</p><p className="text-xs text-muted-foreground">PDF, JPG, PNG 등</p></div><Input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileDrop(e.target.files)}/></label>
+                            {attachments.map((att, index) => (
+                                <div key={att.id} className="flex items-center justify-between p-2 rounded-md border"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><span className="text-sm font-medium">{att.name}</span><span className="text-xs text-muted-foreground">({(att.size / 1024).toFixed(1)} KB)</span></div><Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(index)}><X className="h-4 w-4"/></Button></div>
+                            ))}
+                        </div>
+                    </CardContent>
+                 </Card>
+
+                 {selectedContract && (
+                    <Card>
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare/>소통 기록</CardTitle></CardHeader>
+                        <CardContent>
+                            <Comments 
+                                comments={selectedContract.comments || []} 
+                                users={users as User[]}
+                                currentUser={users[0] as User}
+                                taskId={selectedContract.id}
+                                onSaveComment={handleSaveComment}
+                                onSaveReply={handleSaveReply}
+                            />
+                        </CardContent>
+                    </Card>
+                 )}
+
                 </div>
+                </ScrollArea>
                 <div className="flex justify-between items-center pt-4 pr-6 mt-auto">
                     <Button type="submit">
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
