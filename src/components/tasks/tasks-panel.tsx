@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Search, Info, MapPin, Trash2, Weight, Truck, User, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { placeholderImages } from '@/lib/placeholder-images';
 import type { CollectionTask, TaskStatus, Vehicle, Driver } from '@/lib/types';
@@ -166,20 +166,12 @@ export default function TasksPanel() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                        <DropdownMenuItem>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                     <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full">상태 변경<ChevronDown className="ml-auto h-4 w-4"/></div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    {statuses.map(status => (
-                                        <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
-                                            {statusMap[status]}으로 변경
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </DropdownMenuItem>
+                        {statuses.map(status => (
+                            <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
+                                {statusMap[status]}으로 상태 변경
+                            </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
@@ -215,7 +207,7 @@ export default function TasksPanel() {
               <TableRow>
                 <TableHead className="w-[50px]">
                     <Checkbox 
-                        checked={selectedRowKeys.size > 0 && selectedRowKeys.size === paginatedTasks.length}
+                        checked={selectedRowKeys.size > 0 && paginatedTasks.length > 0 && selectedRowKeys.size === paginatedTasks.length}
                         onCheckedChange={handleSelectAllRows}
                         disabled={paginatedTasks.length === 0}
                     />
