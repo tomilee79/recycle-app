@@ -8,7 +8,7 @@ import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal, Save, X } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal, Save, X, Upload, Download } from "lucide-react";
 import type { Driver } from '@/lib/types';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -24,6 +24,8 @@ import { Loader2 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { format } from 'date-fns';
 
 
 const driverFormSchema = z.object({
@@ -122,6 +124,22 @@ export default function DriversPanel() {
     });
   }
 
+  const handleExport = () => {
+    const headers = ["ID", "Name", "Email", "Contact", "Available"];
+    const csvContent = [
+      headers.join(','),
+      ...filteredDrivers.map(d => [d.id, d.name, d.email, d.contact, d.isAvailable].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `drivers_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <>
     <div className="space-y-4">
@@ -138,19 +156,44 @@ export default function DriversPanel() {
               <Button variant="outline" onClick={() => router.push('/driver-performance')}>
                 성과 대시보드로 이동 <ArrowRight className="ml-2"/>
               </Button>
-              <Button onClick={() => openSheet(null)}>
-                <PlusCircle className="mr-2"/>새 직원 추가
-              </Button>
             </div>
           </div>
-          <div className="relative pt-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="이름, 연락처 또는 이메일로 검색..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex items-center justify-between gap-2 pt-4">
+            <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="이름, 연락처 또는 이메일로 검색..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+            </div>
+            <div className="flex gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>CSV 파일에서 직원 가져오기</DialogTitle>
+                      <DialogDescription>
+                        CSV 파일을 업로드하여 여러 직원을 한 번에 추가합니다. 파일은 'name', 'email', 'contact' 열을 포함해야 합니다.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input type="file" accept=".csv" />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline">취소</Button>
+                        <Button>가져오기</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Button variant="outline" onClick={handleExport}><Download className="mr-2"/>내보내기</Button>
+                <Button onClick={() => openSheet(null)}>
+                  <PlusCircle className="mr-2"/>새 직원 추가
+                </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
