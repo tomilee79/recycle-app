@@ -1,6 +1,6 @@
 
 import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord } from './types';
-import { addDays, format, formatISO, subMinutes, subMonths } from 'date-fns';
+import { addDays, format, formatISO, subMinutes, subMonths, subDays } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
   {
@@ -180,7 +180,11 @@ export const customers: Customer[] = [
     address: '123 Main St',
     contractStatus: 'Active',
     contactPerson: '김철수',
-    expiryDate: format(addDays(new Date(), 150), 'yyyy-MM-dd') 
+    expiryDate: format(addDays(new Date(), 150), 'yyyy-MM-dd'),
+    activityHistory: [
+        { id: 'A001', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), type: '상담', content: '신규 폐기물 처리 단가 문의', manager: '이영희' },
+        { id: 'A002', date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), type: '계약', content: '2025년 재계약 완료', manager: '김철수' },
+    ]
   },
   { 
     id: 'C002', 
@@ -188,7 +192,10 @@ export const customers: Customer[] = [
     address: '456 Market St',
     contractStatus: 'Active',
     contactPerson: '이영희',
-    expiryDate: format(addDays(new Date(), 25), 'yyyy-MM-dd') // Expires soon
+    expiryDate: format(addDays(new Date(), 25), 'yyyy-MM-dd'), // Expires soon
+    activityHistory: [
+        { id: 'A003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), type: '클레임', content: '수거 지연에 대한 불만 제기', manager: '박민준' },
+    ]
   },
   { 
     id: 'C003', 
@@ -196,7 +203,10 @@ export const customers: Customer[] = [
     address: '789 Broadway',
     contractStatus: 'Pending',
     contactPerson: '박민준',
-    expiryDate: format(addDays(new Date(), 300), 'yyyy-MM-dd')
+    expiryDate: format(addDays(new Date(), 300), 'yyyy-MM-dd'),
+    activityHistory: [
+        { id: 'A004', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), type: '영업 기회', content: '신규 계약 제안서 발송', manager: '김철수' },
+    ]
   },
   { 
     id: 'C004', 
@@ -204,7 +214,8 @@ export const customers: Customer[] = [
     address: '101 Park Ave',
     contractStatus: 'Inactive',
     contactPerson: '최지우',
-    expiryDate: format(addDays(new Date(), -90), 'yyyy-MM-dd') // Expired
+    expiryDate: format(addDays(new Date(), -90), 'yyyy-MM-dd'), // Expired
+    activityHistory: []
   },
   { 
     id: 'C005', 
@@ -212,7 +223,8 @@ export const customers: Customer[] = [
     address: '서울시 강남구 테헤란로',
     contractStatus: 'Active',
     contactPerson: '홍길동',
-    expiryDate: format(addDays(new Date(), 400), 'yyyy-MM-dd')
+    expiryDate: format(addDays(new Date(), 400), 'yyyy-MM-dd'),
+    activityHistory: []
   },
 ];
 

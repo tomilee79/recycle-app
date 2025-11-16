@@ -58,6 +58,14 @@ export type Driver = {
   isAvailable: boolean;
 };
 
+export type SalesActivity = {
+    id: string;
+    date: string;
+    type: '상담' | '클레임' | '영업 기회' | '계약';
+    content: string;
+    manager: string;
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -65,6 +73,7 @@ export type Customer = {
   contractStatus: 'Active' | 'Inactive' | 'Pending';
   contactPerson: string;
   expiryDate: string; // YYYY-MM-DD
+  activityHistory: SalesActivity[];
 };
 
 export type Notification = {
