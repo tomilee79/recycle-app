@@ -14,7 +14,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature, MoreHorizontal, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -121,13 +122,14 @@ export default function QuotesPanel() {
     setIsSheetOpen(true);
   };
   
-  const handleDelete = () => {
-      if (!selectedQuote) return;
-      setQuotes(quotes.filter(q => q.id !== selectedQuote.id));
-      setIsSheetOpen(false);
+  const handleDelete = (quoteId: string) => {
+      setQuotes(quotes.filter(q => q.id !== quoteId));
+      if (selectedQuote?.id === quoteId) {
+        setIsSheetOpen(false);
+      }
       toast({
           title: "견적 삭제됨",
-          description: `${selectedQuote.id} 견적이 성공적으로 삭제되었습니다.`,
+          description: `${quoteId} 견적이 성공적으로 삭제되었습니다.`,
           variant: "destructive"
       });
   }
@@ -185,6 +187,19 @@ export default function QuotesPanel() {
       setIsSheetOpen(false);
   }
 
+  const handleCloneQuote = (quoteToClone: Quote) => {
+    setSelectedQuote(null);
+    const newQuoteId = `Q-${format(new Date(), 'yyyy')}-${String(quotes.length + 1).padStart(3, '0')}`;
+    form.reset({
+      id: newQuoteId,
+      customerId: quoteToClone.customerId,
+      status: 'Draft',
+      items: quoteToClone.items.map(item => ({ ...item, id: `item-${Date.now()}-${Math.random()}` })),
+      notes: quoteToClone.notes,
+    });
+    setIsSheetOpen(true);
+  };
+
   return (
     <>
       <Card className="shadow-lg">
@@ -227,6 +242,7 @@ export default function QuotesPanel() {
                 <TableHead>견적일</TableHead>
                 <TableHead>총액</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead className="text-right w-[80px]">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -240,6 +256,42 @@ export default function QuotesPanel() {
                     <Badge variant={quoteStatusVariant[quote.status]}>
                       {quoteStatusMap[quote.status]}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <AlertDialog>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleCloneQuote(quote)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>복제</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>삭제</span>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  이 작업은 되돌릴 수 없습니다. {quote.id} 견적이 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(quote.id)}>삭제 확인</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -439,7 +491,7 @@ export default function QuotesPanel() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(selectedQuote.id)}>삭제 확인</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -452,3 +504,5 @@ export default function QuotesPanel() {
     </>
   );
 }
+
+    
