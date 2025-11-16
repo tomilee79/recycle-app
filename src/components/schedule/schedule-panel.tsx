@@ -9,7 +9,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { Badge } from '../ui/badge';
 import type { CollectionTask } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
-import { Calendar as CalendarIcon, MapPin, Trash2, CheckCircle, Clock, PlusCircle, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Trash2, CheckCircle, Clock, PlusCircle, Loader2, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayProps } from 'react-day-picker';
@@ -24,6 +24,8 @@ import { z } from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Checkbox } from '../ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 const statusMap: { [key in CollectionTask['status']]: string } = {
@@ -32,6 +34,7 @@ const statusMap: { [key in CollectionTask['status']]: string } = {
   'Completed': '완료',
   'Cancelled': '취소'
 };
+const statuses = Object.keys(statusMap) as CollectionTask['status'][];
 
 const statusVariant: { [key in CollectionTask['status']]: "default" | "secondary" | "destructive" | "outline" } = {
     'Completed': 'default',
@@ -65,6 +68,7 @@ export default function SchedulePanel() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<CollectionTask | null>(null);
   const [customerFilter, setCustomerFilter] = useState('all');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const form = useForm<ScheduleFormValues>({
@@ -130,20 +134,25 @@ export default function SchedulePanel() {
     return filteredByCustomer.sort((a, b) => a.id.localeCompare(b.id));
   }, [date, tasks, customerFilter]);
 
+  useEffect(() => {
+    setSelectedRowKeys(new Set());
+  }, [date, customerFilter]);
+
   const getCustomerName = (customerId: string) => {
     return customers.find(c => c.id === customerId)?.name || '알수없음';
   }
 
-  const handleStatusChange = useCallback((taskId: string, newStatus: CollectionTask['status']) => {
+  const handleStatusChange = useCallback((taskIds: string[], newStatus: CollectionTask['status']) => {
     setTasks(prevTasks => 
         prevTasks.map(task => 
-            task.id === taskId ? { ...task, status: newStatus } : task
+            taskIds.includes(task.id) ? { ...task, status: newStatus } : task
         )
     );
     toast({
         title: '상태 변경 완료',
-        description: `작업 상태가 '${statusMap[newStatus]}'(으)로 변경되었습니다.`,
+        description: `선택된 작업 상태가 '${statusMap[newStatus]}'(으)로 변경되었습니다.`,
     });
+    setSelectedRowKeys(new Set());
   }, [toast]);
   
   const onScheduleSubmit: SubmitHandler<ScheduleFormValues> = (data) => {
@@ -175,6 +184,26 @@ export default function SchedulePanel() {
     setIsFormOpen(false);
     setEditingTask(null);
   };
+  
+  const handleSelectRow = (id: string) => {
+      setSelectedRowKeys(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(id)) {
+              newSet.delete(id);
+          } else {
+              newSet.add(id);
+          }
+          return newSet;
+      });
+  };
+
+  const handleSelectAllRows = () => {
+      if (selectedRowKeys.size === selectedDayTasks.length && selectedDayTasks.length > 0) {
+          setSelectedRowKeys(new Set());
+      } else {
+          setSelectedRowKeys(new Set(selectedDayTasks.map(t => t.id)));
+      }
+  };
 
   const CustomDay: CalendarProps['components']['Day'] = (props: DayProps) => {
     const isScheduled = scheduledDays.some(scheduledDay => isSameDay(props.date, scheduledDay));
@@ -187,11 +216,11 @@ export default function SchedulePanel() {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
             <CardTitle>일간/월간 수거 일정</CardTitle>
-            <CardDescription>달력에서 날짜를 선택하여 일별 수거 작업을 확인하세요.</CardDescription>
+            <CardDescription>달력에서 날짜를 선택하여 일별 수거 작업을 확인하고 관리하세요.</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
             <Calendar
@@ -216,62 +245,99 @@ export default function SchedulePanel() {
                 </div>
                  <Button onClick={() => openForm(null)}><PlusCircle className="mr-2"/>새 일정 추가</Button>
             </div>
-             <div className="mt-4">
-                <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                    <SelectTrigger className="w-[240px]">
-                        <SelectValue placeholder="고객사 필터" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">모든 고객사</SelectItem>
-                        {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+             <div className="flex items-center justify-between gap-2 mt-4">
+                <div className="flex gap-2 items-center">
+                  <Select value={customerFilter} onValueChange={setCustomerFilter}>
+                      <SelectTrigger className="w-[240px]">
+                          <SelectValue placeholder="고객사 필터" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">모든 고객사</SelectItem>
+                          {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+                  {selectedRowKeys.size > 0 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                선택 항목 상태 변경 ({selectedRowKeys.size}) <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            {statuses.map(status => (
+                                <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
+                                    {statusMap[status]}으로 변경
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
             </div>
         </CardHeader>
         <CardContent className="flex-grow pt-2">
-            <ScrollArea className="h-96">
-                <div className="space-y-4 pr-4">
-                {selectedDayTasks.length > 0 ? (
-                    selectedDayTasks.map(task => (
-                    <div key={task.id} className="p-3 border rounded-lg bg-muted/20 cursor-pointer hover:bg-muted/40" onClick={() => openForm(task)}>
-                        <div className="flex justify-between items-start mb-2">
-                            <p className="font-semibold">{getCustomerName(task.customerId)}</p>
-                             <div onClick={(e) => e.stopPropagation()}>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-auto p-0 font-normal">
-                                            <Badge variant={statusVariant[task.status]} className="cursor-pointer">
-                                                {statusMap[task.status]}
-                                            </Badge>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {(Object.keys(statusMap) as Array<CollectionTask['status']>).filter(status => status !== task.status).map(status => (
-                                            <DropdownMenuItem key={status} onSelect={() => handleStatusChange(task.id, status)}>
-                                                {statusMap[status]}으로 변경
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                            <p className="flex items-center gap-2"><MapPin className="size-4"/> {task.address}</p>
-                            <p className="flex items-center gap-2"><Trash2 className="size-4"/> {materialTypeMap[task.materialType]}</p>
-                            {task.status === 'Completed' ? (
-                                <p className="flex items-center gap-2"><CheckCircle className="size-4 text-primary"/> 완료 시간: {task.completedTime}</p>
-                            ) : (
-                                <p className="flex items-center gap-2"><Clock className="size-4"/> 예정 시간: 오전</p>
-                            )}
-                        </div>
-                    </div>
-                    ))
-                ) : (
-                    <div className="text-center text-muted-foreground py-10">
-                        <p>선택된 날짜에 수거 일정이 없습니다.</p>
-                    </div>
-                )}
-                </div>
+           <ScrollArea className="h-96">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-12">
+                                <Checkbox
+                                    checked={selectedRowKeys.size > 0 && selectedRowKeys.size === selectedDayTasks.length}
+                                    onCheckedChange={handleSelectAllRows}
+                                    disabled={selectedDayTasks.length === 0}
+                                />
+                            </TableHead>
+                            <TableHead>고객사</TableHead>
+                            <TableHead>주소</TableHead>
+                            <TableHead>품목</TableHead>
+                            <TableHead>상태</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {selectedDayTasks.length > 0 ? (
+                            selectedDayTasks.map(task => (
+                                <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? 'selected' : ''}>
+                                    <TableCell>
+                                        <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)} />
+                                    </TableCell>
+                                    <TableCell className="font-medium cursor-pointer" onClick={() => openForm(task)}>
+                                        {getCustomerName(task.customerId)}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground cursor-pointer" onClick={() => openForm(task)}>
+                                        {task.address}
+                                    </TableCell>
+                                    <TableCell className="cursor-pointer" onClick={() => openForm(task)}>
+                                        {materialTypeMap[task.materialType]}
+                                    </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-auto p-0 font-normal">
+                                                    <Badge variant={statusVariant[task.status]} className="cursor-pointer">
+                                                        {statusMap[task.status]}
+                                                    </Badge>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {statuses.filter(status => status !== task.status).map(status => (
+                                                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange([task.id], status)}>
+                                                        {statusMap[status]}으로 변경
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    선택된 날짜에 수거 일정이 없습니다.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </ScrollArea>
         </CardContent>
       </Card>
