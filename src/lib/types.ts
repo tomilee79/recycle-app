@@ -75,6 +75,7 @@ export type SettlementData = {
 export type Driver = {
   id: string;
   name: string;
+  email: string;
   contact: string;
   isAvailable: boolean;
 };

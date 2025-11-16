@@ -8,7 +8,7 @@ import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal, Save, X } from "lucide-react";
 import type { Driver } from '@/lib/types';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -30,6 +30,10 @@ const driverFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, "이름은 2자 이상이어야 합니다."),
   contact: z.string().regex(/^[0-9]{3}-[0-9]{3,4}-[0-9]{4}$/, "010-1234-5678 형식으로 입력해주세요."),
+  email: z.string().email("유효한 이메일 주소여야 합니다."),
+  password: z.string().optional().refine(val => !val || val.length >= 6, {
+    message: "비밀번호는 최소 6자 이상이어야 합니다.",
+  }),
   isAvailable: z.boolean(),
 });
 
@@ -50,7 +54,8 @@ export default function DriversPanel() {
   const filteredDrivers = useMemo(() =>
     drivers.filter(d =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.contact.includes(search)
+      d.contact.includes(search) ||
+      d.email.toLowerCase().includes(search.toLowerCase())
     ),
     [drivers, search]
   );
@@ -70,10 +75,12 @@ export default function DriversPanel() {
         id: driver.id,
         name: driver.name,
         contact: driver.contact,
+        email: driver.email,
+        password: '',
         isAvailable: driver.isAvailable,
       });
     } else {
-      form.reset({ id: undefined, name: '', contact: '', isAvailable: true });
+      form.reset({ id: undefined, name: '', contact: '', email: '', password: '', isAvailable: true });
     }
     setIsSheetOpen(true);
   };
@@ -91,6 +98,7 @@ export default function DriversPanel() {
       const newDriver: Driver = {
         id: `D${String(drivers.length + 1).padStart(3, '0')}`,
         name: data.name,
+        email: data.email,
         contact: data.contact,
         isAvailable: data.isAvailable,
       };
@@ -138,7 +146,7 @@ export default function DriversPanel() {
           <div className="relative pt-4">
             <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="이름 또는 연락처로 검색..."
+              placeholder="이름, 연락처 또는 이메일로 검색..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -150,6 +158,7 @@ export default function DriversPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead>이름</TableHead>
+                <TableHead>이메일</TableHead>
                 <TableHead>연락처</TableHead>
                 <TableHead className="w-[120px]">배차 가능</TableHead>
                 <TableHead className="text-right">작업</TableHead>
@@ -159,6 +168,7 @@ export default function DriversPanel() {
               {paginatedData.map((driver) => (
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium">{driver.name}</TableCell>
+                  <TableCell>{driver.email}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
@@ -232,28 +242,10 @@ export default function DriversPanel() {
             </SheetHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>이름</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="contact"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>연락처</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="contact" render={({ field }) => (<FormItem><FormLabel>연락처</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>이메일 (로그인 ID)</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="password" render={({ field }) => (<FormItem><FormLabel>비밀번호</FormLabel><FormControl><Input type="password" placeholder={selectedDriver ? '변경할 경우에만 입력' : '••••••••'} {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField
                     control={form.control}
                     name="isAvailable"
