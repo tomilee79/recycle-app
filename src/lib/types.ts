@@ -31,6 +31,7 @@ export type ReportData = {
   paper: number;
   metal: number;
   mixed: number;
+  revenue: number;
 };
 
 export type Driver = {

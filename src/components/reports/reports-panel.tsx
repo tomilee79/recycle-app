@@ -1,6 +1,7 @@
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { reportData } from "@/lib/mock-data";
 
@@ -11,6 +12,7 @@ export default function ReportsPanel() {
     paper: { label: "종이", color: "hsl(var(--chart-3))" },
     metal: { label: "금속", color: "hsl(var(--chart-4))" },
     mixed: { label: "혼합", color: "hsl(var(--chart-5))" },
+    revenue: { label: "매출액", color: "hsl(var(--primary))" },
   } as const;
 
   const monthNames: { [key: string]: string } = {
@@ -28,13 +30,13 @@ export default function ReportsPanel() {
     <div className="grid gap-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>월별 수거량</CardTitle>
-          <CardDescription>매월 수거된 재활용품의 총 무게 (톤 단위)입니다.</CardDescription>
+          <CardTitle>월별 수거 및 매출 현황</CardTitle>
+          <CardDescription>월별 재활용품 수거량(톤) 및 총 매출액(만원)입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[400px] w-full">
             <ResponsiveContainer>
-              <BarChart data={localizedReportData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+              <ComposedChart data={localizedReportData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis 
                   dataKey="month" 
@@ -45,22 +47,42 @@ export default function ReportsPanel() {
                   fontSize={12}
                 />
                 <YAxis
+                  yAxisId="left"
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `${value} T`}
                 />
+                 <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="hsl(var(--primary))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${(value / 10000).toFixed(1)}`}
+                />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
+                  content={<ChartTooltipContent 
+                    indicator="dot" 
+                    formatter={(value, name) => {
+                      if (name === 'revenue') {
+                        return `${(Number(value) / 10000).toLocaleString()}만원`;
+                      }
+                      return `${value} T`;
+                    }}
+                  />}
                 />
-                <Bar dataKey="plastic" stackId="a" fill="var(--color-plastic)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="glass" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="paper" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="metal" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="mixed" stackId="a" fill="var(--color-mixed)" radius={[0, 0, 4, 4]} />
-              </BarChart>
+                <Legend />
+                <Bar dataKey="plastic" stackId="a" fill="var(--color-plastic)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="glass" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="paper" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="metal" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} barSize={30}/>
+                <Bar dataKey="mixed" stackId="a" fill="var(--color-mixed)" radius={[4, 4, 0, 0]} barSize={30}/>
+                <Line type="monotone" dataKey="revenue" stroke="var(--color-revenue)" strokeWidth={2} yAxisId="right" />
+              </ComposedChart>
             </ResponsiveContainer>
           </ChartContainer>
         </CardContent>

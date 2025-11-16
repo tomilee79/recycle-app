@@ -96,12 +96,12 @@ export const collectionTasks: CollectionTask[] = [
 ];
 
 export const reportData: ReportData[] = [
-  { month: 'Jan', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50 },
-  { month: 'Feb', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60 },
-  { month: 'Mar', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70 },
-  { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80 },
-  { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90 },
-  { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100 },
+  { month: 'Jan', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50, revenue: 12550 },
+  { month: 'Feb', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60, revenue: 15800 },
+  { month: 'Mar', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70, revenue: 14230 },
+  { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80, revenue: 17500 },
+  { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800 },
+  { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900 },
 ];
 
 export const drivers: Driver[] = [
