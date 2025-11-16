@@ -10,7 +10,7 @@ import { collectionTasks as initialCollectionTasks, customers, vehicles as initi
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle } from 'lucide-react';
+import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -26,11 +26,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
 import TasksSummary from './tasks-summary';
-import { format } from 'date-fns';
+import { format, addDays, addMonths, addWeeks, isBefore, isEqual } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
+import { Label } from '../ui/label';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 
 const statusMap: { [key in TaskStatus]: string } = {
@@ -69,6 +71,17 @@ const newTaskFormSchema = z.object({
     materialType: z.enum(materialTypes),
     address: z.string().min(5, "주소를 5자 이상 입력해주세요."),
     scheduledDate: z.date({ required_error: "수거 예정일을 선택해주세요." }),
+    isRecurring: z.boolean().default(false),
+    recurringType: z.enum(['weekly', 'monthly']).optional(),
+    recurringEndDate: z.date().optional(),
+}).refine(data => {
+    if (data.isRecurring) {
+        return !!data.recurringType && !!data.recurringEndDate;
+    }
+    return true;
+}, {
+    message: "반복 설정을 완료해주세요.",
+    path: ["recurringType"],
 });
 type NewTaskFormValues = z.infer<typeof newTaskFormSchema>;
 
@@ -93,7 +106,10 @@ export default function TasksPanel() {
   });
 
   const newForm = useForm<NewTaskFormValues>({
-      resolver: zodResolver(newTaskFormSchema)
+      resolver: zodResolver(newTaskFormSchema),
+      defaultValues: {
+          isRecurring: false,
+      }
   });
 
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
@@ -112,7 +128,6 @@ export default function TasksPanel() {
       prevTasks.map(task => {
         if (taskIds.includes(task.id)) {
             const oldStatus = task.status;
-            // When a task is no longer 'In Progress'
             if (oldStatus === 'In Progress' && (newStatus === 'Completed' || newStatus === 'Cancelled')) {
                 const driverName = task.driver;
                 if (driverName) {
@@ -120,7 +135,6 @@ export default function TasksPanel() {
                     setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverName ? {...v, status: 'Idle'} : v));
                 }
             }
-            // When a task becomes 'In Progress'
             if (newStatus === 'In Progress' && task.driver) {
                 const driverName = task.driver;
                 setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: false} : d));
@@ -152,12 +166,16 @@ export default function TasksPanel() {
     const vehicleToAssign = vehicles.find(v => v.id === vehicleId);
     if (!vehicleToAssign || !vehicleToAssign.driver) return;
     
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress' } : task
-    ));
-    setVehicles(prevVehicles => prevVehicles.map(v => v.id === vehicleId ? { ...v, status: 'On Route' } : v));
-    setDrivers(prevDrivers => prevDrivers.map(d => d.name === vehicleToAssign.driver ? { ...d, isAvailable: false } : d));
-
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        if (task.status !== 'In Progress') { // Only change status if it's not already in progress
+          handleStatusChange([taskId], 'In Progress');
+        }
+        return { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress' };
+      }
+      return task;
+    }));
+    
     toast({
       title: "차량 배정 완료",
       description: `작업에 차량(${vehicleToAssign.name}) 및 운전자(${vehicleToAssign.driver})가 배정되었습니다.`,
@@ -166,34 +184,17 @@ export default function TasksPanel() {
     if (selectedTask?.id === taskId) {
       setSelectedTask(prev => prev ? {...prev, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress'} : null);
     }
-  }, [vehicles, selectedTask, toast]);
+  }, [vehicles, selectedTask, toast, handleStatusChange]);
 
   const handleUpdateTask: SubmitHandler<UpdateTaskFormValues> = (data) => {
     if (!editingTask) return;
     
-    const newStatus = data.status;
+    handleStatusChange([editingTask.id], data.status);
 
-    // Apply status change logic from handleStatusChange
     setTasks(prevTasks =>
-        prevTasks.map(task => {
-            if (task.id === editingTask.id) {
-                const oldStatus = task.status;
-                if (oldStatus === 'In Progress' && (newStatus === 'Completed' || newStatus === 'Cancelled')) {
-                    const driverName = task.driver;
-                    if (driverName) {
-                        setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: true} : d));
-                        setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverName ? {...v, status: 'Idle'} : v));
-                    }
-                }
-                if (newStatus === 'In Progress' && task.driver) {
-                    const driverName = task.driver;
-                    setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: false} : d));
-                    setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverName ? {...v, status: 'On Route'} : v));
-                }
-                return { ...task, ...data };
-            }
-            return task;
-        })
+        prevTasks.map(task => 
+            task.id === editingTask.id ? { ...task, ...data } : task
+        )
     );
     
     toast({
@@ -204,22 +205,55 @@ export default function TasksPanel() {
   }
 
   const handleCreateTask: SubmitHandler<NewTaskFormValues> = (data) => {
-      const newTaskId = `T${String(tasks.length + 1).padStart(3, '0')}`;
-      const newTask: CollectionTask = {
-          id: newTaskId,
-          vehicleId: '',
-          ...data,
+      let newTasks: CollectionTask[] = [];
+      const baseTaskData = {
+          customerId: data.customerId,
+          materialType: data.materialType,
+          address: data.address,
           location: { lat: 37.5665 + (Math.random() - 0.5) * 0.1, lng: 126.9780 + (Math.random() - 0.5) * 0.1 },
-          status: 'Pending',
-          scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
+          status: 'Pending' as TaskStatus,
+          vehicleId: '',
           collectedWeight: 0,
       };
-      setTasks(prev => [newTask, ...prev]);
-      toast({ title: "작업 등록됨", description: "새로운 수거 작업이 성공적으로 등록되었습니다." });
+
+      if (data.isRecurring && data.recurringType && data.recurringEndDate) {
+          let currentDate = data.scheduledDate;
+          while (isBefore(currentDate, data.recurringEndDate) || isEqual(currentDate, data.recurringEndDate)) {
+              newTasks.push({
+                  ...baseTaskData,
+                  id: `T${Date.now()}-${newTasks.length}`,
+                  scheduledDate: format(currentDate, 'yyyy-MM-dd'),
+              });
+              if (data.recurringType === 'weekly') {
+                  currentDate = addWeeks(currentDate, 1);
+              } else if (data.recurringType === 'monthly') {
+                  currentDate = addMonths(currentDate, 1);
+              }
+          }
+      } else {
+          newTasks.push({
+              ...baseTaskData,
+              id: `T${Date.now()}`,
+              scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
+          });
+      }
+
+      setTasks(prev => [...newTasks, ...prev]);
+      toast({ title: "작업 등록됨", description: `${newTasks.length}개의 새로운 수거 작업이 성공적으로 등록되었습니다.` });
       setIsNewTaskModalOpen(false);
       newForm.reset();
   }
 
+  const handleCloneTask = (taskToClone: CollectionTask) => {
+      newForm.reset({
+          customerId: taskToClone.customerId,
+          materialType: taskToClone.materialType,
+          address: taskToClone.address,
+          scheduledDate: new Date(),
+          isRecurring: false,
+      });
+      setIsNewTaskModalOpen(true);
+  }
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -277,21 +311,114 @@ export default function TasksPanel() {
               </div>
                <Dialog open={isNewTaskModalOpen} onOpenChange={setIsNewTaskModalOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button onClick={() => newForm.reset({ isRecurring: false, scheduledDate: new Date() })}>
                       <PlusCircle className="mr-2 h-4 w-4" />새 작업 추가
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="sm:max-w-2xl">
                       <DialogHeader>
                           <DialogTitle>새 작업 추가</DialogTitle>
-                          <DialogDescription>새로운 수거 작업을 시스템에 등록합니다.</DialogDescription>
+                          <DialogDescription>새로운 수거 작업을 시스템에 등록합니다. 반복 작업을 설정할 수 있습니다.</DialogDescription>
                       </DialogHeader>
                       <Form {...newForm}>
                           <form onSubmit={newForm.handleSubmit(handleCreateTask)} className="space-y-4 py-4">
-                              <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>수거 예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                              <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                              <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                              </div>
                               <FormField control={newForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                               <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작 예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+
+                               <FormField
+                                control={newForm.control}
+                                name="isRecurring"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>반복 작업 설정</FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                                />
+                                {newForm.watch('isRecurring') && (
+                                    <Card className="p-4 bg-muted/50">
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={newForm.control}
+                                                name="recurringType"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-3">
+                                                        <FormLabel>반복 주기</FormLabel>
+                                                        <FormControl>
+                                                            <RadioGroup
+                                                                onValueChange={field.onChange}
+                                                                defaultValue={field.value}
+                                                                className="flex items-center space-x-4"
+                                                            >
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="weekly" /></FormControl>
+                                                                    <FormLabel className="font-normal">매주</FormLabel>
+                                                                </FormItem>
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="monthly" /></FormControl>
+                                                                    <FormLabel className="font-normal">매월</FormLabel>
+                                                                </FormItem>
+                                                            </RadioGroup>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={newForm.control}
+                                                name="recurringEndDate"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-col">
+                                                        <FormLabel>반복 종료일</FormLabel>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant={"outline"}
+                                                                        className={cn(
+                                                                            "pl-3 text-left font-normal",
+                                                                            !field.value && "text-muted-foreground"
+                                                                        )}
+                                                                    >
+                                                                        {field.value ? (
+                                                                            format(field.value, "PPP")
+                                                                        ) : (
+                                                                            <span>날짜 선택</span>
+                                                                        )}
+                                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0" align="start">
+                                                                <Calendar
+                                                                    mode="single"
+                                                                    selected={field.value}
+                                                                    onSelect={field.onChange}
+                                                                    disabled={(date) =>
+                                                                        date < (newForm.getValues('scheduledDate') || new Date())
+                                                                    }
+                                                                    initialFocus
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </Card>
+                                )}
                               <DialogFooter><Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button></DialogFooter>
                           </form>
                       </Form>
@@ -415,7 +542,7 @@ export default function TasksPanel() {
                       </DropdownMenu>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Dialog>
+                      <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
                          <AlertDialog>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -430,6 +557,10 @@ export default function TasksPanel() {
                                           <span>수정</span>
                                       </DropdownMenuItem>
                                     </DialogTrigger>
+                                    <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
+                                        <Copy className="mr-2 h-4 w-4" />
+                                        <span>복제</span>
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator/>
                                     <AlertDialogTrigger asChild>
                                       <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
