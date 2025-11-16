@@ -20,7 +20,6 @@ import {
   BarChart3,
   Truck,
   Settings,
-  Bot,
   LogOut,
   Users,
   Building2,
@@ -31,7 +30,7 @@ import ReportsPanel from '@/components/reports/reports-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
 import CustomersPanel from '@/components/customers/customers-panel';
-import PredictPanel from '@/components/predict/predict-panel';
+import SettingsPanel from '@/components/settings/settings-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -49,7 +48,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'predict';
+type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'settings';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -65,7 +64,7 @@ export function MainLayout() {
     vehicles: '차량 관리',
     drivers: '직원 관리',
     customers: '고객 관리',
-    predict: 'AI 예측',
+    settings: '설정',
   };
 
 
@@ -81,8 +80,8 @@ export function MainLayout() {
         return <DriversPanel />;
       case 'customers':
         return <CustomersPanel />;
-      case 'predict':
-        return <PredictPanel />;
+      case 'settings':
+        return <SettingsPanel />;
       default:
         return <DashboardPanel />;
     }
@@ -153,12 +152,12 @@ export function MainLayout() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('predict')}
-                isActive={activeView === 'predict'}
-                tooltip={{ children: 'AI 예측' }}
+                onClick={() => setActiveView('settings')}
+                isActive={activeView === 'settings'}
+                tooltip={{ children: '설정' }}
               >
-                <Bot />
-                <span>AI 예측</span>
+                <Settings />
+                <span>설정</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -166,12 +165,6 @@ export function MainLayout() {
         <SidebarFooter>
           <Separator className="my-2 bg-sidebar-border" />
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{ children: '설정' }}>
-                <Settings />
-                <span>설정</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton>
                 <div className="flex w-full items-center gap-2">

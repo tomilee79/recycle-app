@@ -1,9 +1,10 @@
+
 /**
  * @file Firestore Security Rules for EcoTrack UI Demo
  * @core_philosophy This ruleset provides completely open access to all data for demonstration purposes.
  *   In a production environment, a much stricter security model would be required, likely based on
  *   user roles and data ownership.
- * @data_structure The data is organized into four top-level collections: `vehicles`, `collectionRoutes`,
+ * @data_structure The data is organized into five top-level collections: `admin_users`, `vehicles`, `collectionRoutes`,
  *   `collectionTasks`, and `settlementReports`. Each collection stores data related to its respective entity.
  * @key_security_decisions All read and write access is currently open. In a real application, this would
  *   be restricted based on user authentication and authorization.  For example, listing operations would
@@ -14,6 +15,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    /**
+     * @description Allows anyone to read or write admin user data.
+     * @path /admin_users/{userId}
+     */
+    match /admin_users/{userId} {
+      allow read, write: if true;
+    }
 
     /**
      * @description Allows anyone to read or write vehicle data. In a real application,

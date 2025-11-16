@@ -1,5 +1,32 @@
 {
   "entities": {
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an administrator user account.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier for the user, matching the Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the administrator."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user was created."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user, e.g., 'admin'."
+        }
+      },
+      "required": ["uid", "email", "createdAt", "role"]
+    },
     "CollectionRoute": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CollectionRoute",
@@ -168,6 +195,22 @@
   },
   "firestore": {
     "structure": [
+       {
+        "path": "/admin_users/{userId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Stores administrator user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the admin user (matches Auth UID)."
+            }
+          ]
+        }
+      },
       {
         "path": "/vehicles/{vehicleId}",
         "definition": {
@@ -233,6 +276,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the EcoTrack UI Demo application, focusing on real-time dispatch, geospatial monitoring, and settlement report visualization. Given the requirement for a UI demo without backend logic, the structure prioritizes simplicity and ease of mocking data, while adhering to the principles of Authorization Independence (although not strictly enforced due to the demo nature). Since all auth providers are enabled (password and anonymous), the data will only be secured via security rules.\n\n*   **Vehicles Collection:** Stores vehicle data. This is kept separate for ease of querying and updating vehicle locations.\n*   **CollectionRoutes Collection:** Stores collection route data, including start and end times, status and a denormalized `vehicleId` for simple querying.\n*   **CollectionTasks Collection:** Stores individual collection tasks associated with routes. The `routeId` is denormalized for efficient task retrieval by route.\n*   **SettlementReports Collection:** Stores settlement reports, referencing `routeIds`. This allows for aggregating data and generating visualizations.\n\nThis structure facilitates the core features of the application:\n\n*   **Real-Time Dispatch Dashboard:** Achieved by querying the `Vehicles` and `CollectionRoutes` collections to display vehicle locations and route statuses.\n*   **Geospatial Monitoring:** Directly supported by the `locationLatitude` and `locationLongitude` fields in the `Vehicles` collection.\n*   **Settlement Report Visualization:** Enabled by the `SettlementReports` collection, allowing aggregation of data from associated `CollectionRoutes`.\n\nWhile not strictly required for a UI demo, a production system would require robust security rules. In such a system, we would consider the following:\n\n*   **Authorization Independence:** If access to a `CollectionRoute` depended on the vehicle's owner, we would denormalize the `ownerId` into the `CollectionRoute` document to avoid `get()` calls in security rules.\n*   **QAPs (Rules are not Filters):** The segregation of data into separate collections (`Vehicles`, `CollectionRoutes`, `CollectionTasks`, `SettlementReports`) allows for secure `list` operations based on role or ownership without filtering.\n\nSince there are no users or roles defined, all rules will be set to `allow read, write: if true`"
+    "reasoning": "The Firestore structure is designed to support the EcoTrack UI Demo application, focusing on real-time dispatch, geospatial monitoring, and settlement report visualization. Given the requirement for a UI demo without backend logic, the structure prioritizes simplicity and ease of mocking data, while adhering to the principles of Authorization Independence (although not strictly enforced due to the demo nature). Since all auth providers are enabled (password and anonymous), the data will only be secured via security rules.\n\n*   **AdminUsers Collection:** Stores administrator account information.\n*   **Vehicles Collection:** Stores vehicle data. This is kept separate for ease of querying and updating vehicle locations.\n*   **CollectionRoutes Collection:** Stores collection route data, including start and end times, status and a denormalized `vehicleId` for simple querying.\n*   **CollectionTasks Collection:** Stores individual collection tasks associated with routes. The `routeId` is denormalized for efficient task retrieval by route.\n*   **SettlementReports Collection:** Stores settlement reports, referencing `routeIds`. This allows for aggregating data and generating visualizations.\n\nThis structure facilitates the core features of the application:\n\n*   **Real-Time Dispatch Dashboard:** Achieved by querying the `Vehicles` and `CollectionRoutes` collections to display vehicle locations and route statuses.\n*   **Geospatial Monitoring:** Directly supported by the `locationLatitude` and `locationLongitude` fields in the `Vehicles` collection.\n*   **Settlement Report Visualization:** Enabled by the `SettlementReports` collection, allowing aggregation of data from associated `CollectionRoutes`.\n\nWhile not strictly required for a UI demo, a production system would require robust security rules. In such a system, we would consider the following:\n\n*   **Authorization Independence:** If access to a `CollectionRoute` depended on the vehicle's owner, we would denormalize the `ownerId` into the `CollectionRoute` document to avoid `get()` calls in security rules.\n*   **QAPs (Rules are not Filters):** The segregation of data into separate collections (`Vehicles`, `CollectionRoutes`, `CollectionTasks`, `SettlementReports`) allows for secure `list` operations based on role or ownership without filtering.\n\nSince there are no users or roles defined, all rules will be set to `allow read, write: if true`"
   }
 }
