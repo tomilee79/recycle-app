@@ -1,6 +1,6 @@
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer } from './types';
-import { addDays, format } from 'date-fns';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification } from './types';
+import { addDays, format, formatISO, subMinutes } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
   {
@@ -156,3 +156,38 @@ export const customers: Customer[] = [
     expiryDate: format(addDays(new Date(), 400), 'yyyy-MM-dd')
   },
 ];
+
+export const notifications: Notification[] = [
+    {
+      id: 'N001',
+      title: '차량 정비 필요: CleanCruiser',
+      description: 'V004 차량의 정기 점검일이 도래했습니다.',
+      timestamp: formatISO(subMinutes(new Date(), 5)),
+      type: 'Warning',
+      isRead: false,
+    },
+    {
+      id: 'N002',
+      title: '수거 완료: EarthWagon 5',
+      description: 'V005 차량이 모든 수거 작업을 완료했습니다.',
+      timestamp: formatISO(subMinutes(new Date(), 32)),
+      type: 'Info',
+      isRead: false,
+    },
+    {
+      id: 'N003',
+      title: '경로 이탈: RecycleRover',
+      description: 'V003 차량이 지정된 경로를 이탈했습니다.',
+      timestamp: formatISO(subMinutes(new Date(), 48)),
+      type: 'Error',
+      isRead: true,
+    },
+    {
+      id: 'N004',
+      title: '신규 배차 등록',
+      description: '새로운 배차가 GreenMover 2 차량에 할당되었습니다.',
+      timestamp: formatISO(subMinutes(new Date(), 90)),
+      type: 'Info',
+      isRead: true,
+    },
+  ];

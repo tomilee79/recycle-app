@@ -24,6 +24,7 @@ import {
   Users,
   Building2,
   Bot,
+  Bell,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -33,6 +34,7 @@ import DriversPanel from '@/components/drivers/drivers-panel';
 import CustomersPanel from '@/components/customers/customers-panel';
 import SettingsPanel from '@/components/settings/settings-panel';
 import PredictPanel from '@/components/predict/predict-panel';
+import NotificationsPanel from '@/components/notifications/notifications-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -50,7 +52,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'predict' | 'settings';
+type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'predict' | 'notifications' | 'settings';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -67,6 +69,7 @@ export function MainLayout() {
     drivers: '직원 관리',
     customers: '고객 관리',
     predict: 'AI 예측',
+    notifications: '알림 센터',
     settings: '설정',
   };
 
@@ -85,6 +88,8 @@ export function MainLayout() {
         return <CustomersPanel />;
       case 'predict':
         return <PredictPanel />;
+      case 'notifications':
+        return <NotificationsPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -124,6 +129,16 @@ export function MainLayout() {
                 <BarChart3 />
                 <span>보고서</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    onClick={() => setActiveView('notifications')}
+                    isActive={activeView === 'notifications'}
+                    tooltip={{ children: '알림 센터' }}
+                >
+                    <Bell />
+                    <span>알림 센터</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton

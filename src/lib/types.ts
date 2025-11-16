@@ -49,3 +49,12 @@ export type Customer = {
   contactPerson: string;
   expiryDate: string; // YYYY-MM-DD
 };
+
+export type Notification = {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  type: 'Warning' | 'Info' | 'Error';
+  isRead: boolean;
+};
