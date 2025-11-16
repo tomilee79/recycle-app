@@ -4,11 +4,11 @@ import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notificatio
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const users: User[] = [
-    { id: 'U001', name: '김관리', email: 'admin@ecotrack.co.kr', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
-    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
-    { id: 'U003', name: '박사원', email: 'user@ecotrack.co.kr', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
-    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
-    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
+    { id: 'U001', name: '김관리', email: 'admin@ecotrack.co.kr', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1529995049601-ef63465a463f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlJTIwcGVyc29ufGVufDB8fHx8MTc2MzE3OTU0OHww&ixlib=rb-4.1.0&q=80&w=1080' },
+    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHByb2ZpbGV8ZW58MHx8fHwxNzYzOTExODc5fDA&ixlib=rb-4.1.0&q=80&w=1080' },
+    { id: 'U003', name: '박사원', email: 'user@ecotrack.co.kr', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcHJvZmlsZXxlbnwwfHx8fDE3NjM5MTE5MDB8MA&ixlib=rb-4.1.0&q=80&w=1080' },
+    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwcm9maWxlfGVufDB8fHx8MTc2MzkxMTk0N3ww&ixlib=rb-4.1.0&q=80&w=1080' },
+    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtYWxlJTIwcHJvZmlsZXxlbnwwfHx8fDE3NjM5MTE5MDB8MA&ixlib=rb-4.1.0&q=80&w=1080' },
 ];
 
 export const vehicles: Vehicle[] = [
@@ -106,7 +106,7 @@ const sampleComments: Comment[] = [
             {
                 id: 'REPLY01',
                 authorId: 'U001',
-                text: '@이매니저님, 확인했습니다. 다음 주 배차 일정에 반영하겠습니다.',
+                text: '@이매니저, 확인했습니다. 다음 주 배차 일정에 반영하겠습니다.',
                 timestamp: formatISO(subMinutes(new Date(), 30)),
             }
         ]
@@ -132,6 +132,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T02',
@@ -145,10 +146,12 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T03',
     vehicleId: '',
+    driver: undefined,
     customerId: 'C003',
     materialType: 'Glass',
     address: '서울시 송파구 올림픽로 300',
@@ -157,6 +160,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(today, 1), 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T04',
@@ -195,7 +199,8 @@ export const collectionTasks: CollectionTask[] = [
         collectedWeight: 1500,
         notes: '수거량 예상보다 많음.',
         photoUrl: 'https://images.unsplash.com/photo-1611284446314-60a58ac08048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    }
+        comments: [],
+    },
   },
   {
     id: 'T06',
@@ -228,6 +233,7 @@ export const collectionTasks: CollectionTask[] = [
    {
     id: 'T08',
     vehicleId: '',
+    driver: undefined,
     customerId: 'C005',
     materialType: 'Glass',
     address: '서울시 용산구 이태원로 29',
@@ -236,10 +242,12 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(today, 3), 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T09',
     vehicleId: '',
+    driver: undefined,
     customerId: 'C001',
     materialType: 'Paper',
     address: '서울시 강남구 영동대로 513',
@@ -248,6 +256,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(addDays(startOfNextMonth, 5), 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T10',
@@ -275,10 +284,12 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
   {
     id: 'T12',
     vehicleId: '',
+    driver: undefined,
     customerId: 'C004',
     materialType: 'Plastic',
     address: '서울시 은평구 통일로 1050',
@@ -287,6 +298,7 @@ export const collectionTasks: CollectionTask[] = [
     scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
     collectedWeight: 0,
     report: null,
+    completedTime: undefined,
   },
 ];
 

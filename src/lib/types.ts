@@ -200,4 +200,5 @@ export type User = {
   role: UserRole;
   status: UserStatus;
   createdAt: string; // YYYY-MM-DD
+  avatarUrl?: string;
 };

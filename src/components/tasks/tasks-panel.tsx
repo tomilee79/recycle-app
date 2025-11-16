@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,7 +11,7 @@ import { collectionTasks as initialCollectionTasks, customers, vehicles as initi
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy, AlertTriangle, FileText, MessageSquare } from 'lucide-react';
+import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy, AlertTriangle, FileText, MessageSquare, X, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -80,6 +80,14 @@ const newTaskFormSchema = z.object({
 });
 type NewTaskFormValues = z.infer<typeof newTaskFormSchema>;
 
+const updateTaskFormSchema = z.object({
+    customerId: z.string().min(1, "고객사를 선택해주세요."),
+    materialType: z.enum(materialTypes),
+    address: z.string().min(5, "주소를 5자 이상 입력해주세요."),
+    scheduledDate: z.date({ required_error: "수거 예정일을 선택해주세요." }),
+});
+type UpdateTaskFormValues = z.infer<typeof updateTaskFormSchema>;
+
 
 export default function TasksPanel() {
   const [tasks, setTasks] = useState<CollectionTask[]>(initialCollectionTasks);
@@ -102,6 +110,21 @@ export default function TasksPanel() {
           isRecurring: false,
       }
   });
+
+  const updateForm = useForm<UpdateTaskFormValues>({
+    resolver: zodResolver(updateTaskFormSchema),
+  });
+
+  useEffect(() => {
+    if (selectedTask && isEditing) {
+      updateForm.reset({
+        customerId: selectedTask.customerId,
+        materialType: selectedTask.materialType,
+        address: selectedTask.address,
+        scheduledDate: parseISO(selectedTask.scheduledDate),
+      });
+    }
+  }, [selectedTask, isEditing, updateForm]);
 
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
   const getVehicle = (vehicleId: string): Vehicle | undefined => vehicles.find(v => v.id === vehicleId);
@@ -161,9 +184,10 @@ export default function TasksPanel() {
     const vehicleToAssign = vehicles.find(v => v.id === vehicleId);
     if (!vehicleToAssign || !vehicleToAssign.driver) return;
     
+    let newStatus: TaskStatus = 'Pending';
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        const newStatus = task.status === 'Pending' ? 'In Progress' : task.status;
+        newStatus = task.status === 'Pending' ? 'In Progress' : task.status;
         if (task.status !== newStatus) {
             handleStatusChange([taskId], newStatus);
         }
@@ -172,8 +196,10 @@ export default function TasksPanel() {
       return task;
     }));
     
-    setDrivers(prevDrivers => prevDrivers.map(d => d.name === vehicleToAssign.driver ? {...d, isAvailable: false} : d));
-    setVehicles(prevVehicles => prevVehicles.map(v => v.id === vehicleId ? {...v, status: 'On Route'} : v));
+    if (newStatus === 'In Progress') {
+        setDrivers(prevDrivers => prevDrivers.map(d => d.name === vehicleToAssign.driver ? {...d, isAvailable: false} : d));
+        setVehicles(prevVehicles => prevVehicles.map(v => v.id === vehicleId ? {...v, status: 'On Route'} : v));
+    }
     
     toast({
       title: "차량 배정 완료",
@@ -181,7 +207,7 @@ export default function TasksPanel() {
     });
 
     if (selectedTask?.id === taskId) {
-      setSelectedTask(prev => prev ? {...prev, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress'} : null);
+      setSelectedTask(prev => prev ? {...prev, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: newStatus} : null);
     }
   }, [vehicles, selectedTask, toast, handleStatusChange]);
 
@@ -225,6 +251,19 @@ export default function TasksPanel() {
       setIsNewTaskModalOpen(false);
       newForm.reset();
   }
+
+  const handleUpdateTask: SubmitHandler<UpdateTaskFormValues> = (data) => {
+    if (!selectedTask) return;
+    const updatedTask = {
+      ...selectedTask,
+      ...data,
+      scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
+    };
+    setTasks(tasks.map(t => (t.id === selectedTask.id ? updatedTask : t)));
+    setSelectedTask(updatedTask);
+    toast({ title: '작업 정보 수정됨', description: '작업의 기본 정보가 성공적으로 수정되었습니다.' });
+    setIsEditing(false);
+  };
   
   const handleSaveReport = (taskId: string, reportData: Omit<TaskReport, 'comments'>) => {
       setTasks(prevTasks => prevTasks.map(task => {
@@ -342,44 +381,42 @@ export default function TasksPanel() {
                 <CardTitle>작업 관리</CardTitle>
                 <CardDescription>모든 수거 작업을 조회하고 관리합니다.</CardDescription>
               </div>
-              <Dialog open={isNewTaskModalOpen} onOpenChange={setIsNewTaskModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => newForm.reset({ isRecurring: false, scheduledDate: new Date() })}>
-                      <PlusCircle className="mr-2 h-4 w-4" />새 작업 추가
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                      <DialogHeader>
-                          <DialogTitle>새 작업 추가</DialogTitle>
-                          <DialogDescription>새로운 수거 작업을 시스템에 등록합니다. 반복 작업을 설정할 수 있습니다.</DialogDescription>
-                      </DialogHeader>
-                      <Form {...newForm}>
-                          <form onSubmit={newForm.handleSubmit(handleCreateTask)} className="space-y-4 py-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                                <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                              </div>
-                              <FormField control={newForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                              
-                              <FormField control={newForm.control} name="isRecurring" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel>반복 작업 설정</FormLabel></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl></FormItem>)}/>
-                              {newForm.watch('isRecurring') && (
-                                  <Card className="p-4 bg-muted/50">
-                                      <div className="grid grid-cols-3 gap-4 items-end">
-                                          <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                                          <FormField control={newForm.control} name="recurringType" render={({ field }) => (
-                                              <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
-                                          )}/>
-                                          <FormField control={newForm.control} name="recurringEndDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>종료일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < (newForm.getValues('scheduledDate') || new Date())} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                                      </div>
-                                  </Card>
-                              )}
-                              {!newForm.watch('isRecurring') && (
-                                <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                              )}
-                              <DialogFooter><Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button></DialogFooter>
-                          </form>
-                      </Form>
-                  </DialogContent>
+               <Dialog open={isNewTaskModalOpen} onOpenChange={setIsNewTaskModalOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => newForm.reset({ isRecurring: false, scheduledDate: new Date() })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />새 작업 추가
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>새 작업 추가</DialogTitle>
+                    <DialogDescription>새로운 수거 작업을 시스템에 등록합니다. 반복 작업을 설정할 수 있습니다.</DialogDescription>
+                  </DialogHeader>
+                  <Form {...newForm}>
+                    <form onSubmit={newForm.handleSubmit(handleCreateTask)} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                          <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                        </div>
+                        <FormField control={newForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={newForm.control} name="isRecurring" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel>반복 작업 설정</FormLabel></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl></FormItem>)}/>
+                        {newForm.watch('isRecurring') ? (
+                            <Card className="p-4 bg-muted/50">
+                                <div className="grid grid-cols-3 gap-4 items-end">
+                                    <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                                    <FormField control={newForm.control} name="recurringType" render={({ field }) => (
+                                        <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField control={newForm.control} name="recurringEndDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>종료일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < (newForm.getValues('scheduledDate') || new Date())} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                                </div>
+                            </Card>
+                        ) : (
+                          <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                        )}
+                        <DialogFooter><Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button></DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
               </Dialog>
             </div>
           </CardHeader>
@@ -598,6 +635,35 @@ export default function TasksPanel() {
                 <ScrollArea className="h-[calc(100vh-8rem)]">
                 <div className="mt-6 space-y-6 pr-6 pb-6">
                   
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">작업 기본 정보</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {isEditing ? (
+                        <Form {...updateForm}>
+                          <form onSubmit={updateForm.handleSubmit(handleUpdateTask)} className="space-y-4">
+                            <FormField control={updateForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                            <FormField control={updateForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <FormField control={updateForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={updateForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>품목</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <div className="flex justify-end">
+                                <Button type="submit" size="sm" disabled={updateForm.formState.isSubmitting}><Save className="mr-2"/>정보 저장</Button>
+                            </div>
+                          </form>
+                        </Form>
+                      ) : (
+                        <div className="space-y-4 text-sm">
+                          <div className="flex items-center gap-3"><Info className="size-5 text-muted-foreground" /><span className="font-medium">현재 상태:</span><Badge variant={statusVariant[selectedTask.status]}>{statusMap[selectedTask.status]}</Badge></div>
+                          <div className="flex items-center gap-3"><MapPin className="size-5 text-muted-foreground" /><span className="font-medium">수거지:</span><span>{selectedTask.address}</span></div>
+                          <div className="flex items-center gap-3"><Trash2 className="size-5 text-muted-foreground" /><span className="font-medium">폐기물 종류:</span><span>{materialTypeMap[selectedTask.materialType]}</span></div>
+                          <div className="flex items-center gap-3"><Truck className="size-5 text-muted-foreground" /><span className="font-medium">배정 차량:</span><span>{vehicle ? `${vehicle.name} (${vehicle.type})` : '미배정'}</span></div>
+                          <div className="flex items-center gap-3"><User className="size-5 text-muted-foreground" /><span className="font-medium">담당 기사:</span><span>{selectedTask.driver || '미배정'}</span></div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {isEditing ? (
                      <Card>
                         <CardHeader>
@@ -624,26 +690,10 @@ export default function TasksPanel() {
                               </div>
                           )}
                           <div className="space-y-4 text-sm">
-                            <div className="flex items-center gap-3">
-                              <Weight className="size-5 text-muted-foreground" />
-                              <span className="font-medium">실제 수거량:</span>
-                              <span>{selectedTask.report.collectedWeight.toLocaleString()} kg</span>
-                            </div>
-                             <div className="flex items-center gap-3">
-                              <User className="size-5 text-muted-foreground" />
-                              <span className="font-medium">담당 기사:</span>
-                              <span>{selectedTask.driver || '미배정'}</span>
-                            </div>
-                             <div className="flex items-start gap-3">
-                              <FileText className="size-5 text-muted-foreground mt-0.5" />
-                              <div className='flex-1'>
-                                <span className="font-medium">특이사항:</span>
-                                <p className='text-muted-foreground whitespace-pre-wrap'>{selectedTask.report.notes || '없음'}</p>
-                              </div>
-                            </div>
-                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span>보고일: {selectedTask.report.reportDate}</span>
-                            </div>
+                            <div className="flex items-center gap-3"><Weight className="size-5 text-muted-foreground" /><span className="font-medium">실제 수거량:</span><span>{selectedTask.report.collectedWeight.toLocaleString()} kg</span></div>
+                             <div className="flex items-center gap-3"><User className="size-5 text-muted-foreground" /><span className="font-medium">담당 기사:</span><span>{selectedTask.driver || '미배정'}</span></div>
+                             <div className="flex items-start gap-3"><FileText className="size-5 text-muted-foreground mt-0.5" /><div className='flex-1'><span className="font-medium">특이사항:</span><p className='text-muted-foreground whitespace-pre-wrap'>{selectedTask.report.notes || '없음'}</p></div></div>
+                             <div className="flex items-center gap-3 text-xs text-muted-foreground"><span>보고일: {selectedTask.report.reportDate}</span></div>
                           </div>
                       </CardContent>
                     </Card>
@@ -660,36 +710,6 @@ export default function TasksPanel() {
                   
                   {!isEditing && (
                     <>
-                    <Card>
-                        <CardHeader><CardTitle className="text-lg">작업 기본 정보</CardTitle></CardHeader>
-                        <CardContent className="space-y-4 text-sm">
-                        <div className="flex items-center gap-3">
-                            <Info className="size-5 text-muted-foreground" />
-                            <span className="font-medium">현재 상태:</span>
-                            <Badge variant={statusVariant[selectedTask.status]}>{statusMap[selectedTask.status]}</Badge>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <MapPin className="size-5 text-muted-foreground" />
-                            <span className="font-medium">수거지:</span>
-                            <span>{selectedTask.address}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Trash2 className="size-5 text-muted-foreground" />
-                            <span className="font-medium">폐기물 종류:</span>
-                            <span>{materialTypeMap[selectedTask.materialType]}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Truck className="size-5 text-muted-foreground" />
-                            <span className="font-medium">배정 차량:</span>
-                            <span>{vehicle ? `${vehicle.name} (${vehicle.type})` : '미배정'}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <User className="size-5 text-muted-foreground" />
-                            <span className="font-medium">담당 기사:</span>
-                            <span>{selectedTask.driver || '미배정'}</span>
-                        </div>
-                        </CardContent>
-                    </Card>
                     <Card>
                         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><MessageSquare/>소통 기록</CardTitle></CardHeader>
                         <CardContent>
