@@ -221,7 +221,7 @@ export default function QuotesPanel() {
         update(index, { ...item, total: newTotal });
       }
     });
-  }, [watchItems, form, update]);
+  }, [watchItems, update]);
 
   const onSubmit: SubmitHandler<QuoteFormValues> = (data) => {
     const { subtotal, tax, total } = calculateTotals(data.items);
@@ -562,5 +562,3 @@ export default function QuotesPanel() {
     </>
   );
 }
-
-    
