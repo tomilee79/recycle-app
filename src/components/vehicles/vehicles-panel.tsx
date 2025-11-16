@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { vehicles as initialVehicles, drivers, customers, equipments as initialEquipments } from "@/lib/mock-data";
+import { vehicles as initialVehicles, drivers as initialDrivers, customers, equipments as initialEquipments } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wrench, Package, Truck, Search, PlusCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Vehicle, Equipment } from '@/lib/types';
+import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -62,6 +62,7 @@ export default function VehiclesPanel() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
+  const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
   const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments);
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
@@ -109,6 +110,31 @@ export default function VehiclesPanel() {
       description: `차량의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
     })
   };
+
+  const handleDriverChange = (vehicleId: string, newDriverId: string) => {
+    const newDriver = drivers.find(d => d.id === newDriverId);
+    if (!newDriver) return;
+
+    setVehicles(prevVehicles =>
+      prevVehicles.map(v => (v.id === vehicleId ? { ...v, driver: newDriver.name } : v))
+    );
+
+    setDrivers(prevDrivers =>
+      prevDrivers.map(d => {
+        if (d.id === newDriverId) return { ...d, isAvailable: false };
+        const oldDriverForVehicle = initialVehicles.find(v => v.id === vehicleId)?.driver;
+        if (d.name === oldDriverForVehicle) return { ...d, isAvailable: true };
+        return d;
+      })
+    );
+    
+    toast({
+        title: '운전자 변경 완료',
+        description: `차량 담당 운전자가 ${newDriver.name}님으로 변경되었습니다.`,
+    });
+  };
+
+  const availableDrivers = useMemo(() => drivers.filter(d => d.isAvailable), [drivers]);
 
   const filteredVehicles = useMemo(() => 
     vehicles.filter(vehicle => 
@@ -214,7 +240,7 @@ export default function VehiclesPanel() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {drivers.filter(d => d.isAvailable).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                                  {availableDrivers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -248,7 +274,22 @@ export default function VehiclesPanel() {
                       <TableCell className="font-medium">{vehicle.name}</TableCell>
                       <TableCell>{typeMap[vehicle.type]}</TableCell>
                       <TableCell>{vehicle.capacity.toLocaleString()}</TableCell>
-                      <TableCell>{vehicle.driver}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-auto p-1 font-normal">
+                              {vehicle.driver}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {availableDrivers.map(driver => (
+                              <DropdownMenuItem key={driver.id} onSelect={() => handleDriverChange(vehicle.id, driver.id)}>
+                                {driver.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -413,3 +454,5 @@ export default function VehiclesPanel() {
     </>
   );
 }
+
+    
