@@ -24,6 +24,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
 
 
 const statusMap: { [key in TaskStatus]: string } = {
@@ -313,42 +314,66 @@ export default function TasksPanel() {
                     )}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Badge variant={statusVariant[task.status]}>{statusMap[task.status]}</Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-auto p-0 font-normal">
+                            <Badge variant={statusVariant[task.status]} className="cursor-pointer">{statusMap[task.status]}</Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {statuses.filter(s => s !== task.status).map(s => (
+                            <DropdownMenuItem key={s} onSelect={() => handleStatusChange([task.id], s)}>{statusMap[s]}으로 변경</DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell className="text-right">
-                    <AlertDialog>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditingTask(task); form.reset({ collectedWeight: task.collectedWeight, status: task.status }); }}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    <span>수정</span>
-                                  </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <DropdownMenuSeparator/>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>삭제</span>
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                       {editingTask?.id === task.id ? (
+                    <Dialog>
+                       <AlertDialog>
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                  <DialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditingTask(task); form.reset({ collectedWeight: task.collectedWeight, status: task.status }); }}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        <span>수정</span>
+                                    </DropdownMenuItem>
+                                  </DialogTrigger>
+                                  <DropdownMenuSeparator/>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>삭제</span>
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
                            <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>작업 결과 수정</AlertDialogTitle>
-                                <AlertDialogDescription>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                       </AlertDialog>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>작업 결과 수정</DialogTitle>
+                                <DialogDescription>
                                     작업 #{task.id}의 수거량과 상태를 업데이트합니다.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
+                                </DialogDescription>
+                            </DialogHeader>
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleUpdateTask)} className="space-y-4">
+                                <form onSubmit={form.handleSubmit(handleUpdateTask)} className="space-y-4 py-4">
                                     <FormField control={form.control} name="collectedWeight" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>수거량 (kg)</FormLabel>
@@ -374,28 +399,16 @@ export default function TasksPanel() {
                                             <FormMessage />
                                         </FormItem>
                                     )}/>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={() => setEditingTask(null)}>취소</AlertDialogCancel>
-                                        <Button type="submit">저장</Button>
-                                    </AlertDialogFooter>
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={form.formState.isSubmitting}>
+                                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                            저장
+                                        </Button>
+                                    </DialogFooter>
                                 </form>
                             </Form>
-                           </AlertDialogContent>
-                       ) : (
-                          <AlertDialogContent>
-                              <AlertDialogHeader>
-                                  <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                      이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
-                                  </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                  <AlertDialogCancel>취소</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
-                              </AlertDialogFooter>
-                          </AlertDialogContent>
-                       )}
-                    </AlertDialog>
+                        </DialogContent>
+                    </Dialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -535,3 +548,5 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
+
+    
