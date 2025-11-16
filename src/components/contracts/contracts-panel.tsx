@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { customers, contracts as initialContracts } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
@@ -18,7 +18,7 @@ import { Loader2, PlusCircle, Search, FileSignature, Trash2 } from 'lucide-react
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Contract, ContractItem, ContractStatus } from '@/lib/types';
-import { format, addDays } from 'date-fns';
+import { format, addYears } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
@@ -60,12 +60,12 @@ type ContractFormValues = z.infer<typeof contractFormSchema>;
 export default function ContractsPanel() {
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filter, setFilter] = useState<'All' | ContractStatus>('All');
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
-  const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
+  const getCustomerInfo = (customerId: string) => customers.find(c => c.id === customerId) || { name: '알수없음', address: '알수없음'};
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -73,7 +73,7 @@ export default function ContractsPanel() {
   
   const filteredContractsMemo = useMemo(() => {
     return contracts.filter(c => {
-        const customerName = getCustomerName(c.customerId).toLowerCase();
+        const customerName = getCustomerInfo(c.customerId).name.toLowerCase();
         const searchTerm = search.toLowerCase();
         const statusMatch = filter === 'All' || c.status === filter;
         const searchMatch = customerName.includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
@@ -94,7 +94,7 @@ export default function ContractsPanel() {
     name: "items",
   });
 
-  const openDialog = (contract: Contract | null) => {
+  const openSheet = (contract: Contract | null) => {
     setSelectedContract(contract);
     if (contract) {
         form.reset({
@@ -111,12 +111,12 @@ export default function ContractsPanel() {
             customerId: '',
             status: 'Active',
             startDate: new Date(),
-            endDate: addDays(new Date(), 365),
+            endDate: addYears(new Date(), 1),
             items: [{ id: `item-${Date.now()}`, materialType: '', unitPrice: 0 }],
             notes: '',
         });
     }
-    setIsDialogOpen(true);
+    setIsSheetOpen(true);
   }
 
   const onSubmit: SubmitHandler<ContractFormValues> = (data) => {
@@ -133,7 +133,7 @@ export default function ContractsPanel() {
       setContracts([newContract, ...contracts]);
       toast({ title: "계약 생성됨", description: `${newContract.contractNumber} 계약이 성공적으로 생성되었습니다.` });
     }
-    setIsDialogOpen(false);
+    setIsSheetOpen(false);
   };
   
 
@@ -163,7 +163,7 @@ export default function ContractsPanel() {
                             className="pl-9"
                         />
                     </div>
-                    <Button onClick={() => openDialog(null)}>
+                    <Button onClick={() => openSheet(null)}>
                         <PlusCircle className="mr-2"/>
                         신규 계약
                     </Button>
@@ -181,9 +181,9 @@ export default function ContractsPanel() {
             </TableHeader>
             <TableBody>
               {paginatedContracts.map((contract) => (
-                <TableRow key={contract.id} onClick={() => openDialog(contract)} className="cursor-pointer">
+                <TableRow key={contract.id} onClick={() => openSheet(contract)} className="cursor-pointer">
                   <TableCell className="font-medium">{contract.contractNumber}</TableCell>
-                  <TableCell>{getCustomerName(contract.customerId)}</TableCell>
+                  <TableCell>{getCustomerInfo(contract.customerId).name}</TableCell>
                   <TableCell>{contract.startDate}</TableCell>
                   <TableCell>{contract.endDate}</TableCell>
                   <TableCell>
@@ -217,18 +217,18 @@ export default function ContractsPanel() {
         </CardFooter>
       </Card>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl w-full">
-            <DialogHeader>
-                <DialogTitle className="text-2xl flex items-center gap-2">
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-3xl w-full">
+            <SheetHeader>
+                <SheetTitle className="text-2xl flex items-center gap-2">
                     <FileSignature/> {selectedContract ? '계약 수정' : '신규 계약 작성'}
-                </DialogTitle>
-                <DialogDescription>
+                </SheetTitle>
+                <SheetDescription>
                     {selectedContract ? `계약번호: ${selectedContract.contractNumber}` : '새로운 계약 정보를 입력합니다.'}
-                </DialogDescription>
-            </DialogHeader>
+                </SheetDescription>
+            </SheetHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4 max-h-[70vh] overflow-y-auto pr-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 pb-6">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="customerId" render={({ field }) => (
                       <FormItem>
@@ -316,16 +316,18 @@ export default function ContractsPanel() {
                         <FormControl><Textarea placeholder="계약 관련 특이사항을 입력하세요..." {...field} /></FormControl>
                     </FormItem>
                  )}/>
-                <DialogFooter className="pt-4 pr-6">
+                <div className="pt-4 sticky bottom-0 bg-background py-4">
                     <Button type="submit">
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {selectedContract ? '계약 저장' : '계약 생성'}
                     </Button>
-                </DialogFooter>
+                </div>
             </form>
             </Form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
+
+    
