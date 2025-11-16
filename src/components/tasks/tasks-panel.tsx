@@ -10,7 +10,7 @@ import { collectionTasks as initialCollectionTasks, customers, vehicles, drivers
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Info, MapPin, Trash2, Weight, Truck, User, ChevronDown } from 'lucide-react';
+import { Search, Info, MapPin, Trash2, Weight, Truck, User, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -91,14 +91,14 @@ export default function TasksPanel() {
   
   const handleAssignVehicle = useCallback((taskId: string, vehicleId: string, driver: string) => {
       setTasks(prevTasks => prevTasks.map(task => 
-          task.id === taskId ? { ...task, vehicleId, driver, status: 'Pending' } : task
+          task.id === taskId ? { ...task, vehicleId, driver, status: 'In Progress' } : task
       ));
       toast({
           title: "차량 배정 완료",
           description: `작업에 차량(${vehicleId}) 및 운전자(${driver})가 배정되었습니다.`,
       })
       if (selectedTask?.id === taskId) {
-        setSelectedTask(prev => prev ? {...prev, vehicleId, driver, status: 'Pending'} : null);
+        setSelectedTask(prev => prev ? {...prev, vehicleId, driver, status: 'In Progress'} : null);
       }
   }, [selectedTask, toast]);
 
@@ -218,12 +218,13 @@ export default function TasksPanel() {
                 <TableHead>품목</TableHead>
                 <TableHead>배정 차량</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead className="text-right w-[80px]">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedTasks.map((task) => (
                 <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
-                   <TableCell onClick={(e) => e.stopPropagation()}>
+                   <TableCell>
                         <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
                    </TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.scheduledDate}</TableCell>
@@ -231,7 +232,7 @@ export default function TasksPanel() {
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-auto p-0 font-normal">
@@ -248,6 +249,37 @@ export default function TasksPanel() {
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <AlertDialog>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>삭제</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
