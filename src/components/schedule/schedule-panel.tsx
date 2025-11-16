@@ -1,31 +1,32 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { collectionTasks, customers } from "@/lib/mock-data";
 import { format, isSameDay } from 'date-fns';
 import { Badge } from '../ui/badge';
 import type { CollectionTask } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 import { Calendar as CalendarIcon, MapPin, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { DayContent, DayProps } from 'react-day-picker';
 
-
-const statusMap: { [key: string]: string } = {
+const statusMap: { [key in CollectionTask['status']]: string } = {
   'Pending': '대기중',
   'In Progress': '수거중',
   'Completed': '완료',
   'Cancelled': '취소'
 };
 
-const statusVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+const statusVariant: { [key in CollectionTask['status']]: "default" | "secondary" | "destructive" | "outline" } = {
     'Completed': 'default',
     'In Progress': 'secondary',
     'Pending': 'outline',
     'Cancelled': 'destructive',
 };
-
 
 const materialTypeMap: { [key: string]: string } = {
     'Plastic': '플라스틱',
@@ -37,23 +38,47 @@ const materialTypeMap: { [key: string]: string } = {
 
 export default function SchedulePanel() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [tasks, setTasks] = useState<CollectionTask[]>(collectionTasks);
+  const { toast } = useToast();
 
   const scheduledDays = useMemo(() => {
     const days = new Set<string>();
-    collectionTasks.forEach(task => {
+    tasks.forEach(task => {
       days.add(task.scheduledDate);
     });
     return Array.from(days).map(day => new Date(day));
-  }, []);
+  }, [tasks]);
 
   const selectedDayTasks = useMemo(() => {
     if (!date) return [];
-    return collectionTasks.filter(task => isSameDay(new Date(task.scheduledDate), date));
-  }, [date]);
+    return tasks.filter(task => isSameDay(new Date(task.scheduledDate), date));
+  }, [date, tasks]);
 
   const getCustomerName = (customerId: string) => {
     return customers.find(c => c.id === customerId)?.name || '알수없음';
   }
+
+  const handleStatusChange = useCallback((taskId: string, newStatus: CollectionTask['status']) => {
+    setTasks(prevTasks => 
+        prevTasks.map(task => 
+            task.id === taskId ? { ...task, status: newStatus } : task
+        )
+    );
+    toast({
+        title: '상태 변경 완료',
+        description: `작업 상태가 '${statusMap[newStatus]}'(으)로 변경되었습니다.`,
+    });
+  }, [toast]);
+  
+  const CustomDay: CalendarProps['components']['Day'] = (props: DayProps) => {
+    const isScheduled = scheduledDays.some(scheduledDay => isSameDay(props.date, scheduledDay));
+    return (
+      <div className="relative">
+        <DayContent {...props} />
+        {isScheduled && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary" />}
+      </div>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -68,13 +93,7 @@ export default function SchedulePanel() {
                 selected={date}
                 onSelect={setDate}
                 className="p-0"
-                modifiers={{ scheduled: scheduledDays }}
-                modifiersStyles={{
-                    scheduled: { 
-                        fontWeight: 'bold',
-                        color: 'hsl(var(--primary))'
-                    }
-                }}
+                components={{ Day: CustomDay }}
             />
         </CardContent>
       </Card>
@@ -93,9 +112,24 @@ export default function SchedulePanel() {
                 {selectedDayTasks.length > 0 ? (
                     selectedDayTasks.map(task => (
                     <div key={task.id} className="p-3 border rounded-lg bg-muted/20">
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="flex justify-between items-start mb-2">
                             <p className="font-semibold">{getCustomerName(task.customerId)}</p>
-                            <Badge variant={statusVariant[task.status]}>{statusMap[task.status]}</Badge>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-auto p-0 font-normal">
+                                        <Badge variant={statusVariant[task.status]} className="cursor-pointer">
+                                            {statusMap[task.status]}
+                                        </Badge>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {(Object.keys(statusMap) as Array<CollectionTask['status']>).filter(status => status !== task.status).map(status => (
+                                        <DropdownMenuItem key={status} onSelect={() => handleStatusChange(task.id, status)}>
+                                            {statusMap[status]}으로 변경
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                         <div className="text-sm text-muted-foreground space-y-1">
                             <p className="flex items-center gap-2"><MapPin className="size-4"/> {task.address}</p>

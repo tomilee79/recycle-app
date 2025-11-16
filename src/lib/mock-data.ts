@@ -199,6 +199,28 @@ export const collectionTasks: CollectionTask[] = [
     completedTime: '14:30',
     collectedWeight: 2200,
   },
+  {
+    id: 'T11',
+    vehicleId: 'V002',
+    customerId: 'C002',
+    materialType: 'Glass',
+    address: '서울시 강동구 올림픽로 578',
+    location: { lat: 37.5482, lng: 127.1424 },
+    status: 'Pending',
+    scheduledDate: format(today, 'yyyy-MM-dd'),
+    collectedWeight: 0,
+  },
+  {
+    id: 'T12',
+    vehicleId: 'V003',
+    customerId: 'C004',
+    materialType: 'Plastic',
+    address: '서울시 은평구 통일로 1050',
+    location: { lat: 37.6192, lng: 126.9213 },
+    status: 'Cancelled',
+    scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
+    collectedWeight: 0,
+  },
 ];
 
 export const reportData: ReportData[] = [
