@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -166,114 +165,94 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/dashboard" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'dashboard'}
-                  tooltip={{ children: '실시간 배차 현황' }}
-                  asChild
-                >
-                  <a><Truck /><span>실시간 배차 현황</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'dashboard'}
+                tooltip={{ children: '실시간 배차 현황' }}
+                asChild
+              >
+                <Link href="/dashboard"><Truck /><span>실시간 배차 현황</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/schedule" passHref>
-                    <SidebarMenuButton
-                        isActive={activeView === 'schedule'}
-                        tooltip={{ children: '일정 관리' }}
-                        asChild
-                    >
-                        <a><Calendar /><span>일정 관리</span></a>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Link href="/tasks" passHref>
                 <SidebarMenuButton
-                  isActive={activeView === 'tasks'}
-                  tooltip={{ children: '작업 관리' }}
-                  asChild
-                >
-                 <a><ClipboardList /><span>작업 관리</span></a>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Link href="/todos" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'todos'}
-                  tooltip={{ children: '할일 관리' }}
-                  asChild
-                >
-                  <a><CheckSquare /><span>할일 관리</span></a>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-               <Link href="/quotes" passHref>
-                    <SidebarMenuButton
-                    isActive={activeView === 'quotes'}
-                    tooltip={{ children: '견적 관리' }}
+                    isActive={activeView === 'schedule'}
+                    tooltip={{ children: '일정 관리' }}
                     asChild
-                    >
-                    <a><FileText /><span>견적 관리</span></a>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Link href="/billing" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'billing'}
-                  tooltip={{ children: '정산 관리' }}
-                  asChild
                 >
-                  <a><Receipt /><span>정산 관리</span></a>
+                    <Link href="/schedule"><Calendar /><span>일정 관리</span></Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/notifications" passHref>
-                    <SidebarMenuButton
-                        isActive={activeView === 'notifications'}
-                        tooltip={{ children: '알림 센터' }}
-                        asChild
-                    >
-                        <a><Bell /><span>알림 센터</span></a>
-                    </SidebarMenuButton>
-                </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'tasks'}
+                tooltip={{ children: '작업 관리' }}
+                asChild
+              >
+               <Link href="/tasks"><ClipboardList /><span>작업 관리</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/waste-analysis" passHref>
+              <SidebarMenuButton
+                isActive={activeView === 'todos'}
+                tooltip={{ children: '할일 관리' }}
+                asChild
+              >
+                <Link href="/todos"><CheckSquare /><span>할일 관리</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={activeView === 'waste-analysis'}
-                  tooltip={{ children: '상세 폐기물 분석' }}
-                  asChild
+                isActive={activeView === 'quotes'}
+                tooltip={{ children: '견적 관리' }}
+                asChild
                 >
-                  <a><PieChart /><span>폐기물 분석</span></a>
+                <Link href="/quotes"><FileText /><span>견적 관리</span></Link>
                 </SidebarMenuButton>
-              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeView === 'billing'}
+                tooltip={{ children: '정산 관리' }}
+                asChild
+              >
+                <Link href="/billing"><Receipt /><span>정산 관리</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    isActive={activeView === 'notifications'}
+                    tooltip={{ children: '알림 센터' }}
+                    asChild
+                >
+                    <Link href="/notifications"><Bell /><span>알림 센터</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeView === 'waste-analysis'}
+                tooltip={{ children: '상세 폐기물 분석' }}
+                asChild
+              >
+                <Link href="/waste-analysis"><PieChart /><span>폐기물 분석</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/route-optimization" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'route-optimization'}
-                  tooltip={{ children: 'AI 경로 최적화' }}
-                  asChild
-                >
-                 <a><Route /><span>경로 최적화</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'route-optimization'}
+                tooltip={{ children: 'AI 경로 최적화' }}
+                asChild
+              >
+               <Link href="/route-optimization"><Route /><span>경로 최적화</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/vehicles" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'vehicles'}
-                  tooltip={{ children: '차량 및 장비 관리' }}
-                  asChild
-                >
-                  <a><LayoutDashboard /><span>차량 및 장비</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'vehicles'}
+                tooltip={{ children: '차량 및 장비 관리' }}
+                asChild
+              >
+                <Link href="/vehicles"><LayoutDashboard /><span>차량 및 장비</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             
             <SidebarMenuItem>
@@ -283,16 +262,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 activeView={activeView}
                 defaultOpen={['drivers', 'driver-performance'].includes(activeView)}
               >
-                  <Link href="/drivers" passHref>
-                    <SidebarMenuSubButton isActive={activeView === 'drivers'} asChild>
-                        <a><ClipboardList /><span>직원 목록</span></a>
-                    </SidebarMenuSubButton>
-                  </Link>
-                  <Link href="/driver-performance" passHref>
-                    <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
-                        <a><Medal/><span>성과 대시보드</span></a>
-                    </SidebarMenuSubButton>
-                  </Link>
+                <SidebarMenuSubButton isActive={activeView === 'drivers'} asChild>
+                    <Link href="/drivers"><ClipboardList /><span>직원 목록</span></Link>
+                </SidebarMenuSubButton>
+                <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
+                    <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
+                </SidebarMenuSubButton>
               </CollapsibleSidebarMenu>
             </SidebarMenuItem>
 
@@ -303,62 +278,50 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 activeView={activeView}
                 defaultOpen={['customers', 'contracts'].includes(activeView)}
               >
-                  <Link href="/customers" passHref>
-                    <SidebarMenuSubButton isActive={activeView === 'customers'} asChild>
-                        <a><Users2 /><span>고객 목록</span></a>
-                    </SidebarMenuSubButton>
-                  </Link>
-                  <Link href="/contracts" passHref>
-                    <SidebarMenuSubButton isActive={activeView === 'contracts'} asChild>
-                        <a><FileSignature/><span>계약 관리</span></a>
-                    </SidebarMenuSubButton>
-                  </Link>
+                  <SidebarMenuSubButton isActive={activeView === 'customers'} asChild>
+                      <Link href="/customers"><Users2 /><span>고객 목록</span></Link>
+                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton isActive={activeView === 'contracts'} asChild>
+                      <Link href="/contracts"><FileSignature/><span>계약 관리</span></Link>
+                  </SidebarMenuSubButton>
               </CollapsibleSidebarMenu>
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <Link href="/predict" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'predict'}
-                  tooltip={{ children: 'AI 예측' }}
-                  asChild
-                >
-                  <a><Bot /><span>AI 예측</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'predict'}
+                tooltip={{ children: 'AI 예측' }}
+                asChild
+              >
+                <Link href="/predict"><Bot /><span>AI 예측</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/users" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'users'}
-                  tooltip={{ children: '사용자 관리' }}
-                  asChild
-                >
-                 <a><Users /><span>사용자 관리</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'users'}
+                tooltip={{ children: '사용자 관리' }}
+                asChild
+              >
+               <Link href="/users"><Users /><span>사용자 관리</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/settings" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'settings'}
-                  tooltip={{ children: '설정' }}
-                  asChild
-                >
-                  <a><Settings /><span>설정</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'settings'}
+                tooltip={{ children: '설정' }}
+                asChild
+              >
+                <Link href="/settings"><Settings /><span>설정</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/contact" passHref>
-                <SidebarMenuButton
-                  isActive={activeView === 'contact'}
-                  tooltip={{ children: '개발사 연락처' }}
-                  asChild
-                >
-                  <a><Info /><span>개발사 연락처</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                isActive={activeView === 'contact'}
+                tooltip={{ children: '개발사 연락처' }}
+                asChild
+              >
+                <Link href="/contact"><Info /><span>개발사 연락처</span></Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
