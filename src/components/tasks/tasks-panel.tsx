@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { placeholderImages } from '@/lib/placeholder-images';
-import type { CollectionTask, TaskStatus, Vehicle, Driver, TaskReport, Comment } from '@/lib/types';
+import type { CollectionTask, TaskStatus, Vehicle, Driver, TaskReport, Comment, User as UserType } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { usePagination } from '@/hooks/use-pagination';
@@ -393,28 +393,33 @@ export default function TasksPanel() {
                     <DialogDescription>새로운 수거 작업을 시스템에 등록합니다. 반복 작업을 설정할 수 있습니다.</DialogDescription>
                   </DialogHeader>
                   <Form {...newForm}>
-                    <form onSubmit={newForm.handleSubmit(handleCreateTask)} className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                          <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                        </div>
-                        <FormField control={newForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={newForm.control} name="isRecurring" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel>반복 작업 설정</FormLabel></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl></FormItem>)}/>
-                        {newForm.watch('isRecurring') ? (
-                            <Card className="p-4 bg-muted/50">
-                                <div className="grid grid-cols-3 gap-4 items-end">
-                                    <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                                    <FormField control={newForm.control} name="recurringType" render={({ field }) => (
-                                        <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={newForm.control} name="recurringEndDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>종료일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < (newForm.getValues('scheduledDate') || new Date())} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                                </div>
-                            </Card>
-                        ) : (
-                          <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                        )}
-                        <DialogFooter><Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button></DialogFooter>
-                    </form>
+                      <form onSubmit={newForm.handleSubmit(handleCreateTask)} className="space-y-4 py-4">
+                          <div className="grid grid-cols-2 gap-4">
+                              <FormField control={newForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                              <FormField control={newForm.control} name="materialType" render={({ field }) => (<FormItem><FormLabel>폐기물 종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="종류를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{materialTypes.map(type => <SelectItem key={type} value={type}>{materialTypeMap[type]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                          </div>
+                          <FormField control={newForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                          <FormField control={newForm.control} name="isRecurring" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel>반복 작업 설정</FormLabel></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl></FormItem>)}/>
+                          {newForm.watch('isRecurring') && (
+                              <Card className="p-4 bg-muted/50">
+                                  <div className="grid grid-cols-3 gap-4 items-end">
+                                      <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                                      <FormField control={newForm.control} name="recurringType" render={({ field }) => (
+                                          <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
+                                      )}/>
+                                      <FormField control={newForm.control} name="recurringEndDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>종료일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < (newForm.getValues('scheduledDate') || new Date())} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                                  </div>
+                              </Card>
+                          )}
+                          {!newForm.watch('isRecurring') && (
+                            <>
+                              <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                            </>
+                          )}
+                          <DialogFooter>
+                            <Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button>
+                          </DialogFooter>
+                      </form>
                   </Form>
                 </DialogContent>
               </Dialog>
@@ -715,8 +720,8 @@ export default function TasksPanel() {
                         <CardContent>
                             <Comments 
                                 comments={selectedTask.report?.comments || []} 
-                                users={users}
-                                currentUser={currentUser}
+                                users={users as UserType[]}
+                                currentUser={currentUser as UserType}
                                 taskId={selectedTask.id}
                                 onSaveComment={handleSaveComment}
                                 onSaveReply={handleSaveReply}
