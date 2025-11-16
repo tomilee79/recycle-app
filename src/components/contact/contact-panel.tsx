@@ -20,7 +20,7 @@ export default function ContactPanel() {
           <CardTitle className="text-2xl font-bold">DX Consulting (디엑스컨설팅)</CardTitle>
           <p className="text-muted-foreground pt-1">귀사의 비즈니스 혁신을 위한 최고의 파트너</p>
         </CardHeader>
-        <CardContent className="space-y-4 pt-4">
+        <CardContent className="space-y-4 pt-4 pb-6">
           <div className="flex items-center gap-4">
             <User className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium">이홍열 대표</span>
@@ -42,14 +42,6 @@ export default function ContactPanel() {
             <span>010-2294-7981</span>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button asChild className="w-full">
-            <a href="https://dxconsulting.co.kr" target="_blank" rel="noopener noreferrer">
-              <LinkIcon className="mr-2 h-4 w-4" />
-              서비스 소개서 보기
-            </a>
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
