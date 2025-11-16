@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -40,6 +40,9 @@ import {
   Info,
   User,
   UserCog,
+  BookUser,
+  FolderKanban,
+  Settings2,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -58,13 +61,33 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Loader2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'admin' | 'contact';
+
+type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
+
+const menuGroups: Record<MenuGroup, View[]> = {
+  operations: ['dashboard', 'schedule', 'tasks', 'route-optimization'],
+  crm: ['customers', 'quotes', 'contracts', 'billing'],
+  resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
+  system: ['todos', 'notifications', 'predict', 'users', 'admin', 'mypage', 'contact'],
+};
 
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const activeView = (params.view || 'dashboard') as View;
+
+  const [openMenuGroup, setOpenMenuGroup] = useState<MenuGroup | null>(() => {
+    for (const group in menuGroups) {
+        if (menuGroups[group as MenuGroup].includes(activeView)) {
+            return group as MenuGroup;
+        }
+    }
+    return null;
+  });
   
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -87,7 +110,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     vehicles: '차량 및 장비 관리',
     drivers: '직원 관리',
     'driver-performance': '성과 대시보드',
-    customers: '고객 목록',
+    customers: '고객 관리',
     contracts: '계약 관리',
     predict: 'AI 예측',
     'waste-analysis': '상세 폐기물 분석',
@@ -111,6 +134,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
     );
   }
+  
+  const isGroupActive = (group: MenuGroup) => menuGroups[group].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -123,168 +148,76 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'dashboard'}
-                tooltip={{ children: '실시간 배차 현황' }}
-                asChild
-              >
-                <Link href="/dashboard"><Truck /><span>실시간 배차 현황</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                    isActive={activeView === 'schedule'}
-                    tooltip={{ children: '일정 관리' }}
-                    asChild
-                >
-                    <Link href="/schedule"><Calendar /><span>일정 관리</span></Link>
+            <Collapsible open={openMenuGroup === 'operations'} onOpenChange={() => setOpenMenuGroup(openMenuGroup === 'operations' ? null : 'operations')} className="w-full">
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton isActive={isGroupActive('operations')} className="justify-between">
+                  <div className="flex items-center gap-2"><FolderKanban /><span>운영 관리</span></div>
+                  <ChevronDown className={cn("size-4 transition-transform", openMenuGroup === 'operations' && "rotate-180")} />
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'tasks'}
-                tooltip={{ children: '작업 관리' }}
-                asChild
-              >
-               <Link href="/tasks"><ClipboardList /><span>작업 관리</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'todos'}
-                tooltip={{ children: '할일 관리' }}
-                asChild
-              >
-                <Link href="/todos"><CheckSquare /><span>할일 관리</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                isActive={activeView === 'quotes'}
-                tooltip={{ children: '견적 관리' }}
-                asChild
-                >
-                <Link href="/quotes"><FileText /><span>견적 관리</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'contracts'}
-                tooltip={{ children: '계약 관리' }}
-                asChild
-              >
-                <Link href="/contracts"><FileSignature /><span>계약 관리</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'billing'}
-                tooltip={{ children: '정산 관리' }}
-                asChild
-              >
-                <Link href="/billing"><Receipt /><span>정산 관리</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                    isActive={activeView === 'customers'}
-                    tooltip={{ children: '고객 목록' }}
-                    asChild
-                >
-                    <Link href="/customers"><Users2 /><span>고객 목록</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                    isActive={activeView === 'drivers'}
-                    tooltip={{ children: '직원 관리' }}
-                    asChild
-                >
-                    <Link href="/drivers"><Users /><span>직원 관리</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                    isActive={activeView === 'notifications'}
-                    tooltip={{ children: '알림 센터' }}
-                    asChild
-                >
-                    <Link href="/notifications"><Bell /><span>알림 센터</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'waste-analysis'}
-                tooltip={{ children: '상세 폐기물 분석' }}
-                asChild
-              >
-                <Link href="/waste-analysis"><PieChart /><span>폐기물 분석</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'route-optimization'}
-                tooltip={{ children: 'AI 경로 최적화' }}
-                asChild
-              >
-               <Link href="/route-optimization"><Route /><span>경로 최적화</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'vehicles'}
-                tooltip={{ children: '차량 및 장비 관리' }}
-                asChild
-              >
-                <Link href="/vehicles"><LayoutDashboard /><span>차량 및 장비</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'predict'}
-                tooltip={{ children: 'AI 예측' }}
-                asChild
-              >
-                <Link href="/predict"><Bot /><span>AI 예측</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-                <SidebarMenuButton isActive={activeView === 'users'} asChild>
-                    <Link href="/users"><Users /><span>사용자 관리</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton isActive={activeView === 'admin'} asChild>
-                    <Link href="/admin"><UserCog /><span>관리자</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton isActive={activeView === 'driver-performance'} asChild>
-                    <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="pl-6">
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'dashboard'} asChild><Link href="/dashboard"><Truck /><span>실시간 배차 현황</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'schedule'} asChild><Link href="/schedule"><Calendar /><span>일정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'tasks'} asChild><Link href="/tasks"><ClipboardList /><span>작업 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'route-optimization'} asChild><Link href="/route-optimization"><Route /><span>경로 최적화</span></Link></SidebarMenuButton></SidebarMenuItem>
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'mypage'}
-                tooltip={{ children: '마이페이지' }}
-                asChild
-              >
-                <Link href="/mypage"><User /><span>마이페이지</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'contact'}
-                tooltip={{ children: '개발사 연락처' }}
-                asChild
-              >
-                <Link href="/contact"><Info /><span>개발사 연락처</span></Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <Collapsible open={openMenuGroup === 'crm'} onOpenChange={() => setOpenMenuGroup(openMenuGroup === 'crm' ? null : 'crm')} className="w-full">
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton isActive={isGroupActive('crm')} className="justify-between">
+                   <div className="flex items-center gap-2"><BookUser /><span>고객/계약</span></div>
+                   <ChevronDown className={cn("size-4 transition-transform", openMenuGroup === 'crm' && "rotate-180")} />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="pl-6">
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'customers'} asChild><Link href="/customers"><Users2 /><span>고객 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'quotes'} asChild><Link href="/quotes"><FileText /><span>견적 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'contracts'} asChild><Link href="/contracts"><FileSignature /><span>계약 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'billing'} asChild><Link href="/billing"><Receipt /><span>정산 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible open={openMenuGroup === 'resources'} onOpenChange={() => setOpenMenuGroup(openMenuGroup === 'resources' ? null : 'resources')} className="w-full">
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton isActive={isGroupActive('resources')} className="justify-between">
+                  <div className="flex items-center gap-2"><LayoutDashboard /><span>자원/분석</span></div>
+                  <ChevronDown className={cn("size-4 transition-transform", openMenuGroup === 'resources' && "rotate-180")} />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="pl-6">
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'vehicles'} asChild><Link href="/vehicles"><Truck /><span>차량 및 장비</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'drivers'} asChild><Link href="/drivers"><Users /><span>직원 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'driver-performance'} asChild><Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'waste-analysis'} asChild><Link href="/waste-analysis"><PieChart /><span>폐기물 분석</span></Link></SidebarMenuButton></SidebarMenuItem>
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
+            
+             <Collapsible open={openMenuGroup === 'system'} onOpenChange={() => setOpenMenuGroup(openMenuGroup === 'system' ? null : 'system')} className="w-full">
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton isActive={isGroupActive('system')} className="justify-between">
+                  <div className="flex items-center gap-2"><Settings2 /><span>AI 및 시스템</span></div>
+                  <ChevronDown className={cn("size-4 transition-transform", openMenuGroup === 'system' && "rotate-180")} />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="pl-6">
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'todos'} asChild><Link href="/todos"><CheckSquare /><span>할일 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'notifications'} asChild><Link href="/notifications"><Bell /><span>알림 센터</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'users'} asChild><Link href="/users"><Users /><span>사용자 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'mypage'} asChild><Link href="/mypage"><User /><span>마이페이지</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'contact'} asChild><Link href="/contact"><Info /><span>개발사 연락처</span></Link></SidebarMenuButton></SidebarMenuItem>
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
