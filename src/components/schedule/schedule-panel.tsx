@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { collectionTasks as initialCollectionTasks, customers } from "@/lib/mock-data";
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Badge } from '../ui/badge';
-import type { CollectionTask } from '@/lib/types';
+import type { CollectionTask, Customer } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 import { Calendar as CalendarIcon, MapPin, Trash2, CheckCircle, Clock, PlusCircle, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -62,6 +62,7 @@ export default function SchedulePanel() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [tasks, setTasks] = useState<CollectionTask[]>(initialCollectionTasks);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [customerFilter, setCustomerFilter] = useState('all');
   const { toast } = useToast();
 
   const form = useForm<ScheduleFormValues>({
@@ -74,6 +75,18 @@ export default function SchedulePanel() {
     }
   });
 
+  const watchedCustomerId = form.watch('customerId');
+
+  useEffect(() => {
+    if (watchedCustomerId) {
+      const customer = customers.find(c => c.id === watchedCustomerId);
+      if (customer) {
+        form.setValue('address', customer.address, { shouldValidate: true });
+      }
+    }
+  }, [watchedCustomerId, form]);
+
+
   const scheduledDays = useMemo(() => {
     const days = new Set<string>();
     tasks.forEach(task => {
@@ -84,8 +97,12 @@ export default function SchedulePanel() {
 
   const selectedDayTasks = useMemo(() => {
     if (!date) return [];
-    return tasks.filter(task => isSameDay(new Date(task.scheduledDate), date)).sort((a, b) => a.id.localeCompare(b.id));
-  }, [date, tasks]);
+    const filteredByDay = tasks.filter(task => isSameDay(new Date(task.scheduledDate), date));
+    const filteredByCustomer = customerFilter === 'all' 
+      ? filteredByDay 
+      : filteredByDay.filter(task => task.customerId === customerFilter);
+    return filteredByCustomer.sort((a, b) => a.id.localeCompare(b.id));
+  }, [date, tasks, customerFilter]);
 
   const getCustomerName = (customerId: string) => {
     return customers.find(c => c.id === customerId)?.name || '알수없음';
@@ -105,15 +122,13 @@ export default function SchedulePanel() {
   
   const onScheduleSubmit: SubmitHandler<ScheduleFormValues> = (data) => {
     const newTaskId = `T${String(tasks.length + 1).padStart(2, '0')}`;
-    const customer = customers.find(c => c.id === data.customerId);
-
+    
     const newTask: CollectionTask = {
         id: newTaskId,
         vehicleId: '',
         customerId: data.customerId,
         materialType: data.materialType,
         address: data.address,
-        // Mock location data based on address for demo purposes
         location: { lat: 37.5665 + (Math.random() - 0.5) * 0.1, lng: 126.9780 + (Math.random() - 0.5) * 0.1 },
         status: 'Pending',
         scheduledDate: format(data.scheduledDate, 'yyyy-MM-dd'),
@@ -122,7 +137,12 @@ export default function SchedulePanel() {
     setTasks(prev => [newTask, ...prev]);
     toast({ title: "일정 등록됨", description: "새로운 수거 일정이 성공적으로 등록되었습니다." });
     setIsFormOpen(false);
-    form.reset();
+    form.reset({
+      customerId: '',
+      materialType: 'Plastic',
+      address: '',
+      scheduledDate: new Date(),
+    });
   };
 
   const CustomDay: CalendarProps['components']['Day'] = (props: DayProps) => {
@@ -130,7 +150,7 @@ export default function SchedulePanel() {
     return (
       <div className="relative">
         <DayContent {...props} />
-        {isScheduled && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary" />}
+        {isScheduled && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary" />}
       </div>
     );
   };
@@ -155,7 +175,7 @@ export default function SchedulePanel() {
       
       <Card className="shadow-lg flex flex-col">
         <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-start">
                 <div>
                     <CardTitle className="flex items-center gap-2">
                         <CalendarIcon className="size-5" />
@@ -207,8 +227,19 @@ export default function SchedulePanel() {
                     </DialogContent>
                 </Dialog>
             </div>
+             <div className="mt-4">
+                <Select value={customerFilter} onValueChange={setCustomerFilter}>
+                    <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="고객사 필터" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">모든 고객사</SelectItem>
+                        {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent className="flex-grow pt-2">
             <ScrollArea className="h-96">
                 <div className="space-y-4 pr-4">
                 {selectedDayTasks.length > 0 ? (
@@ -216,7 +247,7 @@ export default function SchedulePanel() {
                     <div key={task.id} className="p-3 border rounded-lg bg-muted/20">
                         <div className="flex justify-between items-start mb-2">
                             <p className="font-semibold">{getCustomerName(task.customerId)}</p>
-                            <DropdownMenu>
+                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-auto p-0 font-normal">
                                         <Badge variant={statusVariant[task.status]} className="cursor-pointer">
@@ -257,4 +288,4 @@ export default function SchedulePanel() {
   );
 }
 
-    
+  
