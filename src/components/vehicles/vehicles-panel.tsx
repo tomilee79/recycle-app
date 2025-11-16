@@ -94,7 +94,7 @@ export default function VehiclesPanel() {
     setVehicles(prevVehicles =>
       prevVehicles.map(v => {
         if (v.id === vehicleId) {
-          oldDriverName = v.driver; // Store the old driver's name
+          oldDriverName = v.driver;
           return { ...v, driver: newDriver.name };
         }
         return v;
@@ -103,9 +103,7 @@ export default function VehiclesPanel() {
 
     setDrivers(prevDrivers =>
       prevDrivers.map(d => {
-        // Make the new driver unavailable
         if (d.id === newDriverId) return { ...d, isAvailable: false };
-        // Make the old driver available, if they exist
         if (oldDriverName && d.name === oldDriverName) return { ...d, isAvailable: true };
         return d;
       })
@@ -129,7 +127,6 @@ export default function VehiclesPanel() {
       })
     );
 
-    // If status changes to something that frees up the driver, make them available
     if (changedVehicle && (newStatus === 'Idle' || newStatus === 'Completed' || newStatus === 'Maintenance')) {
         const driverName = changedVehicle.driver;
         setDrivers(prevDrivers => 
@@ -139,7 +136,6 @@ export default function VehiclesPanel() {
         );
     }
     
-    // If status changes to 'On Route', make the driver unavailable
     if (changedVehicle && newStatus === 'On Route') {
         const driverName = changedVehicle.driver;
         setDrivers(prevDrivers =>
@@ -159,8 +155,17 @@ export default function VehiclesPanel() {
     setIsSubmitting(true);
     
     setTimeout(() => {
-      handleDriverChange(data.vehicleId, data.driverId);
-      handleStatusChange(data.vehicleId, 'On Route');
+      // Logic to update vehicle and driver status based on the new dispatch
+      const selectedVehicle = vehicles.find(v => v.id === data.vehicleId);
+      const selectedDriver = drivers.find(d => d.id === data.driverId);
+
+      if (selectedVehicle && selectedDriver) {
+        // Change the vehicle status to 'On Route'
+        handleStatusChange(data.vehicleId, 'On Route');
+
+        // This will also make the new driver unavailable and old driver available (if any)
+        handleDriverChange(data.vehicleId, data.driverId);
+      }
 
       toast({
         title: "배차 등록 완료",
