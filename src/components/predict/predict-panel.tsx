@@ -4,8 +4,9 @@
 import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { predictMaterialType, type PredictMaterialTypeOutput } from '@/ai/flows/predict-material-type';
+import { predictMaterialType } from '@/ai/flows/predict-material-type';
+import type { PredictMaterialTypeOutput } from '@/ai/flows/schemas';
+import { PredictMaterialTypeInputSchema, type PredictMaterialTypeInput } from '@/ai/flows/schemas';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,27 +15,21 @@ import { Loader2, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
-const formSchema = z.object({
-  location: z.string().min(3, "위치는 최소 3자 이상이어야 합니다."),
-  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "시간을 HH:MM 형식으로 입력해주세요."),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 export default function PredictPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictMaterialTypeOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<PredictMaterialTypeInput>({
+    resolver: zodResolver(PredictMaterialTypeInputSchema),
     defaultValues: {
       location: "도심 주거 지역",
       time: "09:30",
     },
   });
 
-  const onSubmit: SubmitHandler<FormValues> = async (data) => {
+  const onSubmit: SubmitHandler<PredictMaterialTypeInput> = async (data) => {
     setIsLoading(true);
     setResult(null);
     setError(null);

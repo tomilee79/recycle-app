@@ -31,6 +31,7 @@ import {
   PieChart,
   Medal,
   ChevronDown,
+  Route,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -43,6 +44,7 @@ import PredictPanel from '@/components/predict/predict-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
 import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
 import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
+import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -62,7 +64,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'settings';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'settings';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -125,6 +127,7 @@ export function MainLayout() {
     customers: '고객 관리',
     predict: 'AI 예측',
     'waste-analysis': '상세 폐기물 분석',
+    'route-optimization': 'AI 경로 최적화',
     settings: '설정',
   };
 
@@ -149,6 +152,8 @@ export function MainLayout() {
         return <PredictPanel />;
       case 'waste-analysis':
         return <WasteAnalysisPanel />;
+      case 'route-optimization':
+        return <RouteOptimizationPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -207,6 +212,16 @@ export function MainLayout() {
               >
                 <PieChart />
                 <span>폐기물 분석</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('route-optimization')}
+                isActive={activeView === 'route-optimization'}
+                tooltip={{ children: 'AI 경로 최적화' }}
+              >
+                <Route />
+                <span>경로 최적화</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
