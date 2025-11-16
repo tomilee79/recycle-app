@@ -1,32 +1,135 @@
 
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { useState, useMemo } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { drivers } from "@/lib/mock-data";
+import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, MoreHorizontal, Trash2, Edit } from "lucide-react";
+import type { Driver } from '@/lib/types';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Input } from '../ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+
+
+const driverFormSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, "이름은 2자 이상이어야 합니다."),
+  contact: z.string().regex(/^[0-9]{3}-[0-9]{3,4}-[0-9]{4}$/, "010-1234-5678 형식으로 입력해주세요."),
+});
+
+type DriverFormValues = z.infer<typeof driverFormSchema>;
 
 export default function DriversPanel() {
   const router = useRouter();
+  const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
+  const [search, setSearch] = useState('');
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<DriverFormValues>({
+    resolver: zodResolver(driverFormSchema),
+  });
+
+  const filteredDrivers = useMemo(() =>
+    drivers.filter(d =>
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.contact.includes(search)
+    ),
+    [drivers, search]
+  );
+  
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData,
+    totalPages,
+  } = usePagination(filteredDrivers, 8);
+
+
+  const openSheet = (driver: Driver | null) => {
+    setSelectedDriver(driver);
+    if (driver) {
+      form.reset({
+        id: driver.id,
+        name: driver.name,
+        contact: driver.contact,
+      });
+    } else {
+      form.reset({ id: undefined, name: '', contact: '' });
+    }
+    setIsSheetOpen(true);
+  };
+
+  const closeSheet = () => {
+    setIsSheetOpen(false);
+    setSelectedDriver(null);
+  };
+  
+  const onSubmit = (data: DriverFormValues) => {
+    if (selectedDriver) { // Update
+      setDrivers(drivers.map(d => (d.id === selectedDriver.id ? { ...d, ...data } : d)));
+      toast({ title: "직원 정보 수정", description: `${data.name} 님의 정보가 수정되었습니다.` });
+    } else { // Create
+      const newDriver: Driver = {
+        id: `D${String(drivers.length + 1).padStart(3, '0')}`,
+        name: data.name,
+        contact: data.contact,
+        isAvailable: true,
+      };
+      setDrivers([newDriver, ...drivers]);
+      toast({ title: "직원 추가 완료", description: `${data.name} 님이 새로운 직원으로 등록되었습니다.` });
+    }
+    closeSheet();
+  };
+
+  const handleDelete = (id: string) => {
+      setDrivers(drivers.filter(d => d.id !== id));
+      toast({ title: "직원 삭제 완료", description: "직원 정보가 삭제되었습니다.", variant: "destructive" });
+  }
 
   return (
+    <>
     <div className="space-y-4">
       <Card className="shadow-lg">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>직원 목록</CardTitle>
+              <CardTitle>직원 관리</CardTitle>
               <CardDescription>
                 시스템 계정(로그인) 관리는 '사용자 관리' 메뉴에서, 직원의 성과 분석은 '성과 대시보드'에서 확인하세요.
               </CardDescription>
             </div>
-            <Button onClick={() => router.push('/driver-performance')}>
-              성과 대시보드로 이동 <ArrowRight className="ml-2"/>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.push('/driver-performance')}>
+                성과 대시보드로 이동 <ArrowRight className="ml-2"/>
+              </Button>
+              <Button onClick={() => openSheet(null)}>
+                <PlusCircle className="mr-2"/>새 직원 추가
+              </Button>
+            </div>
+          </div>
+          <div className="relative pt-4">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="이름 또는 연락처로 검색..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -36,10 +139,11 @@ export default function DriversPanel() {
                 <TableHead>이름</TableHead>
                 <TableHead>연락처</TableHead>
                 <TableHead>배차 가능 여부</TableHead>
+                <TableHead className="text-right">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {drivers.map((driver) => (
+              {paginatedData.map((driver) => (
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium">{driver.name}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
@@ -48,12 +152,85 @@ export default function DriversPanel() {
                       {driver.isAvailable ? '가능' : '배차중'}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => openSheet(driver)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            이 작업은 되돌릴 수 없습니다. {driver.name} 직원의 정보가 영구적으로 삭제됩니다.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(driver.id)}>삭제 확인</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter>
+          <Pagination>
+            <PaginationContent>
+                <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1}/></PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages}/></PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </CardFooter>
       </Card>
     </div>
+
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-md">
+            <SheetHeader>
+                <SheetTitle>{selectedDriver ? '직원 정보 수정' : '새 직원 추가'}</SheetTitle>
+                <SheetDescription>{selectedDriver ? '직원의 정보를 수정합니다.' : '새로운 직원 정보를 입력합니다.'}</SheetDescription>
+            </SheetHeader>
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>이름</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="contact"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>연락처</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {selectedDriver ? '저장' : '추가'}
+                </Button>
+            </form>
+            </Form>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

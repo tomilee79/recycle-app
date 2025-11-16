@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React from 'react';
@@ -85,7 +83,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     billing: '정산 관리',
     notifications: '알림 센터',
     vehicles: '차량 및 장비 관리',
-    drivers: '직원 목록',
+    drivers: '직원 관리',
     'driver-performance': '성과 대시보드',
     customers: '고객 목록',
     contracts: '계약 관리',
@@ -197,10 +195,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
              <SidebarMenuItem>
                 <SidebarMenuButton
                     isActive={activeView === 'drivers'}
-                    tooltip={{ children: '직원 목록' }}
+                    tooltip={{ children: '직원 관리' }}
                     asChild
                 >
-                    <Link href="/drivers"><Users /><span>직원 목록</span></Link>
+                    <Link href="/drivers"><Users /><span>직원 관리</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
