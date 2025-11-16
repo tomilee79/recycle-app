@@ -11,8 +11,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
   SidebarInset,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -26,6 +29,8 @@ import {
   Bot,
   Bell,
   PieChart,
+  Medal,
+  ChevronDown,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -37,6 +42,7 @@ import SettingsPanel from '@/components/settings/settings-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
 import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
+import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -52,9 +58,54 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'customers' | 'predict' | 'waste-analysis' | 'settings';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'settings';
+
+const CollapsibleSidebarMenu = ({
+  title,
+  icon,
+  activeView,
+  children,
+  onTitleClick,
+  defaultOpen = false,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  activeView: View;
+  children: React.ReactNode;
+  onTitleClick: () => void;
+  defaultOpen?: boolean;
+}) => {
+  const { state } = useSidebar();
+  const isActive = React.Children.toArray(children).some(child => 
+      React.isValidElement(child) && child.props.isActive
+  );
+
+  return (
+    <Collapsible defaultOpen={defaultOpen || isActive}>
+      <CollapsibleTrigger asChild>
+        <SidebarMenuButton 
+            onClick={onTitleClick}
+            isActive={isActive && state === 'expanded'}
+            className="justify-between"
+            tooltip={{children: title}}
+        >
+          <div className="flex items-center gap-2">
+            {icon}
+            <span>{title}</span>
+          </div>
+          <ChevronDown className={cn("transition-transform duration-200", "group-data-[state=open]:rotate-180")} />
+        </SidebarMenuButton>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarMenuSub>{children}</SidebarMenuSub>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -69,7 +120,8 @@ export function MainLayout() {
     reports: '정산 보고서',
     notifications: '알림 센터',
     vehicles: '차량 관리',
-    drivers: '직원 관리',
+    drivers: '직원 목록',
+    'driver-performance': '운전자 성과',
     customers: '고객 관리',
     predict: 'AI 예측',
     'waste-analysis': '상세 폐기물 분석',
@@ -89,6 +141,8 @@ export function MainLayout() {
         return <VehiclesPanel />;
       case 'drivers':
         return <DriversPanel />;
+      case 'driver-performance':
+        return <DriverPerformancePanel />;
       case 'customers':
         return <CustomersPanel />;
       case 'predict':
@@ -165,16 +219,31 @@ export function MainLayout() {
                 <span>차량</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
             <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setActiveView('drivers')}
-                isActive={activeView === 'drivers'}
-                tooltip={{ children: '직원 관리' }}
+              <CollapsibleSidebarMenu
+                title="직원 관리"
+                icon={<Users />}
+                activeView={activeView}
+                onTitleClick={() => setActiveView('drivers')}
+                defaultOpen={['drivers', 'driver-performance'].includes(activeView)}
               >
-                <Users />
-                <span>직원</span>
-              </SidebarMenuButton>
+                  <SidebarMenuSubButton
+                    onClick={() => setActiveView('drivers')}
+                    isActive={activeView === 'drivers'}
+                  >
+                    <span>직원 목록</span>
+                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton
+                    onClick={() => setActiveView('driver-performance')}
+                    isActive={activeView === 'driver-performance'}
+                  >
+                    <Medal/>
+                    <span>성과 대시보드</span>
+                  </SidebarMenuSubButton>
+              </CollapsibleSidebarMenu>
             </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setActiveView('customers')}

@@ -1,4 +1,5 @@
 
+
 export type Vehicle = {
   id: string;
   name: string;
@@ -59,3 +60,4 @@ export type Notification = {
   type: 'Warning' | 'Info' | 'Error';
   isRead: boolean;
 };
+
