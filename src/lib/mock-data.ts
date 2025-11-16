@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
@@ -126,7 +126,7 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.5262, lng: 126.9113 },
     status: 'Completed',
     scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
-    completedTime: '09:45 AM',
+    completedTime: '09:45',
     collectedWeight: 2100,
   },
    {
@@ -138,7 +138,7 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.4979, lng: 127.0074 },
     status: 'Completed',
     scheduledDate: format(subDays(today, 2), 'yyyy-MM-dd'),
-    completedTime: '11:30 AM',
+    completedTime: '11:30',
     collectedWeight: 1500,
   },
   {
@@ -150,7 +150,7 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.5665, lng: 126.9780 },
     status: 'Completed',
     scheduledDate: format(addDays(startOfThisMonth, 3), 'yyyy-MM-dd'),
-    completedTime: '12:45 PM',
+    completedTime: '12:45',
     collectedWeight: 3000,
   },
   {
@@ -162,7 +162,7 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.5684, lng: 126.8973 },
     status: 'Completed',
     scheduledDate: format(addDays(startOfThisMonth, 5), 'yyyy-MM-dd'),
-    completedTime: '01:30 PM',
+    completedTime: '13:30',
     collectedWeight: 1800,
   },
    {
@@ -196,7 +196,7 @@ export const collectionTasks: CollectionTask[] = [
     location: { lat: 37.571, lng: 126.9772 },
     status: 'Completed',
     scheduledDate: format(addDays(startOfLastMonth, 10), 'yyyy-MM-dd'),
-    completedTime: '02:30 PM',
+    completedTime: '14:30',
     collectedWeight: 2200,
   },
 ];
@@ -381,4 +381,12 @@ export const contracts: Contract[] = [
     createContract('CT002', 'C002', 'Expiring', subMonths(new Date(), 11), addDays(new Date(), 25)),
     createContract('CT003', 'C004', 'Terminated', subMonths(new Date(), 18), subMonths(new Date(), 6)),
     createContract('CT004', 'C005', 'Active', subDays(new Date(), 100), addMonths(new Date(), 14)),
+];
+
+export const expensesData: Expense[] = [
+    { id: 'EXP001', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), category: '유류비', description: 'EcoHauler 1 주유', amount: 120000, vehicleId: 'V001', status: 'Paid' },
+    { id: 'EXP002', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), category: '정비비', description: 'GreenMover 2 타이어 교체', amount: 450000, vehicleId: 'V002', status: 'Paid' },
+    { id: 'EXP003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), category: '통행료', description: '경부고속도로 통행료', amount: 15000, vehicleId: 'V003', status: 'Pending' },
+    { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
+    { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: 'RecycleRover 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
 ];

@@ -38,10 +38,11 @@ import {
   FileText,
   FileSignature,
   Users2,
+  Receipt,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
-import ReportsPanel from '@/components/reports/reports-panel';
+import BillingPanel from '@/components/billing/billing-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
 import CustomersPanel from '@/components/customers/customers-panel';
@@ -74,7 +75,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -129,7 +130,7 @@ export function MainLayout() {
 
   const viewTitles: { [key in View]: string } = {
     dashboard: '실시간 배차 현황',
-    reports: '정산 관리',
+    billing: '대금 관리',
     notifications: '알림 센터',
     vehicles: '차량 관리',
     drivers: '직원 목록',
@@ -150,8 +151,8 @@ export function MainLayout() {
     switch (activeView) {
       case 'dashboard':
         return <DashboardPanel />;
-      case 'reports':
-        return <ReportsPanel />;
+      case 'billing':
+        return <BillingPanel />;
       case 'notifications':
         return <NotificationsPanel />;
       case 'vehicles':
@@ -238,12 +239,12 @@ export function MainLayout() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('reports')}
-                isActive={activeView === 'reports'}
-                tooltip={{ children: '정산 관리' }}
+                onClick={() => setActiveView('billing')}
+                isActive={activeView === 'billing'}
+                tooltip={{ children: '대금 관리' }}
               >
-                <BarChart3 />
-                <span>정산 관리</span>
+                <Receipt />
+                <span>대금 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

@@ -146,3 +146,16 @@ export type Contract = {
     items: ContractItem[];
     notes?: string;
 };
+
+export type ExpenseCategory = '유류비' | '정비비' | '통행료' | '기타';
+export type ExpenseStatus = 'Pending' | 'Paid';
+
+export type Expense = {
+    id: string;
+    date: string;
+    category: ExpenseCategory;
+    description: string;
+    amount: number;
+    vehicleId?: string;
+    status: ExpenseStatus;
+};
