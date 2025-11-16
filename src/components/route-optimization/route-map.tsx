@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -99,7 +100,7 @@ const Directions = ({ route }: { route: OptimizeRouteOutput }) => {
 
 export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, onTaskSelect }: RouteMapProps) {
   const center = useMemo(() => {
-    if (pendingTasks.length === 0) return { lat: 40.7128, lng: -74.0060 };
+    if (pendingTasks.length === 0) return { lat: 37.5665, lng: 126.9780 }; // 서울 중심
     const avgLat = pendingTasks.reduce((sum, task) => sum + task.location.lat, 0) / pendingTasks.length;
     const avgLng = pendingTasks.reduce((sum, task) => sum + task.location.lng, 0) / pendingTasks.length;
     return { lat: avgLat, lng: avgLng };
@@ -119,6 +120,8 @@ export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, 
 
   const selectedTaskIds = new Set(selectedTasks.map(t => t.id));
   const optimizedTaskIdsInOrder = optimizedRoute ? optimizedRoute.optimizedRoute.map(t => t.id) : [];
+
+  const startPointLocation = { lat: 37.508, lng: 127.06 }; // 강남구 본사 차고지 (가상)
 
   return (
     <APIProvider apiKey={apiKey}>
@@ -158,12 +161,15 @@ export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, 
         
         {/* Render numbered markers for optimized route */}
         {optimizedRoute && optimizedRoute.optimizedRoute.map((task, index) => {
-            const collectionTask = pendingTasks.find(p => p.id === task.id) || { location: { lat: 0, lng: 0 }, address: '출발/도착지' };
+            const collectionTask = pendingTasks.find(p => p.id === task.id);
+            const location = task.id === 'start_end' ? startPointLocation : collectionTask?.location;
             
+            if (!location) return null;
+
             // First item is start/end point, don't make it clickable to deselect
             if (index === 0) {
               return (
-                 <AdvancedMarker key={`optimized-${task.id}`} position={collectionTask.location}>
+                 <AdvancedMarker key={`optimized-${task.id}`} position={location}>
                     <Pin background={'hsl(var(--accent))'} borderColor={'hsl(var(--accent))'} glyphColor={'hsl(var(--accent-foreground))'}>
                       <Route/>
                     </Pin>
@@ -174,7 +180,7 @@ export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, 
             return (
               <AdvancedMarker
                 key={`optimized-${task.id}`}
-                position={collectionTask.location}
+                position={location}
               >
                 <Pin background={'hsl(var(--primary))'} borderColor={'hsl(var(--primary))'} glyphColor={'hsl(var(--primary-foreground))'}>
                     {index}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -21,7 +22,7 @@ export default function RouteOptimizationPanel() {
     const [optimizedRoute, setOptimizedRoute] = useState<OptimizeRouteOutput | null>(null);
     
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    const startPoint = { id: "start_end", address: "본사 차고지, New York" };
+    const startPoint = { id: "start_end", address: "서울시 강남구 본사 차고지" };
 
     const handleTaskSelection = (task: OptimizeRouteLocation, selected: boolean) => {
         setOptimizedRoute(null); // Clear optimized route on selection change

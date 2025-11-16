@@ -1,3 +1,4 @@
+
 'use client';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { Card } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 export default function MapPanel() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const position = { lat: 40.7128, lng: -74.0060 };
+  const position = { lat: 37.5665, lng: 126.9780 }; // 서울 중심
 
   if (!apiKey) {
     return (
