@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export function usePagination<T>(data: T[], itemsPerPage: number) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,10 +14,12 @@ export function usePagination<T>(data: T[], itemsPerPage: number) {
     return data.slice(startIndex, endIndex);
   }, [data, currentPage, itemsPerPage]);
   
-  // Reset to page 1 if filters change and current page is out of bounds
-  if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1);
-  }
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(1);
+    }
+  }, [data, currentPage, totalPages]);
+
 
   return {
     currentPage,

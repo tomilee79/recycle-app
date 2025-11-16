@@ -14,7 +14,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Contract, ContractItem, ContractStatus } from '@/lib/types';
@@ -27,6 +27,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Checkbox } from '../ui/checkbox';
 
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
@@ -59,6 +60,7 @@ const contractFormSchema = z.object({
 });
 
 type ContractFormValues = z.infer<typeof contractFormSchema>;
+type SortableField = 'contractNumber' | 'customerName' | 'startDate' | 'endDate' | 'status';
 
 export default function ContractsPanel() {
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
@@ -66,6 +68,8 @@ export default function ContractsPanel() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filter, setFilter] = useState<'All' | ContractStatus>('All');
   const [search, setSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const getCustomerInfo = (customerId: string) => customers.find(c => c.id === customerId) || { name: '알수없음', address: '알수없음'};
@@ -75,14 +79,31 @@ export default function ContractsPanel() {
   });
   
   const filteredContractsMemo = useMemo(() => {
-    return contracts.filter(c => {
-        const customerName = getCustomerInfo(c.customerId).name.toLowerCase();
-        const searchTerm = search.toLowerCase();
-        const statusMatch = filter === 'All' || c.status === filter;
-        const searchMatch = customerName.includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
-        return statusMatch && searchMatch;
-    }).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  }, [contracts, filter, search]);
+    let filtered = contracts
+        .map(c => ({...c, customerName: getCustomerInfo(c.customerId).name}))
+        .filter(c => {
+            const searchTerm = search.toLowerCase();
+            const statusMatch = filter === 'All' || c.status === filter;
+            const searchMatch = c.customerName.toLowerCase().includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
+            return statusMatch && searchMatch;
+        });
+        
+    if (sortConfig !== null) {
+        filtered.sort((a, b) => {
+            if (a[sortConfig.key] < b[sortConfig.key]) {
+              return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (a[sortConfig.key] > b[sortConfig.key]) {
+              return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+    } else {
+        filtered.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    }
+    
+    return filtered;
+  }, [contracts, filter, search, sortConfig]);
   
   const {
     currentPage,
@@ -90,7 +111,6 @@ export default function ContractsPanel() {
     paginatedData: paginatedContracts,
     totalPages,
   } = usePagination(filteredContractsMemo, 10);
-
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -162,18 +182,54 @@ export default function ContractsPanel() {
     closeSheet();
   };
   
-  const handleDelete = (contractId: string) => {
-      setContracts(contracts.filter(c => c.id !== contractId));
+  const handleDelete = (contractIds: string[]) => {
+      setContracts(contracts.filter(c => !contractIds.includes(c.id)));
       toast({
           title: "계약 삭제됨",
-          description: `계약이 삭제되었습니다.`,
+          description: `${contractIds.length}개의 계약이 삭제되었습니다.`,
           variant: 'destructive',
       });
-      if(selectedContract?.id === contractId) {
+      if(selectedContract && contractIds.includes(selectedContract.id)) {
           closeSheet();
       }
+      setSelectedRowKeys(new Set());
   }
   
+  const requestSort = (key: SortableField) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIcon = (key: SortableField) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedRowKeys(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllRows = (checked: boolean) => {
+    if (checked) {
+      setSelectedRowKeys(new Set(paginatedContracts.map(c => c.id)));
+    } else {
+      setSelectedRowKeys(new Set());
+    }
+  };
+
 
   return (
     <>
@@ -184,12 +240,34 @@ export default function ContractsPanel() {
         </CardHeader>
         <CardContent>
             <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                     {(['All', 'Active', 'Expiring', 'Terminated'] as const).map(f => (
-                        <Button key={f} variant={filter === f ? 'default' : 'outline'} onClick={() => setFilter(f)}>
+                        <Button key={f} variant={filter === f ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f)}>
                             {f === 'All' ? '전체' : contractStatusMap[f]}
                         </Button>
                     ))}
+                    {selectedRowKeys.size > 0 && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    선택 삭제 ({selectedRowKeys.size})
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 계약이 영구적으로 삭제됩니다.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>취소</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     <div className="relative w-64">
@@ -210,22 +288,34 @@ export default function ContractsPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>계약번호</TableHead>
-                <TableHead>고객사</TableHead>
-                <TableHead>시작일</TableHead>
-                <TableHead>종료일</TableHead>
-                <TableHead>상태</TableHead>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={paginatedContracts.length > 0 && selectedRowKeys.size === paginatedContracts.length}
+                    onCheckedChange={(checked) => handleSelectAllRows(!!checked)}
+                  />
+                </TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('contractNumber')}>계약번호{getSortIcon('contractNumber')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('customerName')}>고객사{getSortIcon('customerName')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('startDate')}>시작일{getSortIcon('startDate')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('endDate')}>종료일{getSortIcon('endDate')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>상태{getSortIcon('status')}</Button></TableHead>
                 <TableHead className="text-right w-16">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedContracts.map((contract) => (
-                <TableRow key={contract.id} onClick={() => openSheetForEdit(contract)} className="cursor-pointer">
-                  <TableCell className="font-medium">{contract.contractNumber}</TableCell>
-                  <TableCell>{getCustomerInfo(contract.customerId).name}</TableCell>
-                  <TableCell>{contract.startDate}</TableCell>
-                  <TableCell>{contract.endDate}</TableCell>
-                  <TableCell>
+                <TableRow key={contract.id} data-state={selectedRowKeys.has(contract.id) && "selected"}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                        checked={selectedRowKeys.has(contract.id)}
+                        onCheckedChange={() => handleSelectRow(contract.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.contractNumber}</TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{getCustomerInfo(contract.customerId).name}</TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.startDate}</TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>{contract.endDate}</TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => openSheetForEdit(contract)}>
                     <Badge variant={contractStatusVariant[contract.status]}>
                       {contractStatusMap[contract.status]}
                     </Badge>
@@ -261,7 +351,7 @@ export default function ContractsPanel() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                               <AlertDialogCancel>취소</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(contract.id)}>삭제 확인</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete([contract.id])}>삭제 확인</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -414,7 +504,7 @@ export default function ContractsPanel() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(selectedContract.id)}>삭제 확인</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete([selectedContract.id])}>삭제 확인</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                         </AlertDialog>
