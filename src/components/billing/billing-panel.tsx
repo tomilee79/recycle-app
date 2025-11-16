@@ -11,8 +11,8 @@ import { reportData, settlementData as initialSettlementData, expensesData as in
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote, Search, ChevronDown, Edit, ArrowUp, ArrowDown } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote, Search, ChevronDown, Edit, ArrowUp, ArrowDown, Upload, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { MonthPicker } from '../ui/month-picker';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Checkbox } from '../ui/checkbox';
@@ -389,6 +389,38 @@ export default function BillingPanel() {
       }
   }
 
+  const handleSettlementExport = () => {
+    const headers = ["정산월", "고객사", "수거 횟수", "총 수거량(kg)", "정산 금액(원)", "상태"];
+    const csvContent = [
+      headers.join(','),
+      ...filteredSettlements.map(s => [s.month, s.customerName, s.collectionCount, s.totalWeight, s.amount, settlementStatusMap[s.status]].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `settlements_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const handleExpenseExport = () => {
+    const headers = ["지출일", "항목", "내용", "차량", "금액", "상태"];
+    const csvContent = [
+      headers.join(','),
+      ...filteredExpenses.map(e => [e.date, e.category, e.description, e.vehicleId || '-', e.amount, expenseStatusMap[e.status]].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `expenses_export_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const requestSort = (
     key: SettlementSortableField | ExpenseSortableField, 
     type: 'settlement' | 'expense'
@@ -472,7 +504,30 @@ export default function BillingPanel() {
                             <CardTitle>월별 상세 정산 내역</CardTitle>
                             <CardDescription>고객사별 정산 내역 및 청구 상태를 관리합니다.</CardDescription>
                         </div>
-                        <Button onClick={() => openSettlementDialog(null)}><PlusCircle className="mr-2"/>새 정산 추가</Button>
+                        <div className="flex gap-2">
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                    <DialogTitle>CSV 파일에서 정산 내역 가져오기</DialogTitle>
+                                    <DialogDescription>
+                                        CSV 파일을 업로드하여 여러 정산 내역을 한 번에 추가합니다.
+                                    </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <Input type="file" accept=".csv" />
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline">취소</Button>
+                                        <Button>가져오기</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                            <Button variant="outline" onClick={handleSettlementExport}><Download className="mr-2"/>내보내기</Button>
+                            <Button onClick={() => openSettlementDialog(null)}><PlusCircle className="mr-2"/>새 정산 추가</Button>
+                        </div>
                     </div>
                     <div className="flex items-center justify-between gap-2 pt-4">
                         <div className="flex gap-2 items-center">
@@ -596,7 +651,30 @@ export default function BillingPanel() {
                           <CardTitle>비용 (지출) 내역</CardTitle>
                           <CardDescription>차량 유류비, 정비비 등 모든 지출 내역을 관리합니다.</CardDescription>
                       </div>
-                      <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
+                      <div className="flex gap-2">
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                    <DialogTitle>CSV 파일에서 비용 내역 가져오기</DialogTitle>
+                                    <DialogDescription>
+                                        CSV 파일을 업로드하여 여러 비용 내역을 한 번에 추가합니다.
+                                    </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <Input type="file" accept=".csv" />
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline">취소</Button>
+                                        <Button>가져오기</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                            <Button variant="outline" onClick={handleExpenseExport}><Download className="mr-2"/>내보내기</Button>
+                            <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
+                      </div>
                   </div>
                    <div className="flex items-center justify-between gap-2 pt-4">
                         <div className="flex gap-2 items-center">
