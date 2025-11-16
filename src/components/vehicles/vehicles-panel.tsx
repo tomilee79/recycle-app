@@ -109,7 +109,72 @@ export default function VehiclesPanel() {
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                  {/* Form fields... */}
+                  <FormField
+                    control={form.control}
+                    name="customerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>고객사</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="고객사를 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="vehicleId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>차량</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="배차할 차량을 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="driverId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>운전자</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="담당 운전자를 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {drivers.filter(d => d.isAvailable).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      배차 등록
+                    </Button>
+                  </DialogFooter>
                 </form>
               </Form>
             </DialogContent>
