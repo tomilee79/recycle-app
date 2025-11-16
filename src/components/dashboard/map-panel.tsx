@@ -7,12 +7,12 @@ import { Truck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Vehicle } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface MapPanelProps {
   selectedVehicle: Vehicle | null;
   onVehicleSelect: (vehicle: Vehicle | null) => void;
-  // cameraState is no longer used but kept for props compatibility
-  cameraState: any;
+  cameraState: any; // Kept for compatibility but not used
 }
 
 // Map image dimensions
@@ -70,7 +70,7 @@ export default function MapPanel({ selectedVehicle, onVehicleSelect }: MapPanelP
     <Card className="h-full w-full overflow-hidden shadow-lg relative">
       <TooltipProvider>
         <Image
-          src="/map-background.png"
+          src="/images/map.png"
           alt="Map of Seoul and Gyeonggi area"
           width={MAP_WIDTH}
           height={MAP_HEIGHT}

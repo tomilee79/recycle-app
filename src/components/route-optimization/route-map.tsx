@@ -77,7 +77,7 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
   return (
     <Card className="h-full w-full overflow-hidden shadow-lg relative">
         <Image
-          src="/map-background.png"
+          src="/images/map.png"
           alt="Map of Seoul and Gyeonggi area"
           width={MAP_WIDTH}
           height={MAP_HEIGHT}
@@ -120,9 +120,9 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
             
             const { x, y } = convertLatLngToPixels(location.lat, location.lng);
 
-            if (index === 0) { // Start/End Point
+            if (index === 0 || index === optimizedRoute.optimizedRoute.length -1) { // Start/End Point
               return (
-                 <div key={`optimized-${task.id}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}px`, top: `${y}px` }}>
+                 <div key={`optimized-${task.id}-${index}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}px`, top: `${y}px` }}>
                     <div className="p-2 bg-accent rounded-full shadow-lg">
                       <Route className="size-5 text-accent-foreground"/>
                     </div>
