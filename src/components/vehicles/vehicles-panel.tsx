@@ -15,7 +15,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -106,7 +106,7 @@ export default function VehiclesPanel() {
     );
     toast({
       title: '상태 변경 완료',
-      description: `차량 ID ${vehicleId}의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
+      description: `차량의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
     })
   };
 
@@ -126,92 +126,9 @@ export default function VehiclesPanel() {
   return (
     <>
       <Card className="shadow-lg">
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div>
-            <CardTitle>차량 및 장비 관리</CardTitle>
-            <CardDescription>전체 차량 및 장비 목록과 상태를 관리합니다.</CardDescription>
-          </div>
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button>새 배차 등록</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>새 배차 등록</DialogTitle>
-                <DialogDescription>새로운 배차 정보를 입력해주세요.</DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>고객사</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="고객사를 선택하세요" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="vehicleId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>차량</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="배차할 차량을 선택하세요" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="driverId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>운전자</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="담당 운전자를 선택하세요" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {drivers.filter(d => d.isAvailable).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      배차 등록
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+        <CardHeader>
+          <CardTitle>차량 및 장비 관리</CardTitle>
+          <CardDescription>전체 차량 및 장비 목록과 상태를 관리합니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="vehicles">
@@ -220,14 +137,100 @@ export default function VehiclesPanel() {
               <TabsTrigger value="equipment">장비 목록</TabsTrigger>
             </TabsList>
             <TabsContent value="vehicles" className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="차량명, 운전자, ID로 검색..."
-                  value={vehicleSearch}
-                  onChange={(e) => setVehicleSearch(e.target.value)}
-                  className="pl-9"
-                />
+               <div className="flex items-center justify-between gap-2 mt-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="차량명, 운전자, ID로 검색..."
+                    value={vehicleSearch}
+                    onChange={(e) => setVehicleSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                        <PlusCircle className="mr-2"/>
+                        새 배차 등록
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>새 배차 등록</DialogTitle>
+                      <DialogDescription>새로운 배차 정보를 입력해주세요.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField
+                          control={form.control}
+                          name="customerId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>고객사</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="고객사를 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="vehicleId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>차량</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="배차할 차량을 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name="driverId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>운전자</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="담당 운전자를 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {drivers.filter(d => d.isAvailable).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <DialogFooter>
+                          <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            배차 등록
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </div>
               <Table>
                 <TableHeader>
@@ -274,7 +277,7 @@ export default function VehiclesPanel() {
               </Table>
             </TabsContent>
             <TabsContent value="equipment" className="space-y-4">
-              <div className="relative">
+              <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="장비 ID 또는 위치로 검색..."
