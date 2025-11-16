@@ -30,7 +30,7 @@ export const vehicles: Vehicle[] = [
   {
     id: 'V002',
     name: '그린카 2호',
-    driver: '이서아',
+    driver: '미배정',
     status: 'Idle',
     location: { lat: 37.5665, lng: 126.9780 }, // 서울 시청
     capacity: 5000,
@@ -56,7 +56,7 @@ export const vehicles: Vehicle[] = [
   {
     id: 'V004',
     name: '클린 크루저',
-    driver: '최지우',
+    driver: '미배정',
     status: 'Maintenance',
     location: { lat: 37.5492, lng: 126.9033 }, // 마포
     capacity: 7000,
@@ -70,7 +70,7 @@ export const vehicles: Vehicle[] = [
   {
     id: 'V005',
     name: '어스 웨건 5호',
-    driver: '정하은',
+    driver: '미배정',
     status: 'Completed',
     location: { lat: 37.478, lng: 126.9515 }, // 관악
     capacity: 5000,

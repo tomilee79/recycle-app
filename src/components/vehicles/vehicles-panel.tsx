@@ -182,20 +182,24 @@ export default function VehiclesPanel() {
 
     if (changedVehicle && (newStatus === 'Idle' || newStatus === 'Completed' || newStatus === 'Maintenance')) {
         const driverName = changedVehicle.driver;
-        setDrivers(prevDrivers => 
-            prevDrivers.map(d => 
-                d.name === driverName ? { ...d, isAvailable: true } : d
-            )
-        );
+        if(driverName !== '미배정') {
+            setDrivers(prevDrivers => 
+                prevDrivers.map(d => 
+                    d.name === driverName ? { ...d, isAvailable: true } : d
+                )
+            );
+        }
     }
     
     if (changedVehicle && newStatus === 'On Route') {
         const driverName = changedVehicle.driver;
-        setDrivers(prevDrivers =>
-            prevDrivers.map(d =>
-                d.name === driverName ? { ...d, isAvailable: false } : d
+        if(driverName !== '미배정') {
+            setDrivers(prevDrivers =>
+                prevDrivers.map(d =>
+                    d.name === driverName ? { ...d, isAvailable: false } : d
+                )
             )
-        )
+        }
     }
 
     toast({
@@ -459,7 +463,7 @@ export default function VehiclesPanel() {
                         </DropdownMenu>
                       </TableCell>
                       <TableCell className="text-right">
-                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleVehicleClick(vehicle); setIsEditingVehicle(true); }}>
+                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleVehicleClick(vehicle); }}>
                            <Edit className="size-4" />
                          </Button>
                       </TableCell>
@@ -502,7 +506,7 @@ export default function VehiclesPanel() {
                     </Dialog>
                     <Button variant="outline" onClick={handleEquipmentExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isEquipmentModalOpen} onOpenChange={setIsEquipmentModalOpen}>
-                        <DialogTrigger asChild><Button variant="outline" onClick={() => equipmentForm.reset()}><PlusCircle className="mr-2"/>새 장비 등록</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button onClick={() => equipmentForm.reset()}><PlusCircle className="mr-2"/>새 장비 등록</Button></DialogTrigger>
                         <DialogContent>
                             <DialogHeader><DialogTitle>새 장비 등록</DialogTitle><DialogDescription>새로운 장비 자산을 시스템에 등록합니다.</DialogDescription></DialogHeader>
                             <Form {...equipmentForm}>
@@ -529,7 +533,7 @@ export default function VehiclesPanel() {
                         <TableCell>{item.location}</TableCell>
                         <TableCell className="text-right">{item.lastInspected}</TableCell>
                         <TableCell className="text-right">
-                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEquipmentClick(item); setIsEditingEquipment(true); }}>
+                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEquipmentClick(item); }}>
                              <Edit className="size-4" />
                            </Button>
                         </TableCell>
