@@ -44,4 +44,7 @@ export type Customer = {
   id: string;
   name: string;
   address: string;
+  contractStatus: 'Active' | 'Inactive' | 'Pending';
+  contactPerson: string;
+  expiryDate: string; // YYYY-MM-DD
 };

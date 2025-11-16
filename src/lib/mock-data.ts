@@ -1,5 +1,6 @@
 
 import type { Vehicle, CollectionTask, ReportData, Driver, Customer } from './types';
+import { addDays, format } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
   {
@@ -114,8 +115,44 @@ export const drivers: Driver[] = [
 ];
 
 export const customers: Customer[] = [
-    { id: 'C001', name: 'BigBelly Inc.', address: '123 Main St' },
-    { id: 'C002', name: 'Recycle Corp', address: '456 Market St' },
-    { id: 'C003', name: 'Green Solutions', address: '789 Broadway' },
-    { id: 'C004', name: 'Eco Services', address: '101 Park Ave' },
+  { 
+    id: 'C001', 
+    name: 'BigBelly Inc.', 
+    address: '123 Main St',
+    contractStatus: 'Active',
+    contactPerson: '김철수',
+    expiryDate: format(addDays(new Date(), 150), 'yyyy-MM-dd') 
+  },
+  { 
+    id: 'C002', 
+    name: 'Recycle Corp', 
+    address: '456 Market St',
+    contractStatus: 'Active',
+    contactPerson: '이영희',
+    expiryDate: format(addDays(new Date(), 25), 'yyyy-MM-dd') // Expires soon
+  },
+  { 
+    id: 'C003', 
+    name: 'Green Solutions', 
+    address: '789 Broadway',
+    contractStatus: 'Pending',
+    contactPerson: '박민준',
+    expiryDate: format(addDays(new Date(), 300), 'yyyy-MM-dd')
+  },
+  { 
+    id: 'C004', 
+    name: 'Eco Services', 
+    address: '101 Park Ave',
+    contractStatus: 'Inactive',
+    contactPerson: '최지우',
+    expiryDate: format(addDays(new Date(), -90), 'yyyy-MM-dd') // Expired
+  },
+  { 
+    id: 'C005', 
+    name: '지구환경 주식회사',
+    address: '서울시 강남구 테헤란로',
+    contractStatus: 'Active',
+    contactPerson: '홍길동',
+    expiryDate: format(addDays(new Date(), 400), 'yyyy-MM-dd')
+  },
 ];

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -22,12 +23,14 @@ import {
   Bot,
   LogOut,
   Users,
+  Building2,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
 import ReportsPanel from '@/components/reports/reports-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
+import CustomersPanel from '@/components/customers/customers-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -46,7 +49,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'predict';
+type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'predict';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -61,6 +64,7 @@ export function MainLayout() {
     reports: '정산 보고서',
     vehicles: '차량 관리',
     drivers: '직원 관리',
+    customers: '고객 관리',
     predict: 'AI 예측',
   };
 
@@ -75,6 +79,8 @@ export function MainLayout() {
         return <VehiclesPanel />;
       case 'drivers':
         return <DriversPanel />;
+      case 'customers':
+        return <CustomersPanel />;
       case 'predict':
         return <PredictPanel />;
       default:
@@ -133,6 +139,16 @@ export function MainLayout() {
               >
                 <Users />
                 <span>직원</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('customers')}
+                isActive={activeView === 'customers'}
+                tooltip={{ children: '고객 관리' }}
+              >
+                <Building2 />
+                <span>고객</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
