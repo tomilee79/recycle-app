@@ -33,7 +33,6 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportForm } from './report-form';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -60,7 +59,6 @@ const materialTypeMap: { [key: string]: string } = {
     'Mixed': '혼합'
 };
 const materialTypes = Object.keys(materialTypeMap) as (keyof typeof materialTypeMap)[];
-
 
 const updateTaskFormSchema = z.object({
   collectedWeight: z.coerce.number().min(0, "수거량은 0 이상이어야 합니다.").default(0),
@@ -261,7 +259,11 @@ export default function TasksPanel() {
   const handleSaveReport = (taskId: string, report: TaskReport) => {
       setTasks(prevTasks => prevTasks.map(task => {
           if (task.id === taskId) {
-              return { ...task, report, collectedWeight: report.collectedWeight, status: 'Completed' };
+              const updatedTask = { ...task, report, collectedWeight: report.collectedWeight, status: 'Completed' as TaskStatus };
+              if (selectedTask?.id === taskId) {
+                setSelectedTask(updatedTask);
+              }
+              return updatedTask;
           }
           return task;
       }));
@@ -290,8 +292,6 @@ export default function TasksPanel() {
       return statusMatch && searchMatch;
     }).sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime());
   }, [tasks, statusFilter, search]);
-
-  const reportedTasks = useMemo(() => tasks.filter(task => task.report).sort((a, b) => new Date(b.report!.reportDate).getTime() - new Date(a.report!.reportDate).getTime()), [tasks]);
 
   const {
     currentPage,
@@ -369,9 +369,7 @@ export default function TasksPanel() {
                                   </Card>
                               )}
                               {!newForm.watch('isRecurring') && (
-                                <>
-                                  <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                                </>
+                                <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>예정일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)} />
                               )}
                               <DialogFooter><Button type="submit" disabled={newForm.formState.isSubmitting}>{newForm.formState.isSubmitting && <Loader2 className="mr-2"/>}작업 등록</Button></DialogFooter>
                           </form>
@@ -381,215 +379,178 @@ export default function TasksPanel() {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="list">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list">작업 목록</TabsTrigger>
-                <TabsTrigger value="reports">작업 보고서</TabsTrigger>
-              </TabsList>
-              <TabsContent value="list" className="mt-4">
-                <div className="flex items-center justify-between gap-2 py-4">
-                  <div className="flex gap-2 items-center">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-[180px]"><SelectValue placeholder="상태 필터" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All">모든 상태</SelectItem>
-                        {statuses.map(s => <SelectItem key={s} value={s}>{statusMap[s]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    {selectedRowKeys.size > 0 && (
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="outline">
-                                  일괄 작업 ({selectedRowKeys.size})
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                              {statuses.map(status => (
-                                  <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
-                                      {statusMap[status]}으로 상태 변경
-                                  </DropdownMenuItem>
-                              ))}
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4"/>선택 항목 삭제
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 작업이 영구적으로 삭제됩니다.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>취소</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteTasks(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+            <div className="flex items-center justify-between gap-2 py-4">
+              <div className="flex gap-2 items-center">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="상태 필터" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">모든 상태</SelectItem>
+                    {statuses.map(s => <SelectItem key={s} value={s}>{statusMap[s]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {selectedRowKeys.size > 0 && (
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="outline">
+                              일괄 작업 ({selectedRowKeys.size})
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                          {statuses.map(status => (
+                              <DropdownMenuItem key={status} onSelect={() => handleStatusChange(Array.from(selectedRowKeys), status)}>
+                                  {statusMap[status]}으로 상태 변경
+                              </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4"/>선택 항목 삭제
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        이 작업은 되돌릴 수 없습니다. 선택된 {selectedRowKeys.size}개의 작업이 영구적으로 삭제됩니다.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>취소</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteTasks(Array.from(selectedRowKeys))}>삭제 확인</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+              <div className="flex gap-2">
+                  <div className="relative w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="고객사명 또는 주소로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                   </div>
-                  <div className="flex gap-2">
-                      <div className="relative w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="고객사명 또는 주소로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-                      </div>
-                  </div>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
-                          <Checkbox 
-                              checked={selectedRowKeys.size > 0 && paginatedTasks.length > 0 && selectedRowKeys.size === paginatedTasks.length}
-                              onCheckedChange={handleSelectAllRows}
-                              disabled={paginatedTasks.length === 0}
-                          />
-                      </TableHead>
-                      <TableHead>예정일</TableHead>
-                      <TableHead>고객사</TableHead>
-                      <TableHead>주소</TableHead>
-                      <TableHead>품목</TableHead>
-                      <TableHead className="text-center">수거량</TableHead>
-                      <TableHead className="text-center">배정 차량</TableHead>
-                      <TableHead>상태</TableHead>
-                      <TableHead className="text-right w-[80px]">작업</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedTasks.map((task) => {
-                        const isOverdue = !task.status.match(/Completed|Cancelled/) && isPast(parseISO(task.scheduledDate)) && !isSameDay(parseISO(task.scheduledDate), startOfToday());
-                        return (
-                            <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
-                                <TableCell>
-                                    <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
-                                </TableCell>
-                                <TableCell onClick={() => handleRowClick(task)} className={cn("cursor-pointer", isOverdue && "text-destructive")}>
-                                    <div className='flex items-center gap-2'>
-                                      {isOverdue && <AlertTriangle className="size-4" />}
-                                      {task.scheduledDate}
-                                    </div>
-                                </TableCell>
-                                <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
-                                <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
-                                <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
-                                <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer text-center">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
-                                <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
-                                {task.vehicleId ? (
-                                    <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
-                                ) : (
-                                    <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-auto p-1 font-normal text-blue-600">배정하기</Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start">
-                                        {availableVehicles.length > 0 ? availableVehicles.map(v => (
-                                            <DropdownMenuItem key={v.id} onSelect={() => handleAssignVehicle(task.id, v.id)}>
-                                                {v.name} ({v.driver})
-                                            </DropdownMenuItem>
-                                        )) : <DropdownMenuItem disabled>배정 가능한 차량 없음</DropdownMenuItem>}
-                                    </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
-                                </TableCell>
-                                <TableCell onClick={(e) => e.stopPropagation()}>
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">
+                      <Checkbox 
+                          checked={selectedRowKeys.size > 0 && paginatedTasks.length > 0 && selectedRowKeys.size === paginatedTasks.length}
+                          onCheckedChange={handleSelectAllRows}
+                          disabled={paginatedTasks.length === 0}
+                      />
+                  </TableHead>
+                  <TableHead>예정일</TableHead>
+                  <TableHead>고객사</TableHead>
+                  <TableHead>주소</TableHead>
+                  <TableHead>품목</TableHead>
+                  <TableHead className="text-center">수거량</TableHead>
+                  <TableHead className="text-center">배정 차량</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="text-right w-[80px]">작업</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedTasks.map((task) => {
+                    const isOverdue = !task.status.match(/Completed|Cancelled/) && isPast(parseISO(task.scheduledDate)) && !isSameDay(parseISO(task.scheduledDate), startOfToday());
+                    return (
+                        <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
+                            <TableCell>
+                                <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
+                            </TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className={cn("cursor-pointer", isOverdue && "text-destructive")}>
+                                <div className='flex items-center gap-2'>
+                                  {isOverdue && <AlertTriangle className="size-4" />}
+                                  {task.scheduledDate}
+                                </div>
+                            </TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer text-center">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
+                            {task.vehicleId ? (
+                                <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
+                            ) : (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-auto p-0 font-normal">
-                                        <Badge variant={statusVariant[task.status]} className="cursor-pointer">{statusMap[task.status]}</Badge>
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                    {statuses.filter(s => s !== task.status).map(s => (
-                                        <DropdownMenuItem key={s} onSelect={() => handleStatusChange([task.id], s)}>{statusMap[s]}으로 변경</DropdownMenuItem>
-                                    ))}
-                                    </DropdownMenuContent>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-auto p-1 font-normal text-blue-600">배정하기</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    {availableVehicles.length > 0 ? availableVehicles.map(v => (
+                                        <DropdownMenuItem key={v.id} onSelect={() => handleAssignVehicle(task.id, v.id)}>
+                                            {v.name} ({v.driver})
+                                        </DropdownMenuItem>
+                                    )) : <DropdownMenuItem disabled>배정 가능한 차량 없음</DropdownMenuItem>}
+                                </DropdownMenuContent>
                                 </DropdownMenu>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
-                                    <AlertDialog>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DialogTrigger asChild>
-                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setReportingTask(task); }}>
-                                                        <FileText className="mr-2 h-4 w-4" />
-                                                        <span>보고서 관리</span>
-                                                    </DropdownMenuItem>
-                                                </DialogTrigger>
-                                                <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
-                                                    <Copy className="mr-2 h-4 w-4" />
-                                                    <span>복제</span>
+                            )}
+                            </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-auto p-0 font-normal">
+                                    <Badge variant={statusVariant[task.status]} className="cursor-pointer">{statusMap[task.status]}</Badge>
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                {statuses.filter(s => s !== task.status).map(s => (
+                                    <DropdownMenuItem key={s} onSelect={() => handleStatusChange([task.id], s)}>{statusMap[s]}으로 변경</DropdownMenuItem>
+                                ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
+                                <AlertDialog>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setReportingTask(task); }}>
+                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    <span>보고서 관리</span>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuSeparator/>
-                                                <AlertDialogTrigger asChild>
-                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    <span>삭제</span>
-                                                </DropdownMenuItem>
-                                                </AlertDialogTrigger>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </Dialog>
-                                </TableCell>
-                            </TableRow>
-                        )
-                    })}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-              <TabsContent value="reports" className="mt-4">
-                  <ScrollArea className="h-[600px]">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1">
-                          {reportedTasks.length > 0 ? reportedTasks.map(task => (
-                              <Card key={`report-${task.id}`} className="flex flex-col">
-                                  <CardHeader>
-                                      <CardTitle className="text-base">{getCustomerName(task.customerId)} - {task.address}</CardTitle>
-                                      <CardDescription>보고일: {task.report?.reportDate}</CardDescription>
-                                  </CardHeader>
-                                  <CardContent className="flex-grow space-y-4">
-                                      {task.report?.photoUrl && (
-                                          <Image src={task.report.photoUrl} alt="현장 사진" width={400} height={300} className="rounded-md object-cover aspect-video" data-ai-hint="site trash" />
-                                      )}
-                                      <div className="text-sm space-y-2">
-                                        <p><strong>수거량:</strong> {task.report?.collectedWeight.toLocaleString()}kg</p>
-                                        <p><strong>담당자:</strong> {task.driver}</p>
-                                        <p><strong>특이사항:</strong> {task.report?.notes || '없음'}</p>
-                                      </div>
-                                  </CardContent>
-                              </Card>
-                          )) : (
-                              <div className="col-span-full text-center py-20 text-muted-foreground">
-                                  <FileText className="mx-auto h-12 w-12" />
-                                  <p className="mt-4">표시할 작업 보고서가 없습니다.</p>
-                              </div>
-                          )}
-                      </div>
-                  </ScrollArea>
-              </TabsContent>
-            </Tabs>
+                                            </DialogTrigger>
+                                            <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                <span>복제</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator/>
+                                            <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <span>삭제</span>
+                                            </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>취소</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </Dialog>
+                            </TableCell>
+                        </TableRow>
+                    )
+                })}
+              </TableBody>
+            </Table>
           </CardContent>
           <CardFooter className="justify-center">
               <Pagination>
@@ -637,24 +598,71 @@ export default function TasksPanel() {
                     {getCustomerName(selectedTask.customerId)} / {selectedTask.scheduledDate}
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 space-y-6">
+                <ScrollArea className="h-[calc(100vh-8rem)]">
+                <div className="mt-6 space-y-6 pr-6 pb-6">
+                  
+                  {selectedTask.report ? (
+                    <Card>
+                      <CardHeader><CardTitle className="text-lg">작업 결과 보고서</CardTitle></CardHeader>
+                      <CardContent>
+                          {selectedTask.report.photoUrl && (
+                              <div className="mb-4">
+                                  <Image
+                                      src={selectedTask.report.photoUrl}
+                                      alt="수거 현장 사진"
+                                      width={600}
+                                      height={400}
+                                      className="rounded-lg object-cover w-full aspect-video"
+                                      data-ai-hint="site trash"
+                                  />
+                              </div>
+                          )}
+                          <div className="space-y-4 text-sm">
+                            <div className="flex items-center gap-3">
+                              <Weight className="size-5 text-muted-foreground" />
+                              <span className="font-medium">실제 수거량:</span>
+                              <span>{selectedTask.report.collectedWeight.toLocaleString()} kg</span>
+                            </div>
+                             <div className="flex items-center gap-3">
+                              <User className="size-5 text-muted-foreground" />
+                              <span className="font-medium">담당 기사:</span>
+                              <span>{selectedTask.driver || '미배정'}</span>
+                            </div>
+                             <div className="flex items-start gap-3">
+                              <FileText className="size-5 text-muted-foreground mt-0.5" />
+                              <div className='flex-1'>
+                                <span className="font-medium">특이사항:</span>
+                                <p className='text-muted-foreground whitespace-pre-wrap'>{selectedTask.report.notes || '없음'}</p>
+                              </div>
+                            </div>
+                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>보고일: {selectedTask.report.reportDate}</span>
+                            </div>
+                          </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">수거 현장 사진 (예시)</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {sitePhoto && (
+                          <Image
+                            src={sitePhoto.imageUrl}
+                            alt="수거 현장 사진"
+                            width={600}
+                            height={400}
+                            className="rounded-lg object-cover w-full aspect-video"
+                            data-ai-hint={sitePhoto.imageHint}
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                  
                   <Card>
-                    <CardHeader><CardTitle className="text-lg">수거 현장 사진</CardTitle></CardHeader>
-                    <CardContent>
-                      {sitePhoto && (
-                        <Image
-                          src={sitePhoto.imageUrl}
-                          alt="수거 현장 사진"
-                          width={600}
-                          height={400}
-                          className="rounded-lg object-cover w-full aspect-video"
-                          data-ai-hint={sitePhoto.imageHint}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader><CardTitle className="text-lg">상세 정보</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-lg">작업 기본 정보</CardTitle></CardHeader>
                     <CardContent className="space-y-4 text-sm">
                       <div className="flex items-center gap-3">
                         <Info className="size-5 text-muted-foreground" />
@@ -670,11 +678,6 @@ export default function TasksPanel() {
                         <Trash2 className="size-5 text-muted-foreground" />
                         <span className="font-medium">폐기물 종류:</span>
                         <span>{materialTypeMap[selectedTask.materialType]}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Weight className="size-5 text-muted-foreground" />
-                        <span className="font-medium">예상/수거량:</span>
-                        <span>{selectedTask.collectedWeight > 0 ? `${selectedTask.collectedWeight.toLocaleString()} kg` : 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <Truck className="size-5 text-muted-foreground" />
@@ -697,6 +700,7 @@ export default function TasksPanel() {
                      </Card>
                   )}
                 </div>
+                </ScrollArea>
               </>
             );
           })()}
@@ -737,3 +741,4 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
+
