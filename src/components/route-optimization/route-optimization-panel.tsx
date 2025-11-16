@@ -117,9 +117,9 @@ export default function RouteOptimizationPanel() {
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
-                        <Button onClick={handleOptimize} disabled={isLoading || selectedTasks.length < 1}>
+                        <Button onClick={handleOptimize} disabled={true}>
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2" />}
-                            최적 경로 계산
+                            최적 경로 계산(개발중)
                         </Button>
                     </CardFooter>
                 </Card>
