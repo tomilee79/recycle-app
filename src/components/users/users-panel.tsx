@@ -14,7 +14,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, Trash2, UserPlus, Users, ShieldCheck, Shield, UserCog } from 'lucide-react';
+import { Loader2, PlusCircle, Search, Trash2, UserPlus, Users, ShieldCheck, Shield, UserCog, ArrowDown, ArrowUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, UserRole, UserStatus } from '@/lib/types';
@@ -46,6 +46,8 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
+type SortableField = 'name' | 'email' | 'role' | 'status' | 'createdAt';
+
 const CURRENT_USER_ID = 'U001'; // Mock current user for safety check
 
 export default function UsersPanel() {
@@ -54,27 +56,51 @@ export default function UsersPanel() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filters, setFilters] = useState({ role: 'All', status: 'All' });
   const [search, setSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
   });
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+  const sortedAndFilteredUsers = useMemo(() => {
+    let filteredUsers = users.filter(user => {
       const roleMatch = filters.role === 'All' || user.role === filters.role;
       const statusMatch = filters.status === 'All' || user.status === filters.status;
       const searchMatch = user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
       return roleMatch && statusMatch && searchMatch;
     });
-  }, [users, filters, search]);
+
+    if (sortConfig !== null) {
+      filteredUsers.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filteredUsers;
+  }, [users, filters, search, sortConfig]);
 
   const {
     currentPage,
     setCurrentPage,
     paginatedData: paginatedUsers,
     totalPages,
-  } = usePagination(filteredUsers, 7);
+  } = usePagination(sortedAndFilteredUsers, 7);
+  
+  const requestSort = (key: SortableField) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const openSheet = (user: User | null) => {
     setSelectedUser(user);
@@ -124,6 +150,13 @@ export default function UsersPanel() {
     });
     closeSheet();
   };
+  
+  const getSortIcon = (key: SortableField) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
 
   return (
     <>
@@ -163,7 +196,23 @@ export default function UsersPanel() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>이름</TableHead><TableHead>이메일</TableHead><TableHead>역할</TableHead><TableHead>상태</TableHead><TableHead>등록일</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('name')}>이름{getSortIcon('name')}</Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('email')}>이메일{getSortIcon('email')}</Button>
+                </TableHead>
+                <TableHead>
+                     <Button variant="ghost" onClick={() => requestSort('role')}>역할{getSortIcon('role')}</Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')}>상태{getSortIcon('status')}</Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('createdAt')}>등록일{getSortIcon('createdAt')}</Button>
+                </TableHead>
+            </TableRow></TableHeader>
             <TableBody>
               {paginatedUsers.map((user) => (
                 <TableRow key={user.id} onClick={() => openSheet(user)} className="cursor-pointer">
