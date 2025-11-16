@@ -106,3 +106,26 @@ export type Todo = {
   text: string;
   completed: boolean;
 };
+
+export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected';
+
+export type QuoteItem = {
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+};
+
+export type Quote = {
+    id: string;
+    customerId: string;
+    quoteDate: string;
+    expiryDate: string;
+    status: QuoteStatus;
+    items: QuoteItem[];
+    subtotal: number;
+    tax: number;
+    total: number;
+    notes?: string;
+};

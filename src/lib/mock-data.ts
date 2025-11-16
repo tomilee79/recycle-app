@@ -1,5 +1,6 @@
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData } from './types';
+
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
@@ -318,3 +319,52 @@ export const notifications: Notification[] = [
       isRead: true,
     },
   ];
+
+  const generateQuoteItems = (count: number): QuoteItem[] => {
+    const items: QuoteItem[] = [];
+    const wasteTypes = ['폐 플라스틱', '폐지', '고철', '유리병'];
+    for (let i = 0; i < count; i++) {
+        const quantity = Math.floor(Math.random() * 20) + 1;
+        const unitPrice = (Math.floor(Math.random() * 10) + 1) * 10000;
+        items.push({
+            id: `item-${Date.now()}-${i}`,
+            description: wasteTypes[i % wasteTypes.length],
+            quantity: quantity,
+            unitPrice: unitPrice,
+            total: quantity * unitPrice,
+        });
+    }
+    return items;
+};
+
+const calculateQuoteTotals = (items: QuoteItem[]): { subtotal: number; tax: number; total: number } => {
+    const subtotal = items.reduce((acc, item) => acc + item.total, 0);
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+    return { subtotal, tax, total };
+};
+
+const createQuote = (id: string, customerId: string, status: QuoteStatus, date: Date): Quote => {
+    const items = generateQuoteItems(Math.floor(Math.random() * 3) + 2);
+    const { subtotal, tax, total } = calculateQuoteTotals(items);
+    return {
+        id,
+        customerId,
+        quoteDate: format(date, 'yyyy-MM-dd'),
+        expiryDate: format(addDays(date, 30), 'yyyy-MM-dd'),
+        status,
+        items,
+        subtotal,
+        tax,
+        total,
+        notes: status === 'Rejected' ? '타사 대비 가격 경쟁력 부족으로 거절.' : '월 정기 수거 건에 대한 견적.'
+    };
+};
+
+export const quotes: Quote[] = [
+    createQuote('Q-2024-001', 'C001', 'Accepted', subDays(new Date(), 5)),
+    createQuote('Q-2024-002', 'C002', 'Sent', subDays(new Date(), 2)),
+    createQuote('Q-2024-003', 'C003', 'Draft', subDays(new Date(), 1)),
+    createQuote('Q-2024-004', 'C004', 'Rejected', subDays(new Date(), 15)),
+    createQuote('Q-2024-005', 'C005', 'Sent', subDays(new Date(), 10)),
+];

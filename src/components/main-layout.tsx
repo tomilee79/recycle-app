@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,6 +35,7 @@ import {
   Route,
   Calendar,
   CheckSquare,
+  FileText,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -49,6 +51,7 @@ import DriverPerformancePanel from '@/components/drivers/driver-performance-pane
 import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import SchedulePanel from '@/components/schedule/schedule-panel';
 import TodosPanel from '@/components/todos/todos-panel';
+import QuotesPanel from '@/components/quotes/quotes-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -68,7 +71,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -134,6 +137,7 @@ export function MainLayout() {
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
     todos: '할일 관리',
+    quotes: '견적 관리',
     settings: '설정',
   };
 
@@ -164,6 +168,8 @@ export function MainLayout() {
         return <SchedulePanel />;
       case 'todos':
         return <TodosPanel />;
+      case 'quotes':
+        return <QuotesPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -212,6 +218,16 @@ export function MainLayout() {
               >
                 <CheckSquare />
                 <span>할일 관리</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('quotes')}
+                isActive={activeView === 'quotes'}
+                tooltip={{ children: '견적 관리' }}
+              >
+                <FileText />
+                <span>견적 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
