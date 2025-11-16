@@ -340,7 +340,7 @@ export const notifications: Notification[] = [
         const unitPrice = (Math.floor(Math.random() * 10) + 1) * 10000;
         items.push({
             id: `item-${Date.now()}-${i}`,
-            description: wasteTypes[i % wasteTypes.length],
+            description: `${wasteTypes[i % wasteTypes.length]} 처리 비용`,
             quantity: quantity,
             unitPrice: unitPrice,
             total: quantity * unitPrice,

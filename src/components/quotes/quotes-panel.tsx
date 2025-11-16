@@ -85,7 +85,7 @@ export default function QuotesPanel() {
         items.forEach((item, index) => {
           items[index].total = item.quantity * item.unitPrice;
         });
-        form.setValue('items', items);
+        form.setValue('items', items, { shouldValidate: true });
       }
     });
     return () => subscription.unsubscribe();
@@ -266,6 +266,7 @@ export default function QuotesPanel() {
                                         <FormItem className="flex-1">
                                             <FormLabel className={cn(index !== 0 && "sr-only")}>항목</FormLabel>
                                             <Input {...field} placeholder="예: 폐 플라스틱 처리비"/>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -276,6 +277,7 @@ export default function QuotesPanel() {
                                         <FormItem className="w-20">
                                             <FormLabel className={cn(index !== 0 && "sr-only")}>수량</FormLabel>
                                             <Input type="number" {...field} />
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -286,6 +288,7 @@ export default function QuotesPanel() {
                                         <FormItem className="w-32">
                                             <FormLabel className={cn(index !== 0 && "sr-only")}>단가</FormLabel>
                                             <Input type="number" {...field} />
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -307,6 +310,7 @@ export default function QuotesPanel() {
                         >
                             항목 추가
                         </Button>
+                         {form.formState.errors.items && <FormMessage>{form.formState.errors.items.message}</FormMessage>}
                     </CardContent>
                 </Card>
 
@@ -334,6 +338,7 @@ export default function QuotesPanel() {
               </div>
               <div className="flex justify-between items-center pt-6">
                 <Button type="submit">
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {selectedQuote ? '견적 저장' : '견적 생성'}
                 </Button>
                 {selectedQuote && (

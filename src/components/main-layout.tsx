@@ -141,9 +141,9 @@ export function MainLayout() {
     'waste-analysis': '상세 폐기물 분석',
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
+    settings: '설정',
     todos: '할일 관리',
     quotes: '견적 관리',
-    settings: '설정',
   };
 
 
