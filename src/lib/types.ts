@@ -29,6 +29,8 @@ export type Equipment = {
   lastInspected: string; // YYYY-MM-DD
 };
 
+export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
+
 export type CollectionTask = {
   id: string;
   vehicleId: string;
@@ -39,7 +41,7 @@ export type CollectionTask = {
     lat: number;
     lng: number;
   };
-  status: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
+  status: TaskStatus;
   scheduledDate: string; // YYYY-MM-DD
   completedTime?: string;
   collectedWeight: number;

@@ -39,6 +39,7 @@ import {
   FileSignature,
   Users2,
   Receipt,
+  ClipboardList,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -54,6 +55,7 @@ import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel
 import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
 import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import SchedulePanel from '@/components/schedule/schedule-panel';
+import TasksPanel from '@/components/tasks/tasks-panel';
 import TodosPanel from '@/components/todos/todos-panel';
 import QuotesPanel from '@/components/quotes/quotes-panel';
 import UsersPanel from '@/components/users/users-panel';
@@ -76,7 +78,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos' | 'quotes' | 'users';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'settings' | 'todos' | 'quotes' | 'users';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -142,6 +144,7 @@ export function MainLayout() {
     'waste-analysis': '상세 폐기물 분석',
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
+    tasks: '작업 관리',
     settings: '설정',
     todos: '할일 관리',
     quotes: '견적 관리',
@@ -175,6 +178,8 @@ export function MainLayout() {
         return <RouteOptimizationPanel />;
       case 'schedule':
         return <SchedulePanel />;
+      case 'tasks':
+        return <TasksPanel />;
       case 'todos':
         return <TodosPanel />;
       case 'quotes':
@@ -219,6 +224,16 @@ export function MainLayout() {
               >
                 <Calendar />
                 <span>일정 관리</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('tasks')}
+                isActive={activeView === 'tasks'}
+                tooltip={{ children: '작업 관리' }}
+              >
+                <ClipboardList />
+                <span>작업 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
