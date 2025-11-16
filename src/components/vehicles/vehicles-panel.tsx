@@ -16,7 +16,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download, PackageOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -44,16 +44,19 @@ const typeMap: { [key in Vehicle['type']]: string } = {
 };
 const typeOptions = Object.keys(typeMap) as Vehicle['type'][];
 
-const equipmentStatusMap: { [key: string]: string } = {
+const equipmentStatusMap: { [key in Equipment['status']]: string } = {
   'In Use': '사용중',
   'Available': '사용 가능',
   'Maintenance': '정비중'
 };
+const equipmentStatusOptions = Object.keys(equipmentStatusMap) as Equipment['status'][];
 
-const equipmentTypeMap: { [key: string]: string } = {
+
+const equipmentTypeMap: { [key in Equipment['type']]: string } = {
   'Roll-off Box': '암롤 박스',
   'Container': '컨테이너'
 };
+const equipmentTypeOptions = Object.keys(equipmentTypeMap) as Equipment['type'][];
 
 const dispatchFormSchema = z.object({
   customerId: z.string().min(1, "고객을 선택해주세요."),
@@ -67,15 +70,26 @@ const vehicleFormSchema = z.object({
     capacity: z.coerce.number().min(100, "용량은 100kg 이상이어야 합니다."),
 });
 
+const equipmentFormSchema = z.object({
+    id: z.string().min(3, "장비 ID는 3자 이상이어야 합니다."),
+    type: z.enum(equipmentTypeOptions),
+    status: z.enum(equipmentStatusOptions),
+    location: z.string().min(2, "위치를 입력해주세요."),
+});
+
 type DispatchFormValues = z.infer<typeof dispatchFormSchema>;
 type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
 
 
 export default function VehiclesPanel() {
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
   const [isEditingVehicle, setIsEditingVehicle] = useState(false);
+  const [isEditingEquipment, setIsEditingEquipment] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
   const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments);
@@ -92,6 +106,10 @@ export default function VehiclesPanel() {
     resolver: zodResolver(vehicleFormSchema),
   });
 
+  const equipmentForm = useForm<EquipmentFormValues>({
+      resolver: zodResolver(equipmentFormSchema),
+  });
+
   const handleVehicleClick = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     vehicleForm.reset({
@@ -101,11 +119,26 @@ export default function VehiclesPanel() {
     });
   };
 
-  const handleSheetClose = () => {
+  const handleEquipmentClick = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+    equipmentForm.reset({
+        id: equipment.id,
+        type: equipment.type,
+        status: equipment.status,
+        location: equipment.location,
+    });
+  };
+
+  const handleVehicleSheetClose = () => {
     setSelectedVehicle(null);
     setIsEditingVehicle(false);
   };
   
+  const handleEquipmentSheetClose = () => {
+    setSelectedEquipment(null);
+    setIsEditingEquipment(false);
+  };
+
   const handleDriverChange = useCallback((vehicleId: string, newDriverId: string) => {
     const newDriver = drivers.find(d => d.id === newDriverId);
     if (!newDriver) return;
@@ -212,8 +245,32 @@ export default function VehiclesPanel() {
         setVehicles([newVehicle, ...vehicles]);
         toast({ title: "차량 등록됨", description: "새로운 차량이 시스템에 등록되었습니다." });
         setIsVehicleModalOpen(false);
+        vehicleForm.reset();
     }
   };
+
+  const onEquipmentSubmit: SubmitHandler<EquipmentFormValues> = (data) => {
+    if (selectedEquipment && isEditingEquipment) {
+        const updatedEquipment = { ...selectedEquipment, ...data };
+        setEquipments(equipments.map(e => e.id === selectedEquipment.id ? updatedEquipment : e));
+        setSelectedEquipment(updatedEquipment);
+        toast({ title: "장비 정보 수정됨", description: `${data.id} 정보가 성공적으로 수정되었습니다.` });
+        setIsEditingEquipment(false);
+    } else {
+        const newEquipment: Equipment = {
+            id: data.id,
+            type: data.type,
+            status: data.status,
+            location: data.location,
+            lastInspected: format(new Date(), 'yyyy-MM-dd'),
+            createdAt: format(new Date(), 'yyyy-MM-dd'),
+        };
+        setEquipments([newEquipment, ...equipments]);
+        toast({ title: "장비 등록됨", description: "새로운 장비가 시스템에 등록되었습니다." });
+        setIsEquipmentModalOpen(false);
+        equipmentForm.reset();
+    }
+  }
 
   const handleDeleteVehicle = () => {
     if (!selectedVehicle) return;
@@ -223,7 +280,18 @@ export default function VehiclesPanel() {
       description: `${selectedVehicle.name} 차량이 영구적으로 삭제되었습니다.`,
       variant: 'destructive',
     });
-    handleSheetClose();
+    handleVehicleSheetClose();
+  }
+
+  const handleDeleteEquipment = () => {
+    if (!selectedEquipment) return;
+    setEquipments(equipments.filter(e => e.id !== selectedEquipment.id));
+    toast({
+        title: "장비 삭제됨",
+        description: `${selectedEquipment.id} 장비가 영구적으로 삭제되었습니다.`,
+        variant: 'destructive',
+    });
+    handleEquipmentSheetClose();
   }
   
   const filteredVehicles = useMemo(() => 
@@ -332,7 +400,7 @@ export default function VehiclesPanel() {
                     </Dialog>
                     <Button variant="outline" onClick={handleVehicleExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
-                        <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button variant="outline" onClick={() => vehicleForm.reset()}><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
                         <DialogContent>
                              <DialogHeader><DialogTitle>새 차량 등록</DialogTitle><DialogDescription>새로운 차량 자산을 시스템에 등록합니다.</DialogDescription></DialogHeader>
                              <Form {...vehicleForm}>
@@ -429,13 +497,34 @@ export default function VehiclesPanel() {
                         </DialogContent>
                     </Dialog>
                     <Button variant="outline" onClick={handleEquipmentExport}><Download className="mr-2"/>내보내기</Button>
+                    <Dialog open={isEquipmentModalOpen} onOpenChange={setIsEquipmentModalOpen}>
+                        <DialogTrigger asChild><Button variant="outline" onClick={() => equipmentForm.reset()}><PlusCircle className="mr-2"/>새 장비 등록</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>새 장비 등록</DialogTitle><DialogDescription>새로운 장비 자산을 시스템에 등록합니다.</DialogDescription></DialogHeader>
+                            <Form {...equipmentForm}>
+                                <form onSubmit={equipmentForm.handleSubmit(onEquipmentSubmit)} className="space-y-4 py-4">
+                                    <FormField control={equipmentForm.control} name="id" render={({ field }) => (<FormItem><FormLabel>장비 ID</FormLabel><FormControl><Input placeholder="예: E06" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>종류</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="장비 종류 선택" /></SelectTrigger></FormControl><SelectContent>{equipmentTypeOptions.map(t => <SelectItem key={t} value={t}>{equipmentTypeMap[t]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="status" render={({ field }) => (<FormItem><FormLabel>상태</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="장비 상태 선택" /></SelectTrigger></FormControl><SelectContent>{equipmentStatusOptions.map(s => <SelectItem key={s} value={s}>{equipmentStatusMap[s]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="location" render={({ field }) => (<FormItem><FormLabel>현재 위치</FormLabel><FormControl><Input placeholder="예: 본사 차고지, V002" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <DialogFooter><Button type="submit" disabled={equipmentForm.formState.isSubmitting}>{equipmentForm.formState.isSubmitting && <Loader2 className="mr-2"/>}장비 등록</Button></DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
               </div>
               <Table>
                 <TableHeader><TableRow><TableHead>장비 ID</TableHead><TableHead>종류</TableHead><TableHead>상태</TableHead><TableHead>현재 위치</TableHead><TableHead className="text-right">최근 점검일</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedEquipments.map((item: Equipment) => (
-                    <TableRow key={item.id}><TableCell className="font-medium">{item.id}</TableCell><TableCell>{equipmentTypeMap[item.type]}</TableCell><TableCell><Badge variant={item.status === 'In Use' ? 'default' : item.status === 'Available' ? 'secondary' : 'destructive'}>{equipmentStatusMap[item.status]}</Badge></TableCell><TableCell>{item.location}</TableCell><TableCell className="text-right">{item.lastInspected}</TableCell></TableRow>
+                    <TableRow key={item.id} onClick={() => handleEquipmentClick(item)} className="cursor-pointer">
+                        <TableCell className="font-medium">{item.id}</TableCell>
+                        <TableCell>{equipmentTypeMap[item.type]}</TableCell>
+                        <TableCell><Badge variant={item.status === 'In Use' ? 'default' : item.status === 'Available' ? 'secondary' : 'destructive'}>{equipmentStatusMap[item.status]}</Badge></TableCell>
+                        <TableCell>{item.location}</TableCell>
+                        <TableCell className="text-right">{item.lastInspected}</TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
@@ -451,7 +540,7 @@ export default function VehiclesPanel() {
         </CardContent>
       </Card>
       
-      <Sheet open={!!selectedVehicle} onOpenChange={(open) => !open && handleSheetClose()}>
+      <Sheet open={!!selectedVehicle} onOpenChange={(open) => !open && handleVehicleSheetClose()}>
         <SheetContent className="sm:max-w-xl w-full">
           {selectedVehicle && (
             <>
@@ -523,6 +612,68 @@ export default function VehiclesPanel() {
                         <AlertDialogContent>
                             <AlertDialogHeader><AlertDialogTitle>정말로 이 차량을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. '{selectedVehicle.name}' 차량 정보가 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteVehicle}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                 }
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!selectedEquipment} onOpenChange={(open) => !open && handleEquipmentSheetClose()}>
+        <SheetContent className="sm:max-w-xl w-full">
+          {selectedEquipment && (
+            <>
+              <SheetHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <SheetTitle className="font-headline text-2xl flex items-center gap-2"><PackageOpen className="text-primary"/> {selectedEquipment.id}</SheetTitle>
+                        <SheetDescription>{equipmentTypeMap[selectedEquipment.type]}</SheetDescription>
+                    </div>
+                    {isEditingEquipment ? (
+                        <div className="flex gap-2">
+                           <Button size="sm" onClick={equipmentForm.handleSubmit(onEquipmentSubmit)} disabled={equipmentForm.formState.isSubmitting}>{equipmentForm.formState.isSubmitting ? <Loader2 className="mr-2 animate-spin"/> : <Save className="mr-2"/>} 저장</Button>
+                           <Button size="sm" variant="ghost" onClick={() => setIsEditingEquipment(false)}><X className="mr-2"/>취소</Button>
+                        </div>
+                    ) : (
+                       <Button size="sm" variant="outline" onClick={() => setIsEditingEquipment(true)}><Edit className="mr-2"/>정보 수정</Button>
+                    )}
+                </div>
+              </SheetHeader>
+              <div className="mt-6 space-y-6">
+                <Form {...equipmentForm}>
+                <form onSubmit={equipmentForm.handleSubmit(onEquipmentSubmit)}>
+                    <Card>
+                        <CardHeader><CardTitle className="text-lg">장비 정보</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {isEditingEquipment ? (
+                                <>
+                                    <FormField control={equipmentForm.control} name="id" render={({ field }) => (<FormItem><FormLabel>장비 ID</FormLabel><FormControl><Input {...field} readOnly /></FormControl><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>종류</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{equipmentTypeOptions.map(t=><SelectItem key={t} value={t}>{equipmentTypeMap[t]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="status" render={({ field }) => (<FormItem><FormLabel>상태</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{equipmentStatusOptions.map(s=><SelectItem key={s} value={s}>{equipmentStatusMap[s]}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                    <FormField control={equipmentForm.control} name="location" render={({ field }) => (<FormItem><FormLabel>위치</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                </>
+                            ) : (
+                                <>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">ID</span><span>{selectedEquipment.id}</span></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">종류</span><span>{equipmentTypeMap[selectedEquipment.type]}</span></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">상태</span><Badge variant={selectedEquipment.status === 'In Use' ? 'default' : selectedEquipment.status === 'Available' ? 'secondary' : 'destructive'}>{equipmentStatusMap[selectedEquipment.status]}</Badge></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">현재 위치</span><span>{selectedEquipment.location}</span></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">최근 점검일</span><span className="flex items-center gap-1"><CalendarDays className="size-4"/>{selectedEquipment.lastInspected}</span></div>
+                                <div className="flex items-center justify-between text-sm"><span className="font-medium text-muted-foreground">등록일</span><span className="flex items-center gap-1"><CalendarDays className="size-4"/>{selectedEquipment.createdAt}</span></div>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                </form>
+                </Form>
+                 { !isEditingEquipment && 
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="destructive" className="w-full"><Trash2 className="mr-2"/>장비 삭제</Button></AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>정말로 이 장비를 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. '{selectedEquipment.id}' 장비 정보가 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteEquipment}>삭제 확인</AlertDialogAction></AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
                  }
