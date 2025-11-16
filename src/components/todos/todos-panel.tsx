@@ -10,14 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckSquare, Plus, Trash2, Edit, Save, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
+import { CheckSquare, Plus, Trash2, Edit, Save, Calendar as CalendarIcon, AlertTriangle, X } from "lucide-react";
 import { cn } from '@/lib/utils';
 import type { Todo, Priority } from '@/lib/types';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
-import { format, isPast, startOfToday } from 'date-fns';
+import { format, isPast, startOfToday, isSameDay } from 'date-fns';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form';
 
 const initialTodos: Todo[] = [
@@ -106,7 +106,7 @@ export default function TodosPanel() {
     if (!editingTodo) return;
     setTodos(
       todos.map(todo =>
-        todo.id === editingTodo.id ? { ...todo, text: data.text, priority: data.priority, dueDate: data.dueDate } : todo
+        todo.id === editingTodo.id ? { ...todo, ...data } : todo
       )
     );
     setEditingTodo(null);
@@ -119,7 +119,18 @@ export default function TodosPanel() {
         if (filter === 'completed') return todo.completed;
         return true;
       })
-      .sort((a, b) => priorityMap[b.priority].value - priorityMap[a.priority].value);
+      .sort((a, b) => {
+        if (a.completed !== b.completed) {
+            return a.completed ? 1 : -1;
+        }
+        if (priorityMap[a.priority].value !== priorityMap[b.priority].value) {
+            return priorityMap[b.priority].value - priorityMap[a.priority].value;
+        }
+        if (a.dueDate && b.dueDate) {
+            return a.dueDate.getTime() - b.dueDate.getTime();
+        }
+        return a.id - b.id;
+      });
   }, [todos, filter]);
 
   const completedCount = todos.filter(todo => todo.completed).length;
@@ -204,9 +215,11 @@ export default function TodosPanel() {
                 <div key={todo.id}>
                 {editingTodo?.id === todo.id ? (
                   <Form {...editingForm}>
-                  <form onSubmit={editingForm.handleSubmit(handleEditSave)} className="flex items-center gap-2 p-3 rounded-md border bg-muted/50">
-                      <div className="flex-1 space-y-2">
+                  <form onSubmit={editingForm.handleSubmit(handleEditSave)} className="flex flex-col gap-3 p-3 rounded-md border bg-muted/50">
+                      <div className="flex-1">
                           <FormField control={editingForm.control} name="text" render={({ field }) => (<FormItem><Input {...field} autoFocus/></FormItem>)}/>
+                      </div>
+                      <div className="flex justify-between items-center">
                           <div className="flex items-center gap-4">
                               <FormField control={editingForm.control} name="priority" render={({ field }) => (
                                   <FormItem><RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-2">
@@ -217,9 +230,11 @@ export default function TodosPanel() {
                                   <FormItem><Popover><PopoverTrigger asChild><Button variant={"outline"} size="sm" className={cn("h-7 text-xs w-[100px] pl-2 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "MM/dd") : <span>마감일</span>}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                               )}/>
                           </div>
+                          <div className='flex gap-2'>
+                            <Button type="submit" size="sm"><Save className="mr-2"/>저장</Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={handleEditCancel}><X className="mr-2"/>취소</Button>
+                          </div>
                       </div>
-                       <Button type="submit" variant="ghost" size="icon" className="size-8"><Save className="text-primary"/></Button>
-                       <Button type="button" variant="ghost" size="icon" className="size-8" onClick={handleEditCancel}><Trash2 className="text-destructive"/></Button>
                   </form>
                   </Form>
                 ) : (
@@ -246,7 +261,7 @@ export default function TodosPanel() {
                        {priorityMap[todo.priority].text}
                     </div>
 
-                    <Button variant="ghost" size="icon" className="size-8" onClick={() => handleEditStart(todo)}>
+                    <Button variant="ghost" size="icon" className="size-8" onClick={() => handleEditStart(todo)} disabled={todo.completed}>
                       <Edit className="text-muted-foreground hover:text-primary" />
                     </Button>
                     <Button variant="ghost" size="icon" className="size-8" onClick={() => handleDeleteTodo(todo.id)}>
