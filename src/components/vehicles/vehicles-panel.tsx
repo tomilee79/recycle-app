@@ -16,7 +16,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download, PackageOpen } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download, PackageOpen, MoreHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { format } from 'date-fns';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 
 const statusMap: { [key in Vehicle['status']]: string } = {
@@ -432,7 +432,7 @@ export default function VehiclesPanel() {
                 </div>
               </div>
               <Table>
-                <TableHeader><TableRow><TableHead>차량</TableHead><TableHead>차종</TableHead><TableHead>톤수 (kg)</TableHead><TableHead>운전자</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>차량</TableHead><TableHead>차종</TableHead><TableHead>톤수 (kg)</TableHead><TableHead>운전자</TableHead><TableHead>상태</TableHead><TableHead className="text-right w-16">작업</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedVehicles.map((vehicle) => (
                     <TableRow key={vehicle.id} onClick={() => handleVehicleClick(vehicle)} className="cursor-pointer">
@@ -458,6 +458,11 @@ export default function VehiclesPanel() {
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      </TableCell>
+                      <TableCell className="text-right">
+                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleVehicleClick(vehicle); setIsEditingVehicle(true); }}>
+                           <Edit className="size-4" />
+                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -515,7 +520,7 @@ export default function VehiclesPanel() {
                 </div>
               </div>
               <Table>
-                <TableHeader><TableRow><TableHead>장비 ID</TableHead><TableHead>종류</TableHead><TableHead>상태</TableHead><TableHead>현재 위치</TableHead><TableHead className="text-right">최근 점검일</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>장비 ID</TableHead><TableHead>종류</TableHead><TableHead>상태</TableHead><TableHead>현재 위치</TableHead><TableHead className="text-right">최근 점검일</TableHead><TableHead className="text-right w-16">작업</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedEquipments.map((item: Equipment) => (
                     <TableRow key={item.id} onClick={() => handleEquipmentClick(item)} className="cursor-pointer">
@@ -524,6 +529,11 @@ export default function VehiclesPanel() {
                         <TableCell><Badge variant={item.status === 'In Use' ? 'default' : item.status === 'Available' ? 'secondary' : 'destructive'}>{equipmentStatusMap[item.status]}</Badge></TableCell>
                         <TableCell>{item.location}</TableCell>
                         <TableCell className="text-right">{item.lastInspected}</TableCell>
+                        <TableCell className="text-right">
+                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEquipmentClick(item); setIsEditingEquipment(true); }}>
+                             <Edit className="size-4" />
+                           </Button>
+                        </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -685,4 +695,3 @@ export default function VehiclesPanel() {
     </>
   );
 }
-
