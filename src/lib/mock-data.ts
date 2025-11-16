@@ -6,8 +6,8 @@ import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMont
 export const vehicles: Vehicle[] = [
   {
     id: 'V001',
-    name: 'EcoHauler 1',
-    driver: 'John Doe',
+    name: '에코트럭 1호',
+    driver: '김민준',
     status: 'On Route',
     location: { lat: 37.5833, lng: 127.0017 }, // 동대문
     capacity: 5000,
@@ -21,8 +21,8 @@ export const vehicles: Vehicle[] = [
   },
   {
     id: 'V002',
-    name: 'GreenMover 2',
-    driver: 'Jane Smith',
+    name: '그린카 2호',
+    driver: '이서아',
     status: 'Idle',
     location: { lat: 37.5665, lng: 126.9780 }, // 서울 시청
     capacity: 5000,
@@ -35,8 +35,8 @@ export const vehicles: Vehicle[] = [
   },
   {
     id: 'V003',
-    name: 'RecycleRover',
-    driver: 'Mike Johnson',
+    name: '리사이클 로버',
+    driver: '박도윤',
     status: 'On Route',
     location: { lat: 37.5326, lng: 127.0246 }, // 강남
     capacity: 3000,
@@ -47,8 +47,8 @@ export const vehicles: Vehicle[] = [
   },
   {
     id: 'V004',
-    name: 'CleanCruiser',
-    driver: 'Emily White',
+    name: '클린 크루저',
+    driver: '최지우',
     status: 'Maintenance',
     location: { lat: 37.5492, lng: 126.9033 }, // 마포
     capacity: 7000,
@@ -61,8 +61,8 @@ export const vehicles: Vehicle[] = [
   },
   {
     id: 'V005',
-    name: 'EarthWagon 5',
-    driver: 'Chris Brown',
+    name: '어스 웨건 5호',
+    driver: '정하은',
     status: 'Completed',
     location: { lat: 37.478, lng: 126.9515 }, // 관악
     capacity: 5000,
@@ -92,7 +92,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T01',
     vehicleId: 'V001',
-    driver: 'John Doe',
+    driver: '김민준',
     customerId: 'C001',
     materialType: 'Plastic',
     address: '서울시 종로구 세종대로 175',
@@ -104,7 +104,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T02',
     vehicleId: 'V003',
-    driver: 'Mike Johnson',
+    driver: '박도윤',
     customerId: 'C002',
     materialType: 'Paper',
     address: '서울시 강남구 테헤란로 152',
@@ -127,7 +127,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T04',
     vehicleId: 'V005',
-    driver: 'Chris Brown',
+    driver: '정하은',
     customerId: 'C004',
     materialType: 'Metal',
     address: '서울시 영등포구 의사당대로 1',
@@ -140,7 +140,7 @@ export const collectionTasks: CollectionTask[] = [
    {
     id: 'T05',
     vehicleId: 'V001',
-    driver: 'John Doe',
+    driver: '김민준',
     customerId: 'C005',
     materialType: 'Plastic',
     address: '서울시 서초구 반포대로 222',
@@ -153,7 +153,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T06',
     vehicleId: 'V003',
-    driver: 'Mike Johnson',
+    driver: '박도윤',
     customerId: 'C001',
     materialType: 'Mixed',
     address: '서울시 중구 세종대로 110',
@@ -166,7 +166,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T07',
     vehicleId: 'V005',
-    driver: 'Chris Brown',
+    driver: '정하은',
     customerId: 'C002',
     materialType: 'Paper',
     address: '서울시 마포구 월드컵로 240',
@@ -201,7 +201,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T10',
     vehicleId: 'V001',
-    driver: 'John Doe',
+    driver: '김민준',
     customerId: 'C003',
     materialType: 'Metal',
     address: '서울시 종로구 종로 1',
@@ -214,7 +214,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T11',
     vehicleId: 'V002',
-    driver: 'Jane Smith',
+    driver: '이서아',
     customerId: 'C002',
     materialType: 'Glass',
     address: '서울시 강동구 올림픽로 578',
@@ -237,75 +237,75 @@ export const collectionTasks: CollectionTask[] = [
 ];
 
 export const reportData: ReportData[] = [
-  { month: 'Jan', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50, revenue: 12550000 },
-  { month: 'Feb', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60, revenue: 15800000 },
-  { month: 'Mar', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70, revenue: 14230000 },
-  { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80, revenue: 17500000 },
-  { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800000 },
-  { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900000 },
+  { month: '1월', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50, revenue: 12550000 },
+  { month: '2월', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60, revenue: 15800000 },
+  { month: '3월', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70, revenue: 14230000 },
+  { month: '4월', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80, revenue: 17500000 },
+  { month: '5월', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800000 },
+  { month: '6월', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900000 },
 ];
 
 export const settlementData: SettlementData[] = [
-    { id: 'S001', month: '2024-06', customerName: 'BigBelly Inc.', collectionCount: 15, totalWeight: 12500, amount: 3500000, status: 'Paid' },
-    { id: 'S002', month: '2024-06', customerName: 'Recycle Corp', collectionCount: 22, totalWeight: 18200, amount: 5100000, status: 'Issued' },
-    { id: 'S003', month: '2024-06', customerName: 'Green Solutions', collectionCount: 8, totalWeight: 7500, amount: 1800000, status: 'Pending' },
-    { id: 'S004', month: '2024-06', customerName: '지구환경 주식회사', collectionCount: 30, totalWeight: 25000, amount: 7200000, status: 'Pending' },
-    { id: 'S005', month: '2024-05', customerName: 'BigBelly Inc.', collectionCount: 14, totalWeight: 11800, amount: 3300000, status: 'Paid' },
-    { id: 'S006', month: '2024-05', customerName: 'Recycle Corp', collectionCount: 20, totalWeight: 17500, amount: 4950000, status: 'Paid' },
-    { id: 'S007', month: '2024-05', customerName: 'Eco Services', collectionCount: 5, totalWeight: 4200, amount: 950000, status: 'Paid' },
+    { id: 'S001', month: '2024-06', customerName: '(주)클린월드', collectionCount: 15, totalWeight: 12500, amount: 3500000, status: 'Paid' },
+    { id: 'S002', month: '2024-06', customerName: '자원솔루션', collectionCount: 22, totalWeight: 18200, amount: 5100000, status: 'Issued' },
+    { id: 'S003', month: '2024-06', customerName: '(주)그린환경', collectionCount: 8, totalWeight: 7500, amount: 1800000, status: 'Pending' },
+    { id: 'S004', month: '2024-06', customerName: '네이처로직스', collectionCount: 30, totalWeight: 25000, amount: 7200000, status: 'Pending' },
+    { id: 'S005', month: '2024-05', customerName: '(주)클린월드', collectionCount: 14, totalWeight: 11800, amount: 3300000, status: 'Paid' },
+    { id: 'S006', month: '2024-05', customerName: '자원솔루션', collectionCount: 20, totalWeight: 17500, amount: 4950000, status: 'Paid' },
+    { id: 'S007', month: '2024-05', customerName: '에코서비스', collectionCount: 5, totalWeight: 4200, amount: 950000, status: 'Paid' },
 ]
 
 export const drivers: Driver[] = [
-  { id: 'D001', name: 'John Doe', contact: '555-0101', isAvailable: false },
-  { id: 'D002', name: 'Jane Smith', contact: '555-0102', isAvailable: true },
-  { id: 'D003', name: 'Mike Johnson', contact: '555-0103', isAvailable: false },
-  { id: 'D004', name: 'Emily White', contact: '555-0104', isAvailable: true },
-  { id: 'D005', name: 'Chris Brown', contact: '555-0105', isAvailable: true },
-  { id: 'D006', name: 'Jessica Miller', contact: '555-0106', isAvailable: false },
-  { id: 'D007', name: 'David Wilson', contact: '555-0107', isAvailable: true },
+  { id: 'D001', name: '김민준', contact: '010-1234-5678', isAvailable: false },
+  { id: 'D002', name: '이서아', contact: '010-2345-6789', isAvailable: true },
+  { id: 'D003', name: '박도윤', contact: '010-3456-7890', isAvailable: false },
+  { id: 'D004', name: '최지우', contact: '010-4567-8901', isAvailable: true },
+  { id: 'D005', name: '정하은', contact: '010-5678-9012', isAvailable: true },
+  { id: 'D006', name: '강현우', contact: '010-6789-0123', isAvailable: false },
+  { id: 'D007', name: '조민서', contact: '010-7890-1234', isAvailable: true },
 ];
 
 export const customers: Customer[] = [
   { 
     id: 'C001', 
-    name: 'BigBelly Inc.', 
+    name: '(주)클린월드', 
     address: '서울시 종로구',
-    contactPerson: '김철수',
+    contactPerson: '김대표',
     activityHistory: [
-        { id: 'A001', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), type: '상담', content: '신규 폐기물 처리 단가 문의', manager: '이영희' },
-        { id: 'A002', date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), type: '계약', content: '2025년 재계약 완료', manager: '김철수' },
+        { id: 'A001', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), type: '상담', content: '신규 폐기물 처리 단가 문의', manager: '이팀장' },
+        { id: 'A002', date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), type: '계약', content: '2025년 재계약 완료', manager: '김대표' },
     ]
   },
   { 
     id: 'C002', 
-    name: 'Recycle Corp', 
+    name: '자원솔루션', 
     address: '서울시 강남구',
-    contactPerson: '이영희',
+    contactPerson: '이팀장',
     activityHistory: [
-        { id: 'A003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), type: '클레임', content: '수거 지연에 대한 불만 제기', manager: '박민준' },
+        { id: 'A003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), type: '클레임', content: '수거 지연에 대한 불만 제기', manager: '박대리' },
     ]
   },
   { 
     id: 'C003', 
-    name: 'Green Solutions', 
+    name: '(주)그린환경', 
     address: '서울시 송파구',
-    contactPerson: '박민준',
+    contactPerson: '박대리',
     activityHistory: [
-        { id: 'A004', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), type: '영업 기회', content: '신규 계약 제안서 발송', manager: '김철수' },
+        { id: 'A004', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), type: '영업 기회', content: '신규 계약 제안서 발송', manager: '김대표' },
     ]
   },
   { 
     id: 'C004', 
-    name: 'Eco Services', 
+    name: '에코서비스', 
     address: '서울시 영등포구',
-    contactPerson: '최지우',
+    contactPerson: '최사원',
     activityHistory: []
   },
   { 
     id: 'C005', 
-    name: '지구환경 주식회사',
+    name: '네이처로직스',
     address: '서울시 서초구',
-    contactPerson: '홍길동',
+    contactPerson: '홍사장',
     activityHistory: []
   },
 ];
@@ -313,7 +313,7 @@ export const customers: Customer[] = [
 export const notifications: Notification[] = [
     {
       id: 'N001',
-      title: '차량 정비 필요: CleanCruiser',
+      title: '차량 정비 필요: 클린 크루저',
       description: 'V004 차량의 정기 점검일이 도래했습니다.',
       timestamp: formatISO(subMinutes(new Date(), 5)),
       type: 'Warning',
@@ -321,7 +321,7 @@ export const notifications: Notification[] = [
     },
     {
       id: 'N002',
-      title: '수거 완료: EarthWagon 5',
+      title: '수거 완료: 어스 웨건 5호',
       description: 'V005 차량이 모든 수거 작업을 완료했습니다.',
       timestamp: formatISO(subMinutes(new Date(), 32)),
       type: 'Info',
@@ -329,7 +329,7 @@ export const notifications: Notification[] = [
     },
     {
       id: 'N003',
-      title: '경로 이탈: RecycleRover',
+      title: '경로 이탈: 리사이클 로버',
       description: 'V003 차량이 지정된 경로를 이탈했습니다.',
       timestamp: formatISO(subMinutes(new Date(), 48)),
       type: 'Error',
@@ -338,7 +338,7 @@ export const notifications: Notification[] = [
     {
       id: 'N004',
       title: '신규 배차 등록',
-      description: '새로운 배차가 GreenMover 2 차량에 할당되었습니다.',
+      description: '새로운 배차가 그린카 2호 차량에 할당되었습니다.',
       timestamp: formatISO(subMinutes(new Date(), 90)),
       type: 'Info',
       isRead: true,
@@ -419,17 +419,19 @@ export const contracts: Contract[] = [
 ];
 
 export const expensesData: Expense[] = [
-    { id: 'EXP001', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), category: '유류비', description: 'EcoHauler 1 주유', amount: 120000, vehicleId: 'V001', status: 'Paid' },
-    { id: 'EXP002', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), category: '정비비', description: 'GreenMover 2 타이어 교체', amount: 450000, vehicleId: 'V002', status: 'Paid' },
+    { id: 'EXP001', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), category: '유류비', description: '에코트럭 1호 주유', amount: 120000, vehicleId: 'V001', status: 'Paid' },
+    { id: 'EXP002', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), category: '정비비', description: '그린카 2호 타이어 교체', amount: 450000, vehicleId: 'V002', status: 'Paid' },
     { id: 'EXP003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), category: '통행료', description: '경부고속도로 통행료', amount: 15000, vehicleId: 'V003', status: 'Pending' },
     { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
-    { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: 'RecycleRover 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
+    { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: '리사이클 로버 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
 ];
 
 export const users: User[] = [
-    { id: 'U001', name: '김관리', email: 'admin@ecotrack.com', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
-    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.com', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
-    { id: 'U003', name: '박사원', email: 'user@ecotrack.com', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
-    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.com', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
-    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.com', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
+    { id: 'U001', name: '김관리', email: 'admin@ecotrack.co.kr', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd') },
+    { id: 'U002', name: '이매니저', email: 'manager@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 60), 'yyyy-MM-dd') },
+    { id: 'U003', name: '박사원', email: 'user@ecotrack.co.kr', role: 'User', status: 'Active', createdAt: format(subDays(new Date(), 30), 'yyyy-MM-dd') },
+    { id: 'U004', name: '최비활', email: 'disabled@ecotrack.co.kr', role: 'User', status: 'Disabled', createdAt: format(subDays(new Date(), 90), 'yyyy-MM-dd') },
+    { id: 'U005', name: '정매니저', email: 'manager2@ecotrack.co.kr', role: 'Manager Admin', status: 'Active', createdAt: format(subDays(new Date(), 15), 'yyyy-MM-dd') },
 ];
+
+    
