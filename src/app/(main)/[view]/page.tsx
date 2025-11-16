@@ -1,5 +1,6 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import BillingPanel from '@/components/billing/billing-panel';
 import ContactPanel from '@/components/contact/contact-panel';
 import ContractsPanel from '@/components/contracts/contracts-panel';
@@ -19,8 +20,9 @@ import UsersPanel from '@/components/users/users-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
 
-export default function ViewPage({ params }: { params: { view: string } }) {
-  const { view } = params;
+export default function ViewPage() {
+  const params = useParams();
+  const view = params.view as string;
 
   switch (view) {
     case 'dashboard':
