@@ -113,10 +113,13 @@ export function RouteMap({ apiKey, pendingTasks, selectedTasks, optimizedRoute, 
         <div className="text-center text-muted-foreground p-4">
           <h3 className="font-semibold text-lg mb-2">Google Maps API Key가 필요합니다</h3>
           <p className="text-sm">
-            .env.local 파일에 유효한 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY를 추가해주세요.
+            1. Google Cloud 프로젝트에서 유효한 API 키를 생성해주세요.
           </p>
-           <p className="text-xs mt-2">
-            참고: API를 활성화한 후에도, Google Cloud 프로젝트에 결제 계정이 연결되어 있어야 지도가 표시됩니다.
+          <p className="text-sm">
+            2. <strong>.env</strong> 파일에 <strong>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</strong> 형식으로 키를 추가해주세요.
+          </p>
+          <p className="text-xs mt-4">
+            <strong>참고:</strong> API를 활성화하고, 프로젝트에 <strong>결제 계정이 연결</strong>되어 있어야 지도가 표시됩니다.
           </p>
         </div>
       </Card>
