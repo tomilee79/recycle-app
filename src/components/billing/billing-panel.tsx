@@ -11,7 +11,7 @@ import { reportData, settlementData as initialSettlementData, expensesData as in
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote, Search, ChevronDown, Edit } from 'lucide-react';
+import { PlusCircle, Utensils, Construction, Car, MoreHorizontal, Loader2, Trash2, TrendingUp, HandCoins, CircleDotDashed, Banknote, Search, ChevronDown, Edit, ArrowUp, ArrowDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -73,6 +73,7 @@ const settlementFormSchema = z.object({
   amount: z.coerce.number().min(0, "정산 금액은 0 이상이어야 합니다."),
 });
 type SettlementFormValues = z.infer<typeof settlementFormSchema>;
+type SettlementSortableField = 'month' | 'customerName' | 'collectionCount' | 'totalWeight' | 'amount' | 'status';
 
 const expenseFormSchema = z.object({
   date: z.date({ required_error: "지출일을 선택해주세요." }),
@@ -82,6 +83,8 @@ const expenseFormSchema = z.object({
   vehicleId: z.string().optional(),
 });
 type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
+type ExpenseSortableField = 'date' | 'category' | 'description' | 'vehicleId' | 'amount' | 'status';
+
 
 const RevenueSummary = ({ data }: { data: SettlementData[] }) => {
     const summary = useMemo(() => {
@@ -147,25 +150,55 @@ export default function BillingPanel() {
   const [expenseFilters, setExpenseFilters] = useState({ category: 'all', status: 'all', search: '' });
   const [selectedSettlementRows, setSelectedSettlementRows] = useState<Set<string>>(new Set());
   const [selectedExpenseRows, setSelectedExpenseRows] = useState<Set<string>>(new Set());
+  const [settlementSortConfig, setSettlementSortConfig] = useState<{ key: SettlementSortableField; direction: 'ascending' | 'descending' } | null>(null);
+  const [expenseSortConfig, setExpenseSortConfig] = useState<{ key: ExpenseSortableField; direction: 'ascending' | 'descending' } | null>(null);
   const { toast } = useToast();
 
   const filteredSettlements = useMemo(() => {
-    return settlementData.filter(item => {
+    let filtered = settlementData.filter(item => {
       const customerMatch = settlementFilters.customer === 'all' || item.customerName === settlementFilters.customer;
       const statusMatch = settlementFilters.status === 'all' || item.status === settlementFilters.status;
       const searchMatch = item.customerName.toLowerCase().includes(settlementFilters.search.toLowerCase());
       return customerMatch && statusMatch && searchMatch;
     });
-  }, [settlementData, settlementFilters]);
+
+    if (settlementSortConfig !== null) {
+      filtered.sort((a, b) => {
+        if (a[settlementSortConfig.key] < b[settlementSortConfig.key]) {
+          return settlementSortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[settlementSortConfig.key] > b[settlementSortConfig.key]) {
+          return settlementSortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [settlementData, settlementFilters, settlementSortConfig]);
 
   const filteredExpenses = useMemo(() => {
-    return expensesData.filter(item => {
+    let filtered = expensesData.filter(item => {
       const categoryMatch = expenseFilters.category === 'all' || item.category === expenseFilters.category;
       const statusMatch = expenseFilters.status === 'all' || item.status === expenseFilters.status;
       const searchMatch = item.description.toLowerCase().includes(expenseFilters.search.toLowerCase()) || (item.vehicleId || '').toLowerCase().includes(expenseFilters.search.toLowerCase());
       return categoryMatch && statusMatch && searchMatch;
     });
-  }, [expensesData, expenseFilters]);
+    
+    if (expenseSortConfig !== null) {
+      filtered.sort((a, b) => {
+        if (a[expenseSortConfig.key] < b[expenseSortConfig.key]) {
+          return expenseSortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[expenseSortConfig.key] > b[expenseSortConfig.key]) {
+          return expenseSortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [expensesData, expenseFilters, expenseSortConfig]);
 
 
   const {
@@ -356,6 +389,33 @@ export default function BillingPanel() {
       }
   }
 
+  const requestSort = (
+    key: SettlementSortableField | ExpenseSortableField, 
+    type: 'settlement' | 'expense'
+  ) => {
+    if (type === 'settlement') {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (settlementSortConfig && settlementSortConfig.key === key && settlementSortConfig.direction === 'ascending') {
+        direction = 'descending';
+      }
+      setSettlementSortConfig({ key: key as SettlementSortableField, direction });
+    } else {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (expenseSortConfig && expenseSortConfig.key === key && expenseSortConfig.direction === 'ascending') {
+        direction = 'descending';
+      }
+      setExpenseSortConfig({ key: key as ExpenseSortableField, direction });
+    }
+  };
+  
+  const getSortIcon = (key: SettlementSortableField | ExpenseSortableField, type: 'settlement' | 'expense') => {
+    const sortConfig = type === 'settlement' ? settlementSortConfig : expenseSortConfig;
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
+
   const chartConfig = {
     plastic: { label: "플라스틱", color: "hsl(var(--chart-1))" },
     glass: { label: "유리", color: "hsl(var(--chart-2))" },
@@ -464,12 +524,12 @@ export default function BillingPanel() {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-12"><Checkbox onCheckedChange={(checked) => handleSelectAllSettlementRows(!!checked)} checked={selectedSettlementRows.size === paginatedSettlementData.length && paginatedSettlementData.length > 0} /></TableHead>
-                            <TableHead>정산 월</TableHead>
-                            <TableHead>고객사</TableHead>
-                            <TableHead>수거 횟수</TableHead>
-                            <TableHead>총 수거량(kg)</TableHead>
-                            <TableHead>정산 금액(원)</TableHead>
-                            <TableHead>상태</TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('month', 'settlement')}>정산 월{getSortIcon('month', 'settlement')}</Button></TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('customerName', 'settlement')}>고객사{getSortIcon('customerName', 'settlement')}</Button></TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('collectionCount', 'settlement')}>수거 횟수{getSortIcon('collectionCount', 'settlement')}</Button></TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('totalWeight', 'settlement')}>총 수거량(kg){getSortIcon('totalWeight', 'settlement')}</Button></TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('amount', 'settlement')}>정산 금액(원){getSortIcon('amount', 'settlement')}</Button></TableHead>
+                            <TableHead><Button variant="ghost" onClick={() => requestSort('status', 'settlement')}>상태{getSortIcon('status', 'settlement')}</Button></TableHead>
                             <TableHead className="text-right w-24">작업</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -603,12 +663,12 @@ export default function BillingPanel() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12"><Checkbox onCheckedChange={(checked) => handleSelectAllExpenseRows(!!checked)} checked={selectedExpenseRows.size === paginatedExpenseData.length && paginatedExpenseData.length > 0}/></TableHead>
-                                <TableHead>지출일</TableHead>
-                                <TableHead>항목</TableHead>
-                                <TableHead>내용</TableHead>
-                                <TableHead>차량</TableHead>
-                                <TableHead>금액</TableHead>
-                                <TableHead>상태</TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('date', 'expense')}>지출일{getSortIcon('date', 'expense')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('category', 'expense')}>항목{getSortIcon('category', 'expense')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('description', 'expense')}>내용{getSortIcon('description', 'expense')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('vehicleId', 'expense')}>차량{getSortIcon('vehicleId', 'expense')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('amount', 'expense')}>금액{getSortIcon('amount', 'expense')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('status', 'expense')}>상태{getSortIcon('status', 'expense')}</Button></TableHead>
                                 <TableHead className="text-right w-24">작업</TableHead>
                             </TableRow>
                         </TableHeader>
