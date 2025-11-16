@@ -73,7 +73,7 @@ const menuGroups: Record<MenuGroup, View[]> = {
   operations: ['dashboard', 'schedule', 'tasks', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['todos', 'notifications', 'predict', 'users', 'admin', 'mypage', 'contact'],
+  system: ['todos', 'notifications', 'predict', 'users', 'admin', 'mypage'],
 };
 
 
@@ -215,10 +215,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'users'} asChild><Link href="/users"><Users /><span>사용자 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'mypage'} asChild><Link href="/mypage"><User /><span>마이페이지</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'contact'} asChild><Link href="/contact"><Info /><span>개발사 연락처</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>
             </Collapsible>
+            <Separator className="my-2 bg-sidebar-border" />
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={activeView === 'contact'} asChild>
+                <Link href="/contact"><Info /><span>개발사 연락처</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -287,3 +292,4 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
+
