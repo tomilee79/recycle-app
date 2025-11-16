@@ -56,8 +56,8 @@ export default function SchedulePanel() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-2 shadow-lg">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="shadow-lg">
         <CardHeader>
             <CardTitle>일간/월간 수거 일정</CardTitle>
             <CardDescription>달력에서 날짜를 선택하여 일별 수거 작업을 확인하세요.</CardDescription>
@@ -79,7 +79,7 @@ export default function SchedulePanel() {
         </CardContent>
       </Card>
       
-      <Card className="lg:col-span-1 shadow-lg flex flex-col">
+      <Card className="shadow-lg flex flex-col">
         <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="size-5" />
