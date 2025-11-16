@@ -171,7 +171,6 @@ export default function TasksPanel() {
   const handleUpdateTask: SubmitHandler<UpdateTaskFormValues> = (data) => {
     if (!editingTask) return;
     
-    const taskIds = [editingTask.id];
     const newStatus = data.status;
 
     // Apply status change logic from handleStatusChange
@@ -637,5 +636,3 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
-
-    
