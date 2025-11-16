@@ -343,7 +343,7 @@ export default function ContractsPanel() {
   return (
     <>
       <Card className="shadow-lg">
-      <Tabs defaultValue="dashboard">
+      <Tabs defaultValue="list">
         <CardHeader>
             <div className="flex justify-between items-center">
               <div>
