@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const users: User[] = [
@@ -443,6 +443,10 @@ const calculateQuoteTotals = (items: QuoteItem[]): { subtotal: number; tax: numb
 const createQuote = (id: string, customerId: string, status: QuoteStatus, date: Date): Quote => {
     const items = generateQuoteItems(Math.floor(Math.random() * 3) + 2);
     const { subtotal, tax, total } = calculateQuoteTotals(items);
+    const attachments: Attachment[] = status === 'Accepted' ? [
+        { id: `att-${id}`, name: '고객사_요청서.pdf', size: 1024 * 300, type: 'application/pdf', url: '#' },
+        { id: `att2-${id}`, name: '현장_사진_01.jpg', size: 1024 * 800, type: 'image/jpeg', url: '#' },
+    ] : [];
     return {
         id,
         customerId,
@@ -453,16 +457,19 @@ const createQuote = (id: string, customerId: string, status: QuoteStatus, date: 
         subtotal,
         tax,
         total,
-        notes: status === 'Rejected' ? '타사 대비 가격 경쟁력 부족으로 거절.' : '월 정기 수거 건에 대한 견적.'
+        notes: status === 'Rejected' ? '타사 대비 가격 경쟁력 부족으로 거절.' : '월 정기 수거 건에 대한 견적.',
+        attachments,
     };
 };
 
 export const quotes: Quote[] = [
-    createQuote('Q-2024-001', 'C001', 'Accepted', subDays(new Date(), 5)),
+    createQuote('Q-2024-001', 'C001', 'Accepted', subMonths(new Date(), 2)),
     createQuote('Q-2024-002', 'C002', 'Sent', subDays(new Date(), 2)),
     createQuote('Q-2024-003', 'C003', 'Draft', subDays(new Date(), 1)),
-    createQuote('Q-2024-004', 'C004', 'Rejected', subDays(new Date(), 15)),
+    createQuote('Q-2024-004', 'C004', 'Rejected', subMonths(new Date(), 1)),
     createQuote('Q-2024-005', 'C005', 'Sent', subDays(new Date(), 10)),
+    createQuote('Q-2023-120', 'C001', 'Accepted', subMonths(new Date(), 3)),
+    createQuote('Q-2023-115', 'C002', 'Rejected', subMonths(new Date(), 4)),
 ];
 
 const createContract = (id: string, customerId: string, status: ContractStatus, startDate: Date, endDate: Date): Contract => {

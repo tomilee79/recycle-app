@@ -145,6 +145,14 @@ export type QuoteItem = {
     total: number;
 };
 
+export type Attachment = {
+    id: string;
+    name: string;
+    size: number; // in bytes
+    type: string;
+    url: string; // data URL or a mock URL
+}
+
 export type Quote = {
     id: string;
     customerId: string;
@@ -156,6 +164,7 @@ export type Quote = {
     tax: number;
     total: number;
     notes?: string;
+    attachments?: Attachment[];
 };
 
 export type ContractStatus = 'Active' | 'Expiring' | 'Terminated';
