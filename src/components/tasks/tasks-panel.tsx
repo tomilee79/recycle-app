@@ -10,7 +10,7 @@ import { collectionTasks as initialCollectionTasks, customers, vehicles as initi
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy } from 'lucide-react';
+import { Search, Info, MapPin, Trash2, Weight, Truck, User, MoreHorizontal, Edit, Loader2, PlusCircle, Copy, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -26,7 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
 import TasksSummary from './tasks-summary';
-import { format, addDays, addMonths, addWeeks, isBefore, isEqual } from 'date-fns';
+import { format, addDays, addMonths, addWeeks, isBefore, isEqual, parseISO, isPast, isSameDay, startOfToday } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -128,6 +128,7 @@ export default function TasksPanel() {
       prevTasks.map(task => {
         if (taskIds.includes(task.id)) {
             const oldStatus = task.status;
+            // When a task is completed or cancelled, make the driver available again
             if ((oldStatus === 'In Progress' || oldStatus === 'On Route') && (newStatus === 'Completed' || newStatus === 'Cancelled' || newStatus === 'Idle')) {
                 const driverName = task.driver;
                 if (driverName) {
@@ -135,6 +136,7 @@ export default function TasksPanel() {
                     setVehicles(prevVehicles => prevVehicles.map(v => v.driver === driverName ? {...v, status: 'Idle'} : v));
                 }
             }
+            // When a task becomes 'In Progress', make the driver unavailable
             if (newStatus === 'In Progress' && task.driver) {
                 const driverName = task.driver;
                 setDrivers(prevDrivers => prevDrivers.map(d => d.name === driverName ? {...d, isAvailable: false} : d));
@@ -168,10 +170,12 @@ export default function TasksPanel() {
     
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        if (task.status !== 'In Progress') { // Only change status if it's not already in progress
-          handleStatusChange([taskId], 'In Progress');
+        // Only change status if it's not already in progress
+        const newStatus = task.status === 'In Progress' ? 'In Progress' : 'In Progress';
+        if (task.status !== newStatus) {
+            handleStatusChange([taskId], newStatus);
         }
-        return { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: 'In Progress' };
+        return { ...task, vehicleId: vehicleToAssign.id, driver: vehicleToAssign.driver, status: newStatus };
       }
       return task;
     }));
@@ -499,137 +503,145 @@ export default function TasksPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedTasks.map((task) => (
-                  <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
-                     <TableCell>
-                          <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
-                     </TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.scheduledDate}</TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
-                    <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer text-center">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
-                      {task.vehicleId ? (
-                        <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
-                      ) : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                             <Button variant="ghost" className="h-auto p-1 font-normal text-blue-600">배정하기</Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                              {availableVehicles.length > 0 ? availableVehicles.map(v => (
-                                  <DropdownMenuItem key={v.id} onSelect={() => handleAssignVehicle(task.id, v.id)}>
-                                      {v.name} ({v.driver})
-                                  </DropdownMenuItem>
-                              )) : <DropdownMenuItem disabled>배정 가능한 차량 없음</DropdownMenuItem>}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-auto p-0 font-normal">
-                              <Badge variant={statusVariant[task.status]} className="cursor-pointer">{statusMap[task.status]}</Badge>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          {statuses.filter(s => s !== task.status).map(s => (
-                              <DropdownMenuItem key={s} onSelect={() => handleStatusChange([task.id], s)}>{statusMap[s]}으로 변경</DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
-                         <AlertDialog>
+                {paginatedTasks.map((task) => {
+                    const isOverdue = !task.status.match(/Completed|Cancelled/) && isPast(parseISO(task.scheduledDate)) && !isSameDay(parseISO(task.scheduledDate), startOfToday());
+                    return (
+                        <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
+                            <TableCell>
+                                <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
+                            </TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className={cn("cursor-pointer", isOverdue && "text-destructive")}>
+                                <div className='flex items-center gap-2'>
+                                  {isOverdue && <AlertTriangle className="size-4" />}
+                                  {task.scheduledDate}
+                                </div>
+                            </TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
+                            <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer text-center">{task.collectedWeight > 0 ? `${task.collectedWeight.toLocaleString()}kg` : '미수거'}</TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
+                            {task.vehicleId ? (
+                                <span onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</span>
+                            ) : (
+                                <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-auto p-1 font-normal text-blue-600">배정하기</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    {availableVehicles.length > 0 ? availableVehicles.map(v => (
+                                        <DropdownMenuItem key={v.id} onSelect={() => handleAssignVehicle(task.id, v.id)}>
+                                            {v.name} ({v.driver})
+                                        </DropdownMenuItem>
+                                    )) : <DropdownMenuItem disabled>배정 가능한 차량 없음</DropdownMenuItem>}
+                                </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                            </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
+                                <Button variant="ghost" className="h-auto p-0 font-normal">
+                                    <Badge variant={statusVariant[task.status]} className="cursor-pointer">{statusMap[task.status]}</Badge>
+                                </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditingTask(task); updateForm.reset({ collectedWeight: task.collectedWeight, status: task.status }); }}>
-                                          <Edit className="mr-2 h-4 w-4" />
-                                          <span>수정</span>
-                                      </DropdownMenuItem>
-                                    </DialogTrigger>
-                                    <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
-                                        <Copy className="mr-2 h-4 w-4" />
-                                        <span>복제</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator/>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          <span>삭제</span>
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
+                                <DropdownMenuContent>
+                                {statuses.filter(s => s !== task.status).map(s => (
+                                    <DropdownMenuItem key={s} onSelect={() => handleStatusChange([task.id], s)}>{statusMap[s]}으로 변경</DropdownMenuItem>
+                                ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                             <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>취소</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                         </AlertDialog>
-                          <DialogContent>
-                              <DialogHeader>
-                                  <DialogTitle>작업 결과 수정</DialogTitle>
-                                  <DialogDescription>
-                                      작업 #{task.id}의 수거량과 상태를 업데이트합니다.
-                                  </DialogDescription>
-                              </DialogHeader>
-                              <Form {...updateForm}>
-                                  <form onSubmit={updateForm.handleSubmit(handleUpdateTask)} className="space-y-4 py-4">
-                                      <FormField control={updateForm.control} name="collectedWeight" render={({ field }) => (
-                                          <FormItem>
-                                              <FormLabel>수거량 (kg)</FormLabel>
-                                              <FormControl>
-                                                  <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                          </FormItem>
-                                      )}/>
-                                      <FormField control={updateForm.control} name="status" render={({ field }) => (
-                                          <FormItem>
-                                              <FormLabel>상태</FormLabel>
-                                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                  <FormControl>
-                                                      <SelectTrigger>
-                                                          <SelectValue placeholder="상태를 선택하세요" />
-                                                      </SelectTrigger>
-                                                  </FormControl>
-                                                  <SelectContent>
-                                                      {statuses.map(s => <SelectItem key={s} value={s}>{statusMap[s]}</SelectItem>)}
-                                                  </SelectContent>
-                                              </Select>
-                                              <FormMessage />
-                                          </FormItem>
-                                      )}/>
-                                      <DialogFooter>
-                                          <Button type="submit" disabled={updateForm.formState.isSubmitting}>
-                                              {updateForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                              저장
-                                          </Button>
-                                      </DialogFooter>
-                                  </form>
-                              </Form>
-                          </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            </TableCell>
+                            <TableCell className="text-right">
+                            <Dialog onOpenChange={(open) => !open && setEditingTask(null)}>
+                                <AlertDialog>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditingTask(task); updateForm.reset({ collectedWeight: task.collectedWeight, status: task.status }); }}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                <span>수정</span>
+                                            </DropdownMenuItem>
+                                            </DialogTrigger>
+                                            <DropdownMenuItem onSelect={() => handleCloneTask(task)}>
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                <span>복제</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator/>
+                                            <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <span>삭제</span>
+                                            </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>취소</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteTasks([task.id])}>삭제 확인</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>작업 결과 수정</DialogTitle>
+                                        <DialogDescription>
+                                            작업 #{task.id}의 수거량과 상태를 업데이트합니다.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <Form {...updateForm}>
+                                        <form onSubmit={updateForm.handleSubmit(handleUpdateTask)} className="space-y-4 py-4">
+                                            <FormField control={updateForm.control} name="collectedWeight" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>수거량 (kg)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}/>
+                                            <FormField control={updateForm.control} name="status" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>상태</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="상태를 선택하세요" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {statuses.map(s => <SelectItem key={s} value={s}>{statusMap[s]}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}/>
+                                            <DialogFooter>
+                                                <Button type="submit" disabled={updateForm.formState.isSubmitting}>
+                                                    {updateForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                                    저장
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </Form>
+                                </DialogContent>
+                            </Dialog>
+                            </TableCell>
+                        </TableRow>
+                    )
+                })}
               </TableBody>
             </Table>
           </CardContent>
