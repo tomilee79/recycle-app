@@ -35,6 +35,10 @@ export type CollectionTask = {
   customerId: string;
   materialType: 'Plastic' | 'Glass' | 'Paper' | 'Metal' | 'Mixed';
   address: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
   status: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
   scheduledTime: string;
   completedTime?: string;

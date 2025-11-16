@@ -21,3 +21,22 @@ export const PredictMaterialTypeFormSchema = z.object({
 
 // Note: The related server-side types (PredictMaterialTypeInput, PredictMaterialTypeOutput)
 // are defined and exported directly from 'src/ai/flows/predict-material-type.ts'.
+
+const OptimizeRouteLocationSchema = z.object({
+  id: z.string(),
+  address: z.string(),
+});
+
+export const OptimizeRouteInputSchema = z.object({
+  startPoint: z.string().describe('The starting point of the route, e.g., "본사 차고지".'),
+  locations: z.array(OptimizeRouteLocationSchema).describe('An array of locations to be visited.'),
+});
+
+export const OptimizeRouteOutputSchema = z.object({
+  optimizedRoute: z.array(OptimizeRouteLocationSchema).describe('The optimized route as an ordered array of locations.'),
+  reasoning: z.string().describe('A brief explanation of why this route is optimal.'),
+});
+
+export type OptimizeRouteLocation = z.infer<typeof OptimizeRouteLocationSchema>;
+export type OptimizeRouteInput = z.infer<typeof OptimizeRouteInputSchema>;
+export type OptimizeRouteOutput = z.infer<typeof OptimizeRouteOutputSchema>;
