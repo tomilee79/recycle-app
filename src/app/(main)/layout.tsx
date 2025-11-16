@@ -209,6 +209,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/quotes"><FileText /><span>견적 관리</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeView === 'contracts'}
+                tooltip={{ children: '계약 관리' }}
+                asChild
+              >
+                <Link href="/contracts"><FileSignature /><span>계약 관리</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeView === 'billing'}
@@ -217,6 +226,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               >
                 <Link href="/billing"><Receipt /><span>정산 관리</span></Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton
+                    isActive={activeView === 'customers'}
+                    tooltip={{ children: '고객 목록' }}
+                    asChild
+                >
+                    <Link href="/customers"><Users2 /><span>고객 목록</span></Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton
@@ -256,22 +274,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <CollapsibleSidebarMenu
-                title="고객 관리"
-                icon={<Building2 />}
-                activeView={activeView}
-                defaultOpen={['customers', 'contracts'].includes(activeView)}
-              >
-                  <SidebarMenuSubButton isActive={activeView === 'customers'} asChild>
-                      <Link href="/customers"><Users2 /><span>고객 목록</span></Link>
-                  </SidebarMenuSubButton>
-                  <SidebarMenuSubButton isActive={activeView === 'contracts'} asChild>
-                      <Link href="/contracts"><FileSignature/><span>계약 관리</span></Link>
-                  </SidebarMenuSubButton>
-              </CollapsibleSidebarMenu>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeView === 'predict'}
                 tooltip={{ children: 'AI 예측' }}
@@ -290,9 +292,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               >
                 <SidebarMenuSubButton isActive={activeView === 'users'} asChild>
                     <Link href="/users"><Users /><span>사용자 관리</span></Link>
-                </SidebarMenuSubButton>
-                <SidebarMenuSubButton isActive={activeView === 'drivers'} asChild>
-                    <Link href="/drivers"><ClipboardList /><span>직원 목록</span></Link>
                 </SidebarMenuSubButton>
                 <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
                     <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
@@ -381,3 +380,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
+
+    
