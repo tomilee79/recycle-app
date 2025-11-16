@@ -9,6 +9,7 @@ export const vehicles: Vehicle[] = [
     location: { lat: 40.73061, lng: -73.935242 },
     capacity: 5000,
     load: 3750,
+    type: 'Truck',
   },
   {
     id: 'V002',
@@ -18,6 +19,7 @@ export const vehicles: Vehicle[] = [
     location: { lat: 40.7128, lng: -74.006 },
     capacity: 5000,
     load: 500,
+    type: 'Van',
   },
   {
     id: 'V003',
@@ -27,6 +29,7 @@ export const vehicles: Vehicle[] = [
     location: { lat: 40.758, lng: -73.9855 },
     capacity: 3000,
     load: 2800,
+    type: 'Truck',
   },
   {
     id: 'V004',
@@ -36,6 +39,7 @@ export const vehicles: Vehicle[] = [
     location: { lat: 40.7831, lng: -73.9712 },
     capacity: 7000,
     load: 0,
+    type: 'Electric',
   },
   {
     id: 'V005',
@@ -45,6 +49,7 @@ export const vehicles: Vehicle[] = [
     location: { lat: 40.6782, lng: -73.9442 },
     capacity: 5000,
     load: 4950,
+    type: 'Truck',
   },
 ];
 

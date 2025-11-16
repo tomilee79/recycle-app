@@ -9,6 +9,7 @@ export type Vehicle = {
   };
   capacity: number;
   load: number;
+  type: 'Truck' | 'Van' | 'Electric';
 };
 
 export type CollectionTask = {

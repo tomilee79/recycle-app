@@ -25,7 +25,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
 import ReportsPanel from '@/components/reports/reports-panel';
-import PerformancePanel from '@/components/performance/performance-panel';
+import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'performance' | 'predict';
+type View = 'dashboard' | 'reports' | 'vehicles' | 'predict';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -61,8 +61,8 @@ export function MainLayout() {
         return <DashboardPanel />;
       case 'reports':
         return <ReportsPanel />;
-      case 'performance':
-        return <PerformancePanel />;
+      case 'vehicles':
+        return <VehiclesPanel />;
       case 'predict':
         return <PredictPanel />;
       default:
@@ -105,12 +105,12 @@ export function MainLayout() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('performance')}
-                isActive={activeView === 'performance'}
-                tooltip={{ children: 'Performance' }}
+                onClick={() => setActiveView('vehicles')}
+                isActive={activeView === 'vehicles'}
+                tooltip={{ children: 'Vehicles' }}
               >
                 <Truck />
-                <span>Performance</span>
+                <span>Vehicles</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
