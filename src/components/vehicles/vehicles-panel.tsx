@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -16,7 +15,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download, PackageOpen, MoreHorizontal } from 'lucide-react';
+import { Loader2, Wrench, Package, Truck, Search, PlusCircle, CalendarDays, Edit, Save, Trash2, X, Upload, Download, PackageOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Vehicle, Equipment, Driver } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
