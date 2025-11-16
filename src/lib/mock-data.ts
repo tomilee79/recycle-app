@@ -1,6 +1,6 @@
 
 import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData } from './types';
-import { addDays, format, formatISO, subMinutes, subMonths, subDays } from 'date-fns';
+import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
   {
@@ -77,6 +77,11 @@ export const equipments: Equipment[] = [
     { id: 'E05', type: 'Container', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 6), 'yyyy-MM-dd') },
 ];
 
+const today = new Date();
+const startOfThisMonth = startOfMonth(today);
+const startOfLastMonth = startOfMonth(subMonths(today, 1));
+const startOfNextMonth = startOfMonth(addMonths(today, 1));
+
 export const collectionTasks: CollectionTask[] = [
   {
     id: 'T01',
@@ -86,7 +91,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '123 Main St, Brooklyn, NY',
     location: { lat: 40.6941, lng: -73.9866 },
     status: 'In Progress',
-    scheduledTime: '10:00 AM',
+    scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 1200,
   },
   {
@@ -97,7 +102,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '456 Broadway, New York, NY',
     location: { lat: 40.7209, lng: -74.0007 },
     status: 'In Progress',
-    scheduledTime: '10:30 AM',
+    scheduledDate: format(today, 'yyyy-MM-dd'),
     collectedWeight: 850,
   },
   {
@@ -108,7 +113,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '789 Park Ave, New York, NY',
     location: { lat: 40.7713, lng: -73.9632 },
     status: 'Pending',
-    scheduledTime: '11:00 AM',
+    scheduledDate: format(addDays(today, 1), 'yyyy-MM-dd'),
     collectedWeight: 0,
   },
   {
@@ -119,7 +124,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '101 First Ave, New York, NY',
     location: { lat: 40.7259, lng: -73.9848 },
     status: 'Completed',
-    scheduledTime: '09:00 AM',
+    scheduledDate: format(subDays(today, 1), 'yyyy-MM-dd'),
     completedTime: '09:45 AM',
     collectedWeight: 2100,
   },
@@ -131,7 +136,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '202 Second Ave, New York, NY',
     location: { lat: 40.7312, lng: -73.9854 },
     status: 'Completed',
-    scheduledTime: '11:00 AM',
+    scheduledDate: format(subDays(today, 2), 'yyyy-MM-dd'),
     completedTime: '11:30 AM',
     collectedWeight: 1500,
   },
@@ -143,7 +148,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '303 Third Ave, New York, NY',
     location: { lat: 40.7397, lng: -73.9835 },
     status: 'Completed',
-    scheduledTime: '12:00 PM',
+    scheduledDate: format(addDays(startOfThisMonth, 3), 'yyyy-MM-dd'),
     completedTime: '12:45 PM',
     collectedWeight: 3000,
   },
@@ -155,7 +160,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '404 Fourth Ave, New York, NY',
     location: { lat: 40.7458, lng: -73.9821 },
     status: 'Completed',
-    scheduledTime: '01:00 PM',
+    scheduledDate: format(addDays(startOfThisMonth, 5), 'yyyy-MM-dd'),
     completedTime: '01:30 PM',
     collectedWeight: 1800,
   },
@@ -167,7 +172,7 @@ export const collectionTasks: CollectionTask[] = [
     address: '55 E 1st St, New York, NY',
     location: { lat: 40.7242, lng: -73.9892 },
     status: 'Pending',
-    scheduledTime: '02:00 PM',
+    scheduledDate: format(addDays(today, 3), 'yyyy-MM-dd'),
     collectedWeight: 0,
   },
   {
@@ -178,9 +183,21 @@ export const collectionTasks: CollectionTask[] = [
     address: '1501 Broadway, New York, NY',
     location: { lat: 40.757, lng: -73.9859 },
     status: 'Pending',
-    scheduledTime: '03:00 PM',
+    scheduledDate: format(addDays(startOfNextMonth, 5), 'yyyy-MM-dd'),
     collectedWeight: 0,
-  }
+  },
+  {
+    id: 'T10',
+    vehicleId: 'V001',
+    customerId: 'C003',
+    materialType: 'Metal',
+    address: '250 Canal St, New York, NY',
+    location: { lat: 40.7188, lng: -74.0017 },
+    status: 'Completed',
+    scheduledDate: format(addDays(startOfLastMonth, 10), 'yyyy-MM-dd'),
+    completedTime: '02:30 PM',
+    collectedWeight: 2200,
+  },
 ];
 
 export const reportData: ReportData[] = [

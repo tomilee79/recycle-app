@@ -40,7 +40,7 @@ export type CollectionTask = {
     lng: number;
   };
   status: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
-  scheduledTime: string;
+  scheduledDate: string; // YYYY-MM-DD
   completedTime?: string;
   collectedWeight: number;
 };
