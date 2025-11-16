@@ -33,6 +33,7 @@ import {
   ChevronDown,
   Route,
   Calendar,
+  CheckSquare,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -47,6 +48,7 @@ import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel
 import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
 import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import SchedulePanel from '@/components/schedule/schedule-panel';
+import TodosPanel from '@/components/todos/todos-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -66,7 +68,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { cn } from '@/lib/utils';
 
 
-type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'settings' | 'todos';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -131,6 +133,7 @@ export function MainLayout() {
     'waste-analysis': '상세 폐기물 분석',
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
+    todos: '할일 관리',
     settings: '설정',
   };
 
@@ -159,6 +162,8 @@ export function MainLayout() {
         return <RouteOptimizationPanel />;
       case 'schedule':
         return <SchedulePanel />;
+      case 'todos':
+        return <TodosPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -197,6 +202,16 @@ export function MainLayout() {
               >
                 <Calendar />
                 <span>일정 관리</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('todos')}
+                isActive={activeView === 'todos'}
+                tooltip={{ children: '할일 관리' }}
+              >
+                <CheckSquare />
+                <span>할일 관리</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

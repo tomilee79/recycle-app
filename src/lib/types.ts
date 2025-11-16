@@ -100,3 +100,9 @@ export type Notification = {
   type: 'Warning' | 'Info' | 'Error';
   isRead: boolean;
 };
+
+export type Todo = {
+  id: number;
+  text: string;
+  completed: boolean;
+};
