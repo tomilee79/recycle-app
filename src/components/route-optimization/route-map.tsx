@@ -138,4 +138,6 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
                 </div>
             );
         })}
-    
+    </Card>
+  );
+}

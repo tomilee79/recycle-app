@@ -40,6 +40,7 @@ import {
   Users2,
   Receipt,
   ClipboardList,
+  Info,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -76,9 +77,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { cn } from '@/lib/utils';
+import ContactPanel from './contact/contact-panel';
 
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'settings' | 'todos' | 'quotes' | 'users';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'settings' | 'todos' | 'quotes' | 'users' | 'contact';
 
 const CollapsibleSidebarMenu = ({
   title,
@@ -149,6 +151,7 @@ export function MainLayout() {
     todos: '할일 관리',
     quotes: '견적 관리',
     users: '사용자 관리',
+    contact: '개발사 연락처',
   };
 
 
@@ -188,6 +191,8 @@ export function MainLayout() {
         return <UsersPanel />;
       case 'settings':
         return <SettingsPanel />;
+      case 'contact':
+        return <ContactPanel />;
       default:
         return <DashboardPanel />;
     }
@@ -385,6 +390,16 @@ export function MainLayout() {
               >
                 <Settings />
                 <span>설정</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('contact')}
+                isActive={activeView === 'contact'}
+                tooltip={{ children: '개발사 연락처' }}
+              >
+                <Info />
+                <span>개발사 연락처</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
