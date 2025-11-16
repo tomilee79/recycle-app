@@ -14,7 +14,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, ShieldCheck, Shield, UserCog, ArrowDown, ArrowUp, Upload, Download } from 'lucide-react';
+import { Loader2, UserPlus, Search, Trash2, Users, ShieldCheck, Shield, UserCog, ArrowDown, ArrowUp, Upload, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, UserRole, UserStatus } from '@/lib/types';
@@ -22,7 +22,6 @@ import { format } from 'date-fns';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Trash2 } from 'lucide-react';
 
 
 const roleMap: { [key in UserRole]: { label: string; icon: React.ElementType, variant: "default" | "secondary" | "outline" } } = {
@@ -347,5 +346,4 @@ export default function UsersPanel() {
       </Sheet>
     </>
   );
-
-    
+}
