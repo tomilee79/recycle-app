@@ -143,7 +143,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <EcoTrackLogo className="size-8 text-primary" />
-            <span className="text-lg font-semibold text-sidebar-foreground">에코트랙</span>
+            <span className="text-lg font-semibold text-sidebar-foreground">리사이클</span>
           </div>
         </SidebarHeader>
         <SidebarContent>

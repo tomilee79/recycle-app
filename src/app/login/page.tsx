@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -82,7 +83,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center">
           <EcoTrackLogo className="mx-auto h-12 w-12 text-primary mb-2" />
-          <CardTitle className="font-headline">에코트랙에 오신 것을 환영합니다</CardTitle>
+          <CardTitle className="font-headline">리사이클에 오신 것을 환영합니다</CardTitle>
           <CardDescription>계속하려면 관리자 정보를 입력하세요</CardDescription>
         </CardHeader>
         <Form {...form}>
