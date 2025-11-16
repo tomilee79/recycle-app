@@ -59,6 +59,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T01',
     vehicleId: 'V001',
+    customerId: 'C001',
     materialType: 'Plastic',
     address: '123 Main St, Brooklyn, NY',
     status: 'In Progress',
@@ -68,6 +69,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T02',
     vehicleId: 'V003',
+    customerId: 'C002',
     materialType: 'Paper',
     address: '456 Broadway, New York, NY',
     status: 'In Progress',
@@ -77,6 +79,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T03',
     vehicleId: 'V002',
+    customerId: 'C003',
     materialType: 'Glass',
     address: '789 Park Ave, New York, NY',
     status: 'Pending',
@@ -86,6 +89,7 @@ export const collectionTasks: CollectionTask[] = [
   {
     id: 'T04',
     vehicleId: 'V005',
+    customerId: 'C004',
     materialType: 'Metal',
     address: '101 First Ave, New York, NY',
     status: 'Completed',
@@ -93,15 +97,48 @@ export const collectionTasks: CollectionTask[] = [
     completedTime: '09:45 AM',
     collectedWeight: 2100,
   },
+   {
+    id: 'T05',
+    vehicleId: 'V001',
+    customerId: 'C005',
+    materialType: 'Plastic',
+    address: '202 Second Ave, New York, NY',
+    status: 'Completed',
+    scheduledTime: '11:00 AM',
+    completedTime: '11:30 AM',
+    collectedWeight: 1500,
+  },
+  {
+    id: 'T06',
+    vehicleId: 'V003',
+    customerId: 'C001',
+    materialType: 'Mixed',
+    address: '303 Third Ave, New York, NY',
+    status: 'Completed',
+    scheduledTime: '12:00 PM',
+    completedTime: '12:45 PM',
+    collectedWeight: 3000,
+  },
+  {
+    id: 'T07',
+    vehicleId: 'V005',
+    customerId: 'C002',
+    materialType: 'Paper',
+    address: '404 Fourth Ave, New York, NY',
+    status: 'Completed',
+    scheduledTime: '01:00 PM',
+    completedTime: '01:30 PM',
+    collectedWeight: 1800,
+  },
 ];
 
 export const reportData: ReportData[] = [
-  { month: 'Jan', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50, revenue: 12550 },
-  { month: 'Feb', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60, revenue: 15800 },
-  { month: 'Mar', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70, revenue: 14230 },
-  { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80, revenue: 17500 },
-  { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800 },
-  { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900 },
+  { month: 'Jan', plastic: 186, glass: 80, paper: 200, metal: 100, mixed: 50, revenue: 12550000 },
+  { month: 'Feb', plastic: 305, glass: 90, paper: 150, metal: 120, mixed: 60, revenue: 15800000 },
+  { month: 'Mar', plastic: 237, glass: 70, paper: 220, metal: 110, mixed: 70, revenue: 14230000 },
+  { month: 'Apr', plastic: 278, glass: 110, paper: 250, metal: 130, mixed: 80, revenue: 17500000 },
+  { month: 'May', plastic: 189, glass: 120, paper: 210, metal: 140, mixed: 90, revenue: 16800000 },
+  { month: 'Jun', plastic: 239, glass: 100, paper: 280, metal: 150, mixed: 100, revenue: 18900000 },
 ];
 
 export const drivers: Driver[] = [

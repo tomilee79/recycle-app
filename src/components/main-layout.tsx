@@ -25,6 +25,7 @@ import {
   Building2,
   Bot,
   Bell,
+  PieChart,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
@@ -35,6 +36,7 @@ import CustomersPanel from '@/components/customers/customers-panel';
 import SettingsPanel from '@/components/settings/settings-panel';
 import PredictPanel from '@/components/predict/predict-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
+import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
 import { EcoTrackLogo } from '@/components/icons';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useAuth } from '@/firebase';
@@ -52,7 +54,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-type View = 'dashboard' | 'reports' | 'vehicles' | 'drivers' | 'customers' | 'predict' | 'notifications' | 'settings';
+type View = 'dashboard' | 'reports' | 'notifications' | 'vehicles' | 'drivers' | 'customers' | 'predict' | 'waste-analysis' | 'settings';
 
 export function MainLayout() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -65,11 +67,12 @@ export function MainLayout() {
   const viewTitles: { [key in View]: string } = {
     dashboard: '대시보드',
     reports: '정산 보고서',
+    notifications: '알림 센터',
     vehicles: '차량 관리',
     drivers: '직원 관리',
     customers: '고객 관리',
     predict: 'AI 예측',
-    notifications: '알림 센터',
+    'waste-analysis': '상세 폐기물 분석',
     settings: '설정',
   };
 
@@ -80,6 +83,8 @@ export function MainLayout() {
         return <DashboardPanel />;
       case 'reports':
         return <ReportsPanel />;
+      case 'notifications':
+        return <NotificationsPanel />;
       case 'vehicles':
         return <VehiclesPanel />;
       case 'drivers':
@@ -88,8 +93,8 @@ export function MainLayout() {
         return <CustomersPanel />;
       case 'predict':
         return <PredictPanel />;
-      case 'notifications':
-        return <NotificationsPanel />;
+      case 'waste-analysis':
+        return <WasteAnalysisPanel />;
       case 'settings':
         return <SettingsPanel />;
       default:
@@ -139,6 +144,16 @@ export function MainLayout() {
                     <Bell />
                     <span>알림 센터</span>
                 </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('waste-analysis')}
+                isActive={activeView === 'waste-analysis'}
+                tooltip={{ children: '상세 폐기물 분석' }}
+              >
+                <PieChart />
+                <span>폐기물 분석</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton

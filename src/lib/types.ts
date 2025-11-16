@@ -16,6 +16,7 @@ export type Vehicle = {
 export type CollectionTask = {
   id: string;
   vehicleId: string;
+  customerId: string;
   materialType: 'Plastic' | 'Glass' | 'Paper' | 'Metal' | 'Mixed';
   address: string;
   status: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
