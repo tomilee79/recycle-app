@@ -14,7 +14,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
@@ -58,6 +58,8 @@ export default function QuotesPanel() {
   const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [filter, setFilter] = useState<'All' | QuoteStatus>('All');
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const form = useForm<QuoteFormValues>({
@@ -148,21 +150,51 @@ export default function QuotesPanel() {
   };
   
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || '알수없음';
+  
+  const filteredQuotes = useMemo(() => {
+    return quotes.filter(q => {
+        const customerName = getCustomerName(q.customerId).toLowerCase();
+        const searchTerm = search.toLowerCase();
+        const statusMatch = filter === 'All' || q.status === filter;
+        const searchMatch = customerName.includes(searchTerm) || q.id.toLowerCase().includes(searchTerm);
+        return statusMatch && searchMatch;
+    });
+  }, [quotes, filter, search]);
 
   const { subtotal, tax, total } = useMemo(() => calculateTotals(watchItems || []), [watchItems, calculateTotals]);
 
   return (
     <>
       <Card className="shadow-lg">
-        <CardHeader className="flex-row justify-between items-center">
-            <div>
+        <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
                 <CardTitle>견적 관리</CardTitle>
                 <CardDescription>모든 견적을 생성, 조회, 수정 및 관리합니다.</CardDescription>
+              </div>
+              <Button onClick={handleNewQuote}>
+                  <PlusCircle className="mr-2"/>
+                  새 견적 작성
+              </Button>
             </div>
-            <Button onClick={handleNewQuote}>
-                <PlusCircle className="mr-2"/>
-                새 견적 작성
-            </Button>
+             <div className="flex items-center justify-between gap-2 pt-4">
+                <div className="flex gap-2">
+                    {(['All', 'Draft', 'Sent', 'Accepted', 'Rejected'] as const).map(f => (
+                        <Button key={f} variant={filter === f ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f)}>
+                            {f === 'All' ? '전체' : quoteStatusMap[f]}
+                        </Button>
+                    ))}
+                </div>
+                <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="고객사명, 견적번호 검색..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -176,7 +208,7 @@ export default function QuotesPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {quotes.map((quote) => (
+              {filteredQuotes.map((quote) => (
                 <TableRow key={quote.id} onClick={() => handleRowClick(quote)} className="cursor-pointer">
                   <TableCell className="font-medium">{quote.id}</TableCell>
                   <TableCell>{getCustomerName(quote.customerId)}</TableCell>
@@ -371,3 +403,5 @@ export default function QuotesPanel() {
     </>
   );
 }
+
+    
