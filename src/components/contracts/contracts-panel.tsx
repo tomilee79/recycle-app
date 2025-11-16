@@ -14,11 +14,11 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, FileSignature, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Contract, ContractItem, ContractStatus } from '@/lib/types';
-import { format, addYears } from 'date-fns';
+import { format, addYears, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
@@ -26,6 +26,8 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
   'Active': '활성',
@@ -79,7 +81,7 @@ export default function ContractsPanel() {
         const statusMatch = filter === 'All' || c.status === filter;
         const searchMatch = customerName.includes(searchTerm) || c.contractNumber.toLowerCase().includes(searchTerm);
         return statusMatch && searchMatch;
-    });
+    }).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [contracts, filter, search]);
   
   const {
@@ -95,30 +97,48 @@ export default function ContractsPanel() {
     name: "items",
   });
 
-  const openSheet = (contract: Contract | null) => {
-    setSelectedContract(contract);
-    if (contract) {
-        form.reset({
-            ...contract,
-            startDate: new Date(contract.startDate),
-            endDate: new Date(contract.endDate),
-        });
-    } else {
-        const newId = `CT${String(contracts.length + 1).padStart(3, '0')}`;
-        const newNumber = `C${format(new Date(), 'yyyyMMdd')}-${String(contracts.length + 1).padStart(3, '0')}`;
-        form.reset({
-            id: newId,
-            contractNumber: newNumber,
-            customerId: '',
-            status: 'Active',
-            startDate: new Date(),
-            endDate: addYears(new Date(), 1),
-            items: [{ id: `item-${Date.now()}`, materialType: '', unitPrice: 0 }],
-            notes: '',
-        });
-    }
+  const openSheetForNew = () => {
+    setSelectedContract(null);
+    const newId = `CT${String(contracts.length + 1).padStart(3, '0')}`;
+    const newNumber = `C${format(new Date(), 'yyyyMMdd')}-${String(contracts.length + 1).padStart(3, '0')}`;
+    form.reset({
+        id: newId,
+        contractNumber: newNumber,
+        customerId: '',
+        status: 'Active',
+        startDate: new Date(),
+        endDate: addYears(new Date(), 1),
+        items: [{ id: `item-${Date.now()}`, materialType: '', unitPrice: 0 }],
+        notes: '',
+    });
     setIsSheetOpen(true);
   }
+
+  const openSheetForEdit = (contract: Contract) => {
+    setSelectedContract(contract);
+    form.reset({
+        ...contract,
+        startDate: new Date(contract.startDate),
+        endDate: new Date(contract.endDate),
+    });
+    setIsSheetOpen(true);
+  }
+
+  const handleCloneContract = (contractToClone: Contract) => {
+    setSelectedContract(null);
+    const newId = `CT${String(contracts.length + 1).padStart(3, '0')}`;
+    const newNumber = `C${format(new Date(), 'yyyyMMdd')}-${String(contracts.length + 1).padStart(3, '0')}`;
+    form.reset({
+      ...contractToClone,
+      id: newId,
+      contractNumber: newNumber,
+      status: 'Active',
+      startDate: new Date(),
+      endDate: addDays(new Date(), 365),
+    });
+    setIsSheetOpen(true);
+    toast({ title: "계약 복제됨", description: `기존 계약을 바탕으로 새 계약 초안이 생성되었습니다.` });
+  };
   
   const closeSheet = () => {
     setIsSheetOpen(false);
@@ -142,15 +162,16 @@ export default function ContractsPanel() {
     closeSheet();
   };
   
-  const handleDelete = () => {
-      if (!selectedContract) return;
-      setContracts(contracts.filter(c => c.id !== selectedContract.id));
+  const handleDelete = (contractId: string) => {
+      setContracts(contracts.filter(c => c.id !== contractId));
       toast({
           title: "계약 삭제됨",
-          description: `${selectedContract.contractNumber} 계약이 삭제되었습니다.`,
+          description: `계약이 삭제되었습니다.`,
           variant: 'destructive',
       });
-      closeSheet();
+      if(selectedContract?.id === contractId) {
+          closeSheet();
+      }
   }
   
 
@@ -180,7 +201,7 @@ export default function ContractsPanel() {
                             className="pl-9"
                         />
                     </div>
-                    <Button onClick={() => openSheet(null)}>
+                    <Button onClick={openSheetForNew}>
                         <PlusCircle className="mr-2"/>
                         신규 계약
                     </Button>
@@ -194,11 +215,12 @@ export default function ContractsPanel() {
                 <TableHead>시작일</TableHead>
                 <TableHead>종료일</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead className="text-right w-16">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedContracts.map((contract) => (
-                <TableRow key={contract.id} onClick={() => openSheet(contract)} className="cursor-pointer">
+                <TableRow key={contract.id} onClick={() => openSheetForEdit(contract)} className="cursor-pointer">
                   <TableCell className="font-medium">{contract.contractNumber}</TableCell>
                   <TableCell>{getCustomerInfo(contract.customerId).name}</TableCell>
                   <TableCell>{contract.startDate}</TableCell>
@@ -207,6 +229,42 @@ export default function ContractsPanel() {
                     <Badge variant={contractStatusVariant[contract.status]}>
                       {contractStatusMap[contract.status]}
                     </Badge>
+                  </TableCell>
+                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <AlertDialog>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => handleCloneContract(contract)}>
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  <span>복제</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>삭제</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  이 작업은 되돌릴 수 없습니다. {contract.contractNumber} 계약이 영구적으로 삭제됩니다.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>취소</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(contract.id)}>삭제 확인</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -356,7 +414,7 @@ export default function ContractsPanel() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(selectedContract.id)}>삭제 확인</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                         </AlertDialog>
@@ -369,3 +427,5 @@ export default function ContractsPanel() {
     </>
   );
 }
+
+    
