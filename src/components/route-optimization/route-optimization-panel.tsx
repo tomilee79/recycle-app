@@ -117,9 +117,9 @@ export default function RouteOptimizationPanel() {
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
-                        <Button onClick={handleOptimize} disabled={true}>
+                        <Button onClick={handleOptimize} disabled={isLoading || selectedTasks.length === 0}>
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2" />}
-                            최적 경로 계산(개발중)
+                            최적 경로 계산
                         </Button>
                     </CardFooter>
                 </Card>
@@ -131,14 +131,14 @@ export default function RouteOptimizationPanel() {
                         <ScrollArea className="h-64">
                              <div className="space-y-2">
                                 {pendingTasks.map(task => (
-                                    <div key={task.id} className={cn("flex items-center justify-between p-2 rounded-md", selectedTaskIds.has(task.id) && "bg-muted")}>
+                                    <div key={task.id} className={cn("flex items-center justify-between p-2 rounded-md transition-colors", selectedTaskIds.has(task.id) ? "bg-primary/10" : "hover:bg-muted/50")}>
                                         <div>
                                             <p className="text-sm font-medium">{task.address}</p>
                                             <p className="text-xs text-muted-foreground">{task.materialType}</p>
                                         </div>
-                                        <Button size="sm" variant="ghost" onClick={() => handleTaskSelection({id: task.id, address: task.address}, !selectedTaskIds.has(task.id))} disabled={selectedTaskIds.has(task.id)}>
-                                            <Plus className="mr-2" />
-                                            추가
+                                        <Button size="sm" variant={selectedTaskIds.has(task.id) ? "secondary" : "ghost"} onClick={() => handleTaskSelection({id: task.id, address: task.address}, !selectedTaskIds.has(task.id))}>
+                                            {selectedTaskIds.has(task.id) ? <X className="mr-2" /> : <Plus className="mr-2" />}
+                                            {selectedTaskIds.has(task.id) ? "제거" : "추가"}
                                         </Button>
                                     </div>
                                 ))}
@@ -170,3 +170,4 @@ export default function RouteOptimizationPanel() {
         </div>
     );
 }
+

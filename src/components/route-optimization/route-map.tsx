@@ -99,7 +99,7 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
               <div
                 key={task.id}
                 className={cn(
-                    'absolute -translate-x-1/2 -translate-y-1/2 p-1 rounded-full cursor-pointer transition-all shadow-md',
+                    'absolute -translate-x-1/2 -translate-y-full p-1 rounded-full cursor-pointer transition-all shadow-md',
                     isSelected ? 'bg-primary' : 'bg-muted-foreground'
                 )}
                 style={{ left: `${x}px`, top: `${y}px` }}
@@ -140,3 +140,4 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
     </Card>
   );
 }
+
