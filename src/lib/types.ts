@@ -99,10 +99,13 @@ export type Notification = {
   isRead: boolean;
 };
 
+export type Priority = 'High' | 'Medium' | 'Low';
+
 export type Todo = {
   id: number;
   text: string;
   completed: boolean;
+  priority: Priority;
 };
 
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected';
