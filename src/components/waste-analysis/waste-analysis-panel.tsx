@@ -36,7 +36,7 @@ export default function WasteAnalysisPanel() {
     }, {} as { [key: string]: number });
 
     const wasteByCustomer = collectionTasks.reduce((acc, task) => {
-        if (task.status === 'Completed') {
+        if (task.status === 'Completed' && task.customerId) {
           const customer = customers.find(c => c.id === task.customerId);
           const customerName = customer ? customer.name : '알 수 없음';
           acc[customerName] = (acc[customerName] || 0) + task.collectedWeight;
@@ -88,79 +88,92 @@ export default function WasteAnalysisPanel() {
   };
 
   return (
-    <div className="grid gap-6">
-      <Card className="shadow-lg col-span-1 md:col-span-2">
-        <CardHeader>
-          <CardTitle>폐기물 종류별 분석</CardTitle>
-          <CardDescription>수거 완료된 폐기물의 종류별 분포입니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfigWasteType} className="h-[300px] w-full">
-            <ResponsiveContainer>
-              <PieChart>
-                <RechartsTooltip 
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel formatter={(value, name) => `${value.toLocaleString()} kg`} />} 
-                />
-                <Pie data={wasteByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ percent, name }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                  {wasteByType.map((entry) => (
-                    <Cell key={`cell-${entry.name}`} fill={chartConfigWasteType[entry.name]?.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-      
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>고객사별 수거량</CardTitle>
-          <CardDescription>상위 10개 고객사의 총 수거량(kg)입니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfigCustomer} className="h-[400px] w-full">
-            <ResponsiveContainer>
-              <BarChart data={wasteByCustomer} layout="vertical" margin={{ left: 10, right: 30 }}>
-                <CartesianGrid horizontal={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={80} interval={0}/>
-                <XAxis type="number" dataKey="value" tickFormatter={(value) => `${value / 1000}t`} />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" formatter={(value) => `${value.toLocaleString()} kg`}/>}
-                />
-                <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+    <Tabs defaultValue="type" className="space-y-4">
+        <TabsList>
+            <TabsTrigger value="type">종류별 분석</TabsTrigger>
+            <TabsTrigger value="customer">고객사별 분석</TabsTrigger>
+            <TabsTrigger value="time">시간대별 분석</TabsTrigger>
+        </TabsList>
 
-       <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>시간대별 수거량 분석</CardTitle>
-          <CardDescription>시간대별 총 수거량 및 종류별 수거량(kg) 추이입니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfigTime} className="h-[400px] w-full">
-            <ResponsiveContainer>
-               <ComposedChart data={wasteByTime}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
-                  <YAxis tickFormatter={(value) => `${value / 1000}t`} />
-                  <ChartTooltip content={<ChartTooltipContent indicator="dot" formatter={(value, name) => `${(value as number).toLocaleString()} kg`} />} />
-                  <Legend />
-                  <Bar dataKey="plastic" stackId="a" fill="var(--color-plastic)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="glass" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="paper" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="metal" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="mixed" stackId="a" fill="var(--color-mixed)" radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="total" stroke="var(--color-total)" strokeWidth={2} dot={false} />
-               </ComposedChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-    </div>
+        <TabsContent value="type">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>폐기물 종류별 분포</CardTitle>
+                    <CardDescription>수거 완료된 폐기물의 종류별 분포입니다.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfigWasteType} className="h-[400px] w-full">
+                        <ResponsiveContainer>
+                        <PieChart>
+                            <RechartsTooltip 
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel formatter={(value, name) => `${(value as number).toLocaleString()} kg`} />} 
+                            />
+                            <Pie data={wasteByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={120} labelLine={false} label={({ percent, name }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                            {wasteByType.map((entry) => (
+                                <Cell key={`cell-${entry.name}`} fill={chartConfigWasteType[entry.name]?.color} />
+                            ))}
+                            </Pie>
+                            <Legend />
+                        </PieChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="customer">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>고객사별 수거량</CardTitle>
+                    <CardDescription>상위 10개 고객사의 총 수거량(kg)입니다.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfigCustomer} className="h-[400px] w-full">
+                        <ResponsiveContainer>
+                        <BarChart data={wasteByCustomer} layout="vertical" margin={{ left: 10, right: 30 }}>
+                            <CartesianGrid horizontal={false} />
+                            <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={80} interval={0}/>
+                            <XAxis type="number" dataKey="value" tickFormatter={(value) => `${value / 1000}t`} />
+                            <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent indicator="dot" formatter={(value) => `${(value as number).toLocaleString()} kg`}/>}
+                            />
+                            <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+                        </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="time">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>시간대별 수거량 분석</CardTitle>
+                    <CardDescription>시간대별 총 수거량 및 종류별 수거량(kg) 추이입니다.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfigTime} className="h-[400px] w-full">
+                        <ResponsiveContainer>
+                        <ComposedChart data={wasteByTime}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis tickFormatter={(value) => `${value / 1000}t`} />
+                            <ChartTooltip content={<ChartTooltipContent indicator="dot" formatter={(value, name) => `${(value as number).toLocaleString()} kg`} />} />
+                            <Legend />
+                            <Bar dataKey="plastic" stackId="a" fill="var(--color-plastic)" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="glass" stackId="a" fill="var(--color-glass)" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="paper" stackId="a" fill="var(--color-paper)" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="metal" stackId="a" fill="var(--color-metal)" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="mixed" stackId="a" fill="var(--color-mixed)" radius={[4, 4, 0, 0]} />
+                            <Line type="monotone" dataKey="total" stroke="var(--color-total)" strokeWidth={2} dot={false} />
+                        </ComposedChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+        </TabsContent>
+    </Tabs>
   );
 }
