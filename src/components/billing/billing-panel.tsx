@@ -29,7 +29,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { usePagination } from '@/hooks/use-pagination';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { MonthPicker } from '../ui/month-picker';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Checkbox } from '../ui/checkbox';
 
 
@@ -466,7 +466,7 @@ export default function BillingPanel() {
                             <TableHead>총 수거량(kg)</TableHead>
                             <TableHead>정산 금액(원)</TableHead>
                             <TableHead>상태</TableHead>
-                            <TableHead className="text-right w-16">작업</TableHead>
+                            <TableHead className="text-right w-24">작업</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -480,28 +480,32 @@ export default function BillingPanel() {
                             <TableCell>{item.amount.toLocaleString()}</TableCell>
                             <TableCell><Badge variant={settlementStatusVariant[item.status]}>{settlementStatusMap[item.status]}</Badge></TableCell>
                             <TableCell className="text-right">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={() => openSettlementDialog(item)}><Edit className="mr-2"/> 수정</DropdownMenuItem>
-                                        <DropdownMenuSub>
-                                            <DropdownMenuSubTrigger>상태 변경</DropdownMenuSubTrigger>
-                                            <DropdownMenuPortal>
-                                                <DropdownMenuSubContent>
-                                                    {settlementStatusOptions.filter(s => s !== item.status).map(status => <DropdownMenuItem key={status} onSelect={() => handleSettlementStatusChange([item.id], status)}>{settlementStatusMap[status]}으로 변경</DropdownMenuItem>)}
-                                                </DropdownMenuSubContent>
-                                            </DropdownMenuPortal>
-                                        </DropdownMenuSub>
-                                        <DropdownMenuSeparator />
-                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 정산 내역은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                                                <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlement([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <div className="flex justify-end gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openSettlementDialog(item)}>
+                                        <Edit className="size-4" />
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuSub>
+                                                <DropdownMenuSubTrigger>상태 변경</DropdownMenuSubTrigger>
+                                                <DropdownMenuPortal>
+                                                    <DropdownMenuSubContent>
+                                                        {settlementStatusOptions.filter(s => s !== item.status).map(status => <DropdownMenuItem key={status} onSelect={() => handleSettlementStatusChange([item.id], status)}>{settlementStatusMap[status]}으로 변경</DropdownMenuItem>)}
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuPortal>
+                                            </DropdownMenuSub>
+                                            <DropdownMenuSeparator />
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 정산 내역은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlement([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </TableCell>
                         </TableRow>
                     ))}
@@ -586,7 +590,7 @@ export default function BillingPanel() {
                                 <TableHead>차량</TableHead>
                                 <TableHead>금액</TableHead>
                                 <TableHead>상태</TableHead>
-                                <TableHead className="text-right w-16">작업</TableHead>
+                                <TableHead className="text-right w-24">작업</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -602,28 +606,32 @@ export default function BillingPanel() {
                                         <TableCell>{item.amount.toLocaleString()} 원</TableCell>
                                         <TableCell><Badge variant={expenseStatusVariant[item.status]}>{expenseStatusMap[item.status]}</Badge></TableCell>
                                         <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => openExpenseDialog(item)}><Edit className="mr-2"/> 수정</DropdownMenuItem>
-                                                     <DropdownMenuSub>
-                                                        <DropdownMenuSubTrigger>상태 변경</DropdownMenuSubTrigger>
-                                                        <DropdownMenuPortal>
-                                                            <DropdownMenuSubContent>
-                                                                {expenseStatusOptions.filter(s => s !== item.status).map(status => <DropdownMenuItem key={status} onSelect={() => handleExpenseStatusChange([item.id], status)}>{expenseStatusMap[status]}으로 변경</DropdownMenuItem>)}
-                                                            </DropdownMenuSubContent>
-                                                        </DropdownMenuPortal>
-                                                    </DropdownMenuSub>
-                                                    <DropdownMenuSeparator />
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                                                            <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpense([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <div className="flex justify-end gap-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openExpenseDialog(item)}>
+                                                    <Edit className="size-4" />
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuSub>
+                                                            <DropdownMenuSubTrigger>상태 변경</DropdownMenuSubTrigger>
+                                                            <DropdownMenuPortal>
+                                                                <DropdownMenuSubContent>
+                                                                    {expenseStatusOptions.filter(s => s !== item.status).map(status => <DropdownMenuItem key={status} onSelect={() => handleExpenseStatusChange([item.id], status)}>{expenseStatusMap[status]}으로 변경</DropdownMenuItem>)}
+                                                                </DropdownMenuSubContent>
+                                                            </DropdownMenuPortal>
+                                                        </DropdownMenuSub>
+                                                        <DropdownMenuSeparator />
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                                                                <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpense([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )
