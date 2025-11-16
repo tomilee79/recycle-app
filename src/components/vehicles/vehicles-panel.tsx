@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -76,11 +76,92 @@ export default function VehiclesPanel() {
       driverId: ''
     }
   });
+  
+  const handleVehicleClick = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
+  };
+
+  const handleSheetClose = () => {
+    setSelectedVehicle(null);
+  };
+  
+  const handleDriverChange = useCallback((vehicleId: string, newDriverId: string) => {
+    const newDriver = drivers.find(d => d.id === newDriverId);
+    if (!newDriver) return;
+
+    let oldDriverName: string | undefined;
+
+    setVehicles(prevVehicles =>
+      prevVehicles.map(v => {
+        if (v.id === vehicleId) {
+          oldDriverName = v.driver; // Store the old driver's name
+          return { ...v, driver: newDriver.name };
+        }
+        return v;
+      })
+    );
+
+    setDrivers(prevDrivers =>
+      prevDrivers.map(d => {
+        // Make the new driver unavailable
+        if (d.id === newDriverId) return { ...d, isAvailable: false };
+        // Make the old driver available, if they exist
+        if (oldDriverName && d.name === oldDriverName) return { ...d, isAvailable: true };
+        return d;
+      })
+    );
+    
+    toast({
+        title: '운전자 변경 완료',
+        description: `차량 담당 운전자가 ${newDriver.name}님으로 변경되었습니다.`,
+    });
+  }, [drivers, toast]);
+
+  const handleStatusChange = useCallback((vehicleId: string, newStatus: Vehicle['status']) => {
+    let changedVehicle: Vehicle | undefined;
+    setVehicles(prevVehicles => 
+      prevVehicles.map(v => {
+        if (v.id === vehicleId) {
+          changedVehicle = { ...v, status: newStatus };
+          return changedVehicle;
+        }
+        return v;
+      })
+    );
+
+    // If status changes to something that frees up the driver, make them available
+    if (changedVehicle && (newStatus === 'Idle' || newStatus === 'Completed' || newStatus === 'Maintenance')) {
+        const driverName = changedVehicle.driver;
+        setDrivers(prevDrivers => 
+            prevDrivers.map(d => 
+                d.name === driverName ? { ...d, isAvailable: true } : d
+            )
+        );
+    }
+    
+    // If status changes to 'On Route', make the driver unavailable
+    if (changedVehicle && newStatus === 'On Route') {
+        const driverName = changedVehicle.driver;
+        setDrivers(prevDrivers =>
+            prevDrivers.map(d =>
+                d.name === driverName ? { ...d, isAvailable: false } : d
+            )
+        )
+    }
+
+    toast({
+      title: '상태 변경 완료',
+      description: `차량의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
+    })
+  }, [toast]);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
     setIsSubmitting(true);
-    console.log("New Dispatch Data:", data);
+    
     setTimeout(() => {
+      handleDriverChange(data.vehicleId, data.driverId);
+      handleStatusChange(data.vehicleId, 'On Route');
+
       toast({
         title: "배차 등록 완료",
         description: "새로운 배차 정보가 성공적으로 등록되었습니다.",
@@ -91,49 +172,6 @@ export default function VehiclesPanel() {
     }, 1000);
   };
   
-  const handleVehicleClick = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-  };
-
-  const handleSheetClose = () => {
-    setSelectedVehicle(null);
-  };
-  
-  const handleStatusChange = (vehicleId: string, newStatus: Vehicle['status']) => {
-    setVehicles(prevVehicles => 
-      prevVehicles.map(v => 
-        v.id === vehicleId ? { ...v, status: newStatus } : v
-      )
-    );
-    toast({
-      title: '상태 변경 완료',
-      description: `차량의 상태가 '${statusMap[newStatus]}'으로 변경되었습니다.`,
-    })
-  };
-
-  const handleDriverChange = (vehicleId: string, newDriverId: string) => {
-    const newDriver = drivers.find(d => d.id === newDriverId);
-    if (!newDriver) return;
-
-    setVehicles(prevVehicles =>
-      prevVehicles.map(v => (v.id === vehicleId ? { ...v, driver: newDriver.name } : v))
-    );
-
-    setDrivers(prevDrivers =>
-      prevDrivers.map(d => {
-        if (d.id === newDriverId) return { ...d, isAvailable: false };
-        const oldDriverForVehicle = initialVehicles.find(v => v.id === vehicleId)?.driver;
-        if (d.name === oldDriverForVehicle) return { ...d, isAvailable: true };
-        return d;
-      })
-    );
-    
-    toast({
-        title: '운전자 변경 완료',
-        description: `차량 담당 운전자가 ${newDriver.name}님으로 변경되었습니다.`,
-    });
-  };
-
   const availableDrivers = useMemo(() => drivers.filter(d => d.isAvailable), [drivers]);
 
   const filteredVehicles = useMemo(() => 
