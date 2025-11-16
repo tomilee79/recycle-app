@@ -779,5 +779,3 @@ function AssignVehicleForm({ taskId, onAssign, availableVehicles }: { taskId: st
         </div>
     )
 }
-
-    
