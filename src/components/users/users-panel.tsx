@@ -238,7 +238,7 @@ export default function UsersPanel() {
                   {selectedUser && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={selectedUser.id === CURRENT_USER_ID}>
+                        <Button type="button" variant="destructive" disabled={selectedUser.id === CURRENT_USER_ID}>
                           <Trash2 className="mr-2"/>삭제
                         </Button>
                       </AlertDialogTrigger>
@@ -256,5 +256,3 @@ export default function UsersPanel() {
     </>
   );
 }
-
-    

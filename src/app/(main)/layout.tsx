@@ -128,7 +128,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     notifications: '알림 센터',
     vehicles: '차량 및 장비 관리',
     drivers: '직원 목록',
-    'driver-performance': '운전자 성과',
+    'driver-performance': '성과 대시보드',
     customers: '고객 목록',
     contracts: '계약 관리',
     predict: 'AI 예측',
@@ -257,22 +257,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             
             <SidebarMenuItem>
               <CollapsibleSidebarMenu
-                title="직원 관리"
-                icon={<Users />}
-                activeView={activeView}
-                defaultOpen={['drivers', 'driver-performance'].includes(activeView)}
-              >
-                <SidebarMenuSubButton isActive={activeView === 'drivers'} asChild>
-                    <Link href="/drivers"><ClipboardList /><span>직원 목록</span></Link>
-                </SidebarMenuSubButton>
-                <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
-                    <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
-                </SidebarMenuSubButton>
-              </CollapsibleSidebarMenu>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <CollapsibleSidebarMenu
                 title="고객 관리"
                 icon={<Building2 />}
                 activeView={activeView}
@@ -296,15 +280,26 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/predict"><Bot /><span>AI 예측</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+
             <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeView === 'users'}
-                tooltip={{ children: '사용자 관리' }}
-                asChild
+              <CollapsibleSidebarMenu
+                title="관리"
+                icon={<Users />}
+                activeView={activeView}
+                defaultOpen={['users', 'drivers', 'driver-performance'].includes(activeView)}
               >
-               <Link href="/users"><Users /><span>사용자 관리</span></Link>
-              </SidebarMenuButton>
+                <SidebarMenuSubButton isActive={activeView === 'users'} asChild>
+                    <Link href="/users"><Users /><span>사용자 관리</span></Link>
+                </SidebarMenuSubButton>
+                <SidebarMenuSubButton isActive={activeView === 'drivers'} asChild>
+                    <Link href="/drivers"><ClipboardList /><span>직원 목록</span></Link>
+                </SidebarMenuSubButton>
+                <SidebarMenuSubButton isActive={activeView === 'driver-performance'} asChild>
+                    <Link href="/driver-performance"><Medal/><span>성과 대시보드</span></Link>
+                </SidebarMenuSubButton>
+              </CollapsibleSidebarMenu>
             </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeView === 'settings'}
