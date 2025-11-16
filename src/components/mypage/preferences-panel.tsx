@@ -8,10 +8,9 @@ import { z } from 'zod';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Bell, UserPlus } from 'lucide-react';
+import { Loader2, Bell } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import AdminRegistration from "./admin-registration";
 
 const preferencesFormSchema = z.object({
   emailNotifications: z.boolean(),
@@ -95,8 +94,6 @@ export default function PreferencesPanel() {
         </CardFooter>
         </form>
       </Card>
-      
-      <AdminRegistration />
     </div>
   );
 }

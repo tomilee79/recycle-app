@@ -39,6 +39,7 @@ import {
   ClipboardList,
   Info,
   User,
+  UserCog,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -58,7 +59,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Loader2 } from 'lucide-react';
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'contact';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'admin' | 'contact';
 
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -97,6 +98,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     todos: '할일 관리',
     quotes: '견적 관리',
     users: '사용자 관리',
+    admin: '관리자',
     contact: '개발사 연락처',
   };
   
@@ -252,6 +254,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <SidebarMenuItem>
                 <SidebarMenuButton isActive={activeView === 'users'} asChild>
                     <Link href="/users"><Users /><span>사용자 관리</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeView === 'admin'} asChild>
+                    <Link href="/admin"><UserCog /><span>관리자</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
