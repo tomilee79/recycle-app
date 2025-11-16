@@ -12,6 +12,7 @@ import type { Comment, User } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { Loader2, Send } from 'lucide-react';
+import { Card } from '../ui/card';
 
 
 interface CommentsProps {
@@ -41,12 +42,6 @@ const getAvatar = (userId: string, users: User[]) => {
     }
 }
 
-const findMentions = (text: string): string[] => {
-    const regex = /@([\w\d_]+)/g;
-    const matches = text.match(regex);
-    return matches ? matches.map(m => m.substring(1)) : [];
-}
-
 const renderTextWithMentions = (text: string, users: User[]) => {
     const parts = text.split(/(@[\w\d_]+)/g);
     return parts.map((part, index) => {
@@ -66,6 +61,10 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, users, currentUser, 
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
   const author = getAvatar(comment.authorId, users);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+
 
   const handleReplySubmit = () => {
     if (replyText.trim()) {
@@ -74,6 +73,39 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, users, currentUser, 
       setIsReplying(false);
     }
   }
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setReplyText(text);
+
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = text.substring(0, cursorPosition);
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+    if (atMatch) {
+      setMentionQuery(atMatch[1]);
+      setShowMentions(true);
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const handleMentionSelect = (name: string) => {
+    const text = replyText;
+    const cursorPosition = textareaRef.current?.selectionStart || 0;
+    const textBeforeCursor = text.substring(0, cursorPosition);
+    
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    if(atMatch) {
+        const atIndex = atMatch.index || 0;
+        const newText = `${text.substring(0, atIndex)}@${name} ${text.substring(cursorPosition)}`;
+        setReplyText(newText);
+        setShowMentions(false);
+        textareaRef.current?.focus();
+    }
+  };
+
+  const filteredUsers = users.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase()) && u.id !== currentUser.id);
 
   return (
     <div className="flex gap-3">
@@ -96,9 +128,20 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, users, currentUser, 
         </div>
 
         {isReplying && (
-           <div className="mt-2 flex items-start gap-2">
-                <Textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="답글을 입력하세요..." className="min-h-[60px]" />
+           <div className="relative mt-2 flex items-start gap-2">
+                <Textarea ref={textareaRef} value={replyText} onChange={handleTextareaChange} placeholder="답글을 입력하세요..." className="min-h-[60px]" />
                 <Button size="sm" onClick={handleReplySubmit}>답글</Button>
+                {showMentions && filteredUsers.length > 0 && (
+                <Card className="absolute z-10 mt-14 w-full max-w-xs shadow-lg">
+                        <ScrollArea className="h-32">
+                            {filteredUsers.map(user => (
+                                <div key={user.id} onClick={() => handleMentionSelect(user.name)} className="p-2 hover:bg-accent cursor-pointer text-sm">
+                                    {user.name}
+                                </div>
+                            ))}
+                        </ScrollArea>
+                </Card>
+                )}
            </div>
         )}
         

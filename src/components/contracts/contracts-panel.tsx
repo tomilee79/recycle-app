@@ -624,12 +624,3 @@ export default function ContractsPanel() {
     </>
   );
 }
-
-    
-
-    
-
-
-
-
-    
