@@ -106,6 +106,7 @@ export type Todo = {
   text: string;
   completed: boolean;
   priority: Priority;
+  dueDate?: Date;
 };
 
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected';
@@ -162,5 +163,7 @@ export type Expense = {
     vehicleId?: string;
     status: ExpenseStatus;
 };
+
+    
 
     
