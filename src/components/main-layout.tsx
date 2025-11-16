@@ -128,7 +128,7 @@ export function MainLayout() {
   };
 
   const viewTitles: { [key in View]: string } = {
-    dashboard: '대시보드',
+    dashboard: '실시간 배차 현황',
     reports: '정산 관리',
     notifications: '알림 센터',
     vehicles: '차량 관리',
@@ -200,10 +200,10 @@ export function MainLayout() {
               <SidebarMenuButton
                 onClick={() => setActiveView('dashboard')}
                 isActive={activeView === 'dashboard'}
-                tooltip={{ children: '대시보드' }}
+                tooltip={{ children: '실시간 배차 현황' }}
               >
-                <LayoutDashboard />
-                <span>대시보드</span>
+                <Truck />
+                <span>실시간 배차 현황</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
@@ -282,7 +282,7 @@ export function MainLayout() {
                 isActive={activeView === 'vehicles'}
                 tooltip={{ children: '차량 관리' }}
               >
-                <Truck />
+                <LayoutDashboard />
                 <span>차량</span>
               </SidebarMenuButton>
             </SidebarMenuItem>

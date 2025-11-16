@@ -45,7 +45,7 @@ export default function DispatchPanel() {
     <>
       <Card className="h-full flex flex-col shadow-lg">
         <CardHeader>
-          <CardTitle>실시간 배차 현황</CardTitle>
+          <CardTitle>차량별 현황</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-0">
           <ScrollArea className="h-full">
