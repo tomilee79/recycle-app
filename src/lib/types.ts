@@ -1,5 +1,11 @@
 
 
+export type MaintenanceRecord = {
+  date: string;
+  description: string;
+  cost: number;
+};
+
 export type Vehicle = {
   id: string;
   name: string;
@@ -12,6 +18,15 @@ export type Vehicle = {
   capacity: number;
   load: number;
   type: 'Truck' | 'Van' | 'Electric';
+  maintenanceHistory: MaintenanceRecord[];
+};
+
+export type Equipment = {
+  id: string;
+  type: 'Roll-off Box' | 'Container';
+  status: 'In Use' | 'Available' | 'Maintenance';
+  location: string; // Vehicle ID or Yard Name
+  lastInspected: string; // YYYY-MM-DD
 };
 
 export type CollectionTask = {
@@ -60,4 +75,3 @@ export type Notification = {
   type: 'Warning' | 'Info' | 'Error';
   isRead: boolean;
 };
-

@@ -1,6 +1,6 @@
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification } from './types';
-import { addDays, format, formatISO, subMinutes } from 'date-fns';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord } from './types';
+import { addDays, format, formatISO, subMinutes, subMonths } from 'date-fns';
 
 export const vehicles: Vehicle[] = [
   {
@@ -12,6 +12,10 @@ export const vehicles: Vehicle[] = [
     capacity: 5000,
     load: 3750,
     type: 'Truck',
+    maintenanceHistory: [
+      { date: format(subMonths(new Date(), 1), 'yyyy-MM-dd'), description: '엔진 오일 교체', cost: 150000 },
+      { date: format(subMonths(new Date(), 6), 'yyyy-MM-dd'), description: '타이어 교체', cost: 800000 },
+    ],
   },
   {
     id: 'V002',
@@ -22,6 +26,9 @@ export const vehicles: Vehicle[] = [
     capacity: 5000,
     load: 500,
     type: 'Van',
+    maintenanceHistory: [
+      { date: format(subMonths(new Date(), 2), 'yyyy-MM-dd'), description: '정기 점검', cost: 250000 },
+    ],
   },
   {
     id: 'V003',
@@ -32,6 +39,7 @@ export const vehicles: Vehicle[] = [
     capacity: 3000,
     load: 2800,
     type: 'Truck',
+    maintenanceHistory: [],
   },
   {
     id: 'V004',
@@ -42,6 +50,9 @@ export const vehicles: Vehicle[] = [
     capacity: 7000,
     load: 0,
     type: 'Electric',
+    maintenanceHistory: [
+        { date: format(new Date(), 'yyyy-MM-dd'), description: '배터리 시스템 오류 점검', cost: 500000 },
+    ]
   },
   {
     id: 'V005',
@@ -52,7 +63,18 @@ export const vehicles: Vehicle[] = [
     capacity: 5000,
     load: 4950,
     type: 'Truck',
+    maintenanceHistory: [
+        { date: format(subMonths(new Date(), 3), 'yyyy-MM-dd'), description: '브레이크 패드 교체', cost: 300000 },
+    ]
   },
+];
+
+export const equipments: Equipment[] = [
+    { id: 'E01', type: 'Roll-off Box', status: 'In Use', location: 'V001', lastInspected: format(subMonths(new Date(), 1), 'yyyy-MM-dd') },
+    { id: 'E02', type: 'Roll-off Box', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 2), 'yyyy-MM-dd') },
+    { id: 'E03', type: 'Container', status: 'Maintenance', location: '정비소', lastInspected: format(subMonths(new Date(), 12), 'yyyy-MM-dd') },
+    { id: 'E04', type: 'Roll-off Box', status: 'In Use', location: 'V003', lastInspected: format(subMonths(new Date(), 3), 'yyyy-MM-dd') },
+    { id: 'E05', type: 'Container', status: 'Available', location: '본사 차고지', lastInspected: format(subMonths(new Date(), 6), 'yyyy-MM-dd') },
 ];
 
 export const collectionTasks: CollectionTask[] = [
