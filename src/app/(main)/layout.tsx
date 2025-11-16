@@ -274,6 +274,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               {viewTitles[activeView]}
             </h1>
           </div>
+           <div className="flex items-center gap-4">
+            <p className="text-xs text-muted-foreground hidden md:block">
+              본 리사이클 업무 관리 솔루션은 DX 컨설팅이 개발하였습니다. 시연 목적의 Demo 이므로 일부는 작동하지 않을 수 있습니다.
+            </p>
+          </div>
         </header>
         <div className="flex-1 overflow-auto p-4 md:p-6">
           {children}
