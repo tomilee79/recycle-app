@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayProps } from 'react-day-picker';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
@@ -23,6 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 
 const statusMap: { [key in CollectionTask['status']]: string } = {
@@ -75,7 +76,7 @@ export default function SchedulePanel() {
   useEffect(() => {
     if (watchedCustomerId) {
       const customer = customers.find(c => c.id === watchedCustomerId);
-      if (customer && !form.getValues('address')) { // Only autofill if address is empty
+      if (customer) {
         form.setValue('address', customer.address, { shouldValidate: true });
       }
     }
@@ -97,6 +98,18 @@ export default function SchedulePanel() {
         });
     }
     setIsFormOpen(true);
+  }
+
+  const handleDelete = () => {
+    if (!editingTask) return;
+    setTasks(prev => prev.filter(t => t.id !== editingTask.id));
+    toast({
+        title: "일정 삭제됨",
+        description: "수거 일정이 삭제되었습니다.",
+        variant: "destructive"
+    });
+    setIsFormOpen(false);
+    setEditingTask(null);
   }
 
 
@@ -297,7 +310,28 @@ export default function SchedulePanel() {
                       )}/>
                       <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input placeholder="상세 주소를 입력하세요" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       
-                      <DialogFooter className="pt-4">
+                      <DialogFooter className="pt-4 sm:justify-between">
+                         {editingTask ? (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/>삭제
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            이 작업은 되돌릴 수 없습니다. 이 수거 일정은 영구적으로 삭제됩니다.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>취소</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                         ) : <div></div>}
                           <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingTask ? '저장' : '일정 등록'}</Button>
                       </DialogFooter>
                   </form>
