@@ -1,13 +1,14 @@
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { customers as initialCustomers, contracts } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, ChevronLeft, ChevronRight, MessageSquare, Handshake, ShieldAlert, CirclePlus, NotepadText } from "lucide-react";
-import type { Customer, SalesActivity, Contract } from '@/lib/types';
+import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, MessageSquare, Handshake, ShieldAlert, CirclePlus, NotepadText, Star, TrendingUp, HandCoins } from "lucide-react";
+import type { Customer, SalesActivity, Contract, CustomerTier } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
@@ -22,7 +23,10 @@ import { ScrollArea } from '../ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Pie, PieChart, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { subDays, parseISO, startOfMonth } from 'date-fns';
 
 const activityTypeMap: { [key: string]: { icon: React.ElementType, color: string } } = {
     '상담': { icon: MessageSquare, color: 'text-blue-500' },
@@ -31,6 +35,14 @@ const activityTypeMap: { [key: string]: { icon: React.ElementType, color: string
     '계약': { icon: FileText, color: 'text-green-500' },
 };
 const activityTypes = Object.keys(activityTypeMap);
+
+const tierMap: { [key in CustomerTier]: { label: string, color: string, icon: React.ElementType } } = {
+    'VVIP': { label: 'VVIP', color: 'bg-purple-600 text-white', icon: Star },
+    'VIP': { label: 'VIP', color: 'bg-yellow-500 text-white', icon: Star },
+    'Gold': { label: 'Gold', color: 'bg-amber-400 text-white', icon: Star },
+    'Silver': { label: 'Silver', color: 'bg-gray-400 text-white', icon: Star },
+    'Bronze': { label: 'Bronze', color: 'bg-orange-400 text-white', icon: Star },
+};
 
 const newActivitySchema = z.object({
     type: z.enum(['상담', '클레임', '영업 기회', '계약']),
@@ -41,6 +53,7 @@ const customerFormSchema = z.object({
     name: z.string().min(2, "고객사명은 최소 2자 이상이어야 합니다."),
     address: z.string().min(5, "주소는 최소 5자 이상이어야 합니다."),
     contactPerson: z.string().min(2, "담당자명은 최소 2자 이상이어야 합니다."),
+    tier: z.enum(['VVIP', 'VIP', 'Gold', 'Silver', 'Bronze']),
 });
 
 type NewActivityFormValues = z.infer<typeof newActivitySchema>;
@@ -52,8 +65,34 @@ export default function CustomersPanel() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [isAddingActivity, setIsAddingActivity] = useState(false);
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({ tier: 'All', search: '' });
   const { toast } = useToast();
+
+  const dashboardData = useMemo(() => {
+    const totalCustomers = customers.length;
+    const contractedCustomers = new Set(contracts.filter(c => c.status !== 'Terminated').map(c => c.customerId)).size;
+    const newCustomersLast30Days = customers.filter(c => parseISO(c.activityHistory[c.activityHistory.length - 1]?.date || '1970-01-01') > subDays(new Date(), 30)).length;
+    const contractStatusDistribution = contracts.reduce((acc, contract) => {
+        const status = contract.status === 'Expiring' ? '만료 예정' : contract.status === 'Active' ? '활성' : '종료';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+    }, {} as { [key: string]: number });
+    
+    const monthlyNewCustomers = customers.reduce((acc, customer) => {
+        const joinDate = parseISO(customer.activityHistory[customer.activityHistory.length - 1]?.date || '1970-01-01');
+        const monthKey = `${joinDate.getFullYear()}-${String(joinDate.getMonth() + 1).padStart(2, '0')}`;
+        acc[monthKey] = (acc[monthKey] || 0) + 1;
+        return acc;
+    }, {} as { [key: string]: number });
+    
+    return {
+        totalCustomers,
+        contractedCustomers,
+        newCustomersLast30Days,
+        contractStatusChartData: Object.entries(contractStatusDistribution).map(([name, value]) => ({ name, value })),
+        newCustomersChartData: Object.entries(monthlyNewCustomers).map(([name, customers]) => ({ month: name, customers })).sort((a,b) => a.month.localeCompare(b.month)),
+    };
+  }, [customers, contracts]);
 
   const activityForm = useForm<NewActivityFormValues>({
     resolver: zodResolver(newActivitySchema),
@@ -65,10 +104,12 @@ export default function CustomersPanel() {
   });
 
   const filteredCustomers = useMemo(() => 
-    customers.filter(c => 
-      c.name.toLowerCase().includes(search.toLowerCase()) || 
-      c.address.toLowerCase().includes(search.toLowerCase())
-    ), [customers, search]);
+    customers.filter(c => {
+        const searchMatch = c.name.toLowerCase().includes(filters.search.toLowerCase()) || 
+                            c.address.toLowerCase().includes(filters.search.toLowerCase());
+        const tierMatch = filters.tier === 'All' || c.tier === filters.tier;
+        return searchMatch && tierMatch;
+    }), [customers, filters]);
 
   const {
     currentPage,
@@ -85,6 +126,7 @@ export default function CustomersPanel() {
         name: customer.name,
         address: customer.address,
         contactPerson: customer.contactPerson,
+        tier: customer.tier,
     });
     setIsSheetOpen(true);
   };
@@ -93,7 +135,7 @@ export default function CustomersPanel() {
     setSelectedCustomer(null);
     setIsEditingCustomer(true);
     setIsAddingActivity(false);
-    customerForm.reset({ name: '', address: '', contactPerson: '' });
+    customerForm.reset({ name: '', address: '', contactPerson: '', tier: 'Bronze' });
     setIsSheetOpen(true);
   }
 
@@ -141,7 +183,13 @@ export default function CustomersPanel() {
         const newCustomer: Customer = {
             id: `C${String(customers.length + 1).padStart(3, '0')}`,
             ...data,
-            activityHistory: []
+            activityHistory: [{
+                id: 'A000',
+                date: new Date().toISOString().split('T')[0],
+                type: '상담',
+                content: '신규 고객 등록',
+                manager: '관리자'
+            }]
         };
         setCustomers([newCustomer, ...customers]);
         toast({ title: "신규 고객 추가됨", description: `${data.name} 고객이 추가되었습니다.` });
@@ -165,98 +213,169 @@ export default function CustomersPanel() {
     return contracts.find(c => c.customerId === customerId && c.status !== 'Terminated');
   }
 
-  return (
-    <>
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>고객 목록</CardTitle>
-                <CardDescription>전체 고객사 목록 및 기본 정보입니다.</CardDescription>
-              </div>
-              <Button onClick={handleNewCustomerClick}><PlusCircle className="mr-2" />신규 고객 추가</Button>
-          </div>
-          <div className="relative pt-4">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                  placeholder="고객명, 주소로 검색..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-              />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader><TableRow><TableHead>고객명</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {paginatedCustomers.map((customer) => {
-                const contract = getCustomerContract(customer.id);
-                const statusConfig = {
-                    'Active': { text: '활성', variant: 'default', icon: FileText },
-                    'Expiring': { text: '만료 예정', variant: 'destructive', icon: ShieldAlert },
-                } as const;
-                const contractDisplay = contract ? statusConfig[contract.status as keyof typeof statusConfig] : null;
+  const CustomerDashboard = () => {
+     const chartConfigStatus = {
+        value: { label: "고객 수" },
+        "활성": { label: "활성", color: "hsl(var(--chart-2))" },
+        "만료 예정": { label: "만료 예정", color: "hsl(var(--chart-4))" },
+        "종료": { label: "종료", color: "hsl(var(--muted))" },
+    };
+    const chartConfigNew = {
+        customers: { label: "신규 고객", color: "hsl(var(--primary))" }
+    }
 
-                return (
-                  <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.contactPerson}</TableCell>
-                    <TableCell>{customer.address}</TableCell>
-                    <TableCell>
-                      {contractDisplay ? (
-                        <Badge variant={contractDisplay.variant} className="gap-1">
-                          {React.createElement(contractDisplay.icon, { className: 'size-3' })}
-                          {contractDisplay.text}
-                        </Badge>
-                      ) : (<Badge variant="outline">계약 없음</Badge>)}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <CardFooter>
-            <Pagination>
-                <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }}>
-                        </PaginationPrevious>
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
-                    <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}>
-                        </PaginationNext>
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
-        </CardFooter>
-      </Card>
-      
+    return (
+        <div className="space-y-6 mt-4">
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">총 고객 수</CardTitle><Users2 className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{dashboardData.totalCustomers}</div><p className="text-xs text-muted-foreground">시스템에 등록된 모든 고객사</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">계약 고객 수</CardTitle><Handshake className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{dashboardData.contractedCustomers}</div><p className="text-xs text-muted-foreground">현재 활성 또는 만료 예정 계약 보유</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">신규 고객 (30일)</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">+{dashboardData.newCustomersLast30Days}</div><p className="text-xs text-muted-foreground">최근 30일 내 등록된 신규 고객</p></CardContent>
+                </Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader><CardTitle>계약 상태 분포</CardTitle><CardDescription>현재 모든 계약의 상태 분포입니다.</CardDescription></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={chartConfigStatus} className="h-64 w-full">
+                            <ResponsiveContainer>
+                                <PieChart>
+                                    <RechartsTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                    <Pie data={dashboardData.contractStatusChartData} dataKey="value" nameKey="name" innerRadius={50}>
+                                        {dashboardData.contractStatusChartData.map(entry => <Cell key={entry.name} fill={chartConfigStatus[entry.name as keyof typeof chartConfigStatus]?.color} />)}
+                                    </Pie>
+                                    <Legend/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle>월별 신규 고객 추이</CardTitle><CardDescription>지난 몇 달간의 신규 고객 확보 추세입니다.</CardDescription></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={chartConfigNew} className="h-64 w-full">
+                            <ResponsiveContainer>
+                                <BarChart data={dashboardData.newCustomersChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} fontSize={12} />
+                                    <YAxis />
+                                    <RechartsTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="customers" fill="var(--color-customers)" radius={4} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    )
+  }
+
+  return (
+    <Tabs defaultValue="list">
+      <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>고객 관리</CardTitle>
+              <CardDescription>고객 현황 대시보드 및 상세 목록을 관리합니다.</CardDescription>
+            </div>
+            <TabsList>
+                <TabsTrigger value="dashboard">대시보드</TabsTrigger>
+                <TabsTrigger value="list">목록</TabsTrigger>
+            </TabsList>
+          </div>
+      </CardHeader>
+      <TabsContent value="dashboard">
+          <CardContent>
+              <CustomerDashboard />
+          </CardContent>
+      </TabsContent>
+      <TabsContent value="list">
+          <CardContent>
+              <div className="flex items-center justify-between gap-2 my-4">
+                  <div className="flex gap-2">
+                      <Select value={filters.tier} onValueChange={(value) => setFilters(f => ({ ...f, tier: value }))}>
+                          <SelectTrigger className="w-[180px]"><SelectValue placeholder="등급 필터" /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="All">모든 등급</SelectItem>
+                              {Object.keys(tierMap).map(t => <SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="고객명, 주소로 검색..." value={filters.search} onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))} className="pl-9" />
+                    </div>
+                    <Button onClick={handleNewCustomerClick}><PlusCircle className="mr-2" />신규 고객</Button>
+                  </div>
+              </div>
+            <Table>
+              <TableHeader><TableRow><TableHead>고객명</TableHead><TableHead>등급</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {paginatedCustomers.map((customer) => {
+                  const contract = getCustomerContract(customer.id);
+                  const statusConfig = {
+                      'Active': { text: '활성', variant: 'default', icon: FileText },
+                      'Expiring': { text: '만료 예정', variant: 'destructive', icon: ShieldAlert },
+                  } as const;
+                  const contractDisplay = contract ? statusConfig[contract.status as keyof typeof statusConfig] : null;
+                  const tierInfo = tierMap[customer.tier];
+
+                  return (
+                    <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                       <TableCell><Badge className={cn("gap-1 text-white", tierInfo.color)}>{React.createElement(tierInfo.icon, {className: 'size-3'})} {tierInfo.label}</Badge></TableCell>
+                      <TableCell>{customer.contactPerson}</TableCell>
+                      <TableCell>{customer.address}</TableCell>
+                      <TableCell>
+                        {contractDisplay ? (
+                          <Badge variant={contractDisplay.variant} className="gap-1">
+                            {React.createElement(contractDisplay.icon, { className: 'size-3' })}
+                            {contractDisplay.text}
+                          </Badge>
+                        ) : (<Badge variant="outline">계약 없음</Badge>)}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+          <CardFooter>
+              <Pagination>
+                  <PaginationContent>
+                      <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }}/></PaginationItem>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                      <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}/></PaginationItem>
+                  </PaginationContent>
+              </Pagination>
+          </CardFooter>
+      </TabsContent>
       <Sheet open={isSheetOpen} onOpenChange={handleSheetClose}>
         <SheetContent className="sm:max-w-2xl w-full">
             {isEditingCustomer ? (
                 <Form {...customerForm}>
                     <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)}>
                         <SheetHeader>
-                            <SheetTitle className="font-headline text-2xl flex items-center gap-2">
-                                <Users2/> {selectedCustomer ? '고객 정보 수정' : '신규 고객 추가'}
-                            </SheetTitle>
-                            <SheetDescription>
-                                {selectedCustomer ? '고객사의 기본 정보를 수정합니다.' : '새로운 고객사 정보를 입력합니다.'}
-                            </SheetDescription>
+                            <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer ? '고객 정보 수정' : '신규 고객 추가'}</SheetTitle>
+                            <SheetDescription>{selectedCustomer ? '고객사의 기본 정보를 수정합니다.' : '새로운 고객사 정보를 입력합니다.'}</SheetDescription>
                         </SheetHeader>
                         <div className="mt-6 space-y-4">
                             <FormField control={customerForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>고객사명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={customerForm.control} name="tier" render={({ field }) => (<FormItem><FormLabel>고객 등급</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{Object.keys(tierMap).map(t=><SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
                             <FormField control={customerForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                             <FormField control={customerForm.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>담당자명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         </div>
                         <div className="mt-6 flex justify-between">
-                            <Button type="submit" disabled={customerForm.formState.isSubmitting}>
-                                {customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Save className="mr-2"/>저장
-                            </Button>
+                            <Button type="submit" disabled={customerForm.formState.isSubmitting}>{customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<Save className="mr-2"/>저장</Button>
                             <Button type="button" variant="ghost" onClick={() => selectedCustomer ? setIsEditingCustomer(false) : handleSheetClose()}><X className="mr-2"/>취소</Button>
                         </div>
                     </form>
@@ -266,7 +385,10 @@ export default function CustomersPanel() {
                 <SheetHeader className="pr-12">
                     <div className="flex justify-between items-start">
                         <div>
-                            <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
+                            <div className="flex items-center gap-2">
+                                <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
+                                <Badge className={cn("gap-1 text-white", tierMap[selectedCustomer.tier].color)}>{React.createElement(tierMap[selectedCustomer.tier].icon, {className: 'size-3'})} {tierMap[selectedCustomer.tier].label}</Badge>
+                            </div>
                             <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
                                 <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
                                 <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
@@ -340,8 +462,6 @@ export default function CustomersPanel() {
             )}
         </SheetContent>
       </Sheet>
-    </>
+    </Tabs>
   );
 }
-
-    

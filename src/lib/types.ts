@@ -88,11 +88,14 @@ export type SalesActivity = {
     manager: string;
 };
 
+export type CustomerTier = 'VVIP' | 'VIP' | 'Gold' | 'Silver' | 'Bronze';
+
 export type Customer = {
   id: string;
   name: string;
   address: string;
   contactPerson: string;
+  tier: CustomerTier;
   activityHistory: SalesActivity[];
 };
 

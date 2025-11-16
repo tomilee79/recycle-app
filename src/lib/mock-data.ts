@@ -271,6 +271,7 @@ export const customers: Customer[] = [
     name: '(주)클린월드', 
     address: '서울시 종로구',
     contactPerson: '김대표',
+    tier: 'VVIP',
     activityHistory: [
         { id: 'A001', date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), type: '상담', content: '신규 폐기물 처리 단가 문의', manager: '이팀장' },
         { id: 'A002', date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), type: '계약', content: '2025년 재계약 완료', manager: '김대표' },
@@ -281,6 +282,7 @@ export const customers: Customer[] = [
     name: '자원솔루션', 
     address: '서울시 강남구',
     contactPerson: '이팀장',
+    tier: 'VIP',
     activityHistory: [
         { id: 'A003', date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), type: '클레임', content: '수거 지연에 대한 불만 제기', manager: '박대리' },
     ]
@@ -290,6 +292,7 @@ export const customers: Customer[] = [
     name: '(주)그린환경', 
     address: '서울시 송파구',
     contactPerson: '박대리',
+    tier: 'Gold',
     activityHistory: [
         { id: 'A004', date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), type: '영업 기회', content: '신규 계약 제안서 발송', manager: '김대표' },
     ]
@@ -299,6 +302,7 @@ export const customers: Customer[] = [
     name: '에코서비스', 
     address: '서울시 영등포구',
     contactPerson: '최사원',
+    tier: 'Silver',
     activityHistory: []
   },
   { 
@@ -306,6 +310,7 @@ export const customers: Customer[] = [
     name: '네이처로직스',
     address: '서울시 서초구',
     contactPerson: '홍사장',
+    tier: 'Bronze',
     activityHistory: []
   },
 ];
