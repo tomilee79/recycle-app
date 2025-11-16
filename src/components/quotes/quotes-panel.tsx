@@ -14,16 +14,13 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature, MoreHorizontal, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { usePagination } from '@/hooks/use-pagination';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -75,7 +72,6 @@ export default function QuotesPanel() {
   });
 
   const watchItems = form.watch('items');
-  const watchedStatus = form.watch('status');
 
   const calculateTotals = useCallback((items: any[]) => {
     const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -83,19 +79,6 @@ export default function QuotesPanel() {
     const total = subtotal + tax;
     return { subtotal, tax, total };
   }, []);
-
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      if (name && (name.startsWith('items.') && (name.endsWith('.quantity') || name.endsWith('.unitPrice')))) {
-        const items = form.getValues('items');
-        items.forEach((item, index) => {
-          items[index].total = (item.quantity || 0) * (item.unitPrice || 0);
-        });
-        form.setValue('items', items, { shouldValidate: true });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
 
   const handleNewQuote = () => {
     setSelectedQuote(null);
@@ -116,23 +99,11 @@ export default function QuotesPanel() {
       id: quote.id,
       customerId: quote.customerId,
       status: quote.status,
-      items: quote.items.map(item => ({...item})),
+      items: quote.items.map(item => ({...item})), // Deep copy to prevent mutation issues
       notes: quote.notes || '',
     });
     setIsSheetOpen(true);
   };
-  
-  const handleDelete = (quoteId: string) => {
-      setQuotes(quotes.filter(q => q.id !== quoteId));
-      if (selectedQuote?.id === quoteId) {
-        setIsSheetOpen(false);
-      }
-      toast({
-          title: "견적 삭제됨",
-          description: `${quoteId} 견적이 성공적으로 삭제되었습니다.`,
-          variant: "destructive"
-      });
-  }
 
   const onSubmit: SubmitHandler<QuoteFormValues> = (data) => {
     const { subtotal, tax, total } = calculateTotals(data.items);
@@ -167,13 +138,6 @@ export default function QuotesPanel() {
     }).sort((a, b) => new Date(b.quoteDate).getTime() - new Date(a.quoteDate).getTime());
   }, [quotes, filter, search]);
 
-  const {
-    currentPage,
-    setCurrentPage,
-    paginatedData,
-    totalPages,
-  } = usePagination(filteredQuotes, 10);
-
   const { subtotal, tax, total } = useMemo(() => calculateTotals(watchItems || []), [watchItems, calculateTotals]);
 
   const handleConvertToContract = () => {
@@ -186,19 +150,6 @@ export default function QuotesPanel() {
       });
       setIsSheetOpen(false);
   }
-
-  const handleCloneQuote = (quoteToClone: Quote) => {
-    setSelectedQuote(null);
-    const newQuoteId = `Q-${format(new Date(), 'yyyy')}-${String(quotes.length + 1).padStart(3, '0')}`;
-    form.reset({
-      id: newQuoteId,
-      customerId: quoteToClone.customerId,
-      status: 'Draft',
-      items: quoteToClone.items.map(item => ({ ...item, id: `item-${Date.now()}-${Math.random()}` })),
-      notes: quoteToClone.notes,
-    });
-    setIsSheetOpen(true);
-  };
 
   return (
     <>
@@ -242,11 +193,10 @@ export default function QuotesPanel() {
                 <TableHead>견적일</TableHead>
                 <TableHead>총액</TableHead>
                 <TableHead>상태</TableHead>
-                <TableHead className="text-right w-[80px]">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.map((quote) => (
+              {filteredQuotes.map((quote) => (
                 <TableRow key={quote.id} onClick={() => handleRowClick(quote)} className="cursor-pointer">
                   <TableCell className="font-medium">{quote.id}</TableCell>
                   <TableCell>{getCustomerName(quote.customerId)}</TableCell>
@@ -257,66 +207,11 @@ export default function QuotesPanel() {
                       {quoteStatusMap[quote.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <AlertDialog>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => handleCloneQuote(quote)}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                <span>복제</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>삭제</span>
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  이 작업은 되돌릴 수 없습니다. {quote.id} 견적이 영구적으로 삭제됩니다.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>취소</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(quote.id)}>삭제 확인</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter>
-            <Pagination>
-                <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1} />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <PaginationItem key={page}>
-                            <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
-                                {page}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages} />
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
-        </CardFooter>
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -330,8 +225,7 @@ export default function QuotesPanel() {
                 </SheetDescription>
             </SheetHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4 h-full flex flex-col">
-              <div className="flex-1 space-y-4 overflow-y-auto pr-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -418,8 +312,8 @@ export default function QuotesPanel() {
                                     )}
                                 />
                                 <div className="w-32">
-                                     <p className={cn("text-sm font-medium leading-none", index !== 0 && "sr-only")}>합계</p>
-                                     <p className="p-2 h-10 flex items-center">{watchItems?.[index]?.total.toLocaleString() ?? 0}원</p>
+                                     <p className={cn("text-sm font-medium leading-none sr-only", index === 0 && "not-sr-only")}>합계</p>
+                                     <p className="p-2 h-10 flex items-center">{((watchItems?.[index]?.quantity || 0) * (watchItems?.[index]?.unitPrice || 0)).toLocaleString()}원</p>
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                     <Trash2 className="size-4 text-destructive"/>
@@ -460,43 +354,46 @@ export default function QuotesPanel() {
                     )}
                  />
 
-              </div>
-              <div className="flex justify-between items-center pt-6">
-                <div>
-                  <Button type="submit" disabled={form.formState.isSubmitting || watchedStatus === 'Accepted'}>
-                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {selectedQuote ? '견적 저장' : '견적 생성'}
-                  </Button>
-                   {selectedQuote && watchedStatus === 'Accepted' && (
-                       <Button type="button" variant="secondary" onClick={handleConvertToContract} className="ml-2">
-                           <FileSignature className="mr-2" />
-                           계약으로 전환
-                       </Button>
-                   )}
+                <div className="flex justify-between items-center pt-6">
+                  <div>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {selectedQuote ? '견적 저장' : '견적 생성'}
+                    </Button>
+                     {selectedQuote && selectedQuote.status === 'Accepted' && (
+                         <Button type="button" variant="secondary" onClick={handleConvertToContract} className="ml-2">
+                             <FileSignature className="mr-2" />
+                             계약으로 전환
+                         </Button>
+                     )}
+                  </div>
+                  {selectedQuote && (
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive">
+                                  <Trash2 className="mr-2"/>
+                                  삭제
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      이 작업은 되돌릴 수 없습니다. {selectedQuote.id} 견적이 영구적으로 삭제됩니다.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => {
+                                      setQuotes(quotes.filter(q => q.id !== selectedQuote.id));
+                                      setIsSheetOpen(false);
+                                      toast({ title: "견적 삭제됨", description: `${selectedQuote.id} 견적이 삭제되었습니다.`, variant: "destructive"});
+                                  }}>삭제 확인</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  )}
                 </div>
-                {selectedQuote && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive">
-                                <Trash2 className="mr-2"/>
-                                삭제
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    이 작업은 되돌릴 수 없습니다. {selectedQuote.id} 견적이 영구적으로 삭제됩니다.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(selectedQuote.id)}>삭제 확인</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
-              </div>
             </form>
             </Form>
         </SheetContent>
@@ -504,5 +401,3 @@ export default function QuotesPanel() {
     </>
   );
 }
-
-    

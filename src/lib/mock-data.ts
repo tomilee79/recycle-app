@@ -496,5 +496,3 @@ export const expensesData: Expense[] = [
     { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
     { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: '리사이클 로버 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
 ];
-
-    

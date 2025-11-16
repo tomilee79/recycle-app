@@ -202,5 +202,3 @@ export type User = {
   createdAt: string; // YYYY-MM-DD
   avatarUrl?: string;
 };
-
-    
