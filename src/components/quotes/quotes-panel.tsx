@@ -21,6 +21,8 @@ import type { Quote, QuoteItem, QuoteStatus } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { usePagination } from '@/hooks/use-pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -126,6 +128,7 @@ export default function QuotesPanel() {
       toast({
           title: "견적 삭제됨",
           description: `${selectedQuote.id} 견적이 성공적으로 삭제되었습니다.`,
+          variant: "destructive"
       });
   }
 
@@ -159,8 +162,15 @@ export default function QuotesPanel() {
         const statusMatch = filter === 'All' || q.status === filter;
         const searchMatch = customerName.includes(searchTerm) || q.id.toLowerCase().includes(searchTerm);
         return statusMatch && searchMatch;
-    });
+    }).sort((a, b) => new Date(b.quoteDate).getTime() - new Date(a.quoteDate).getTime());
   }, [quotes, filter, search]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData,
+    totalPages,
+  } = usePagination(filteredQuotes, 10);
 
   const { subtotal, tax, total } = useMemo(() => calculateTotals(watchItems || []), [watchItems, calculateTotals]);
 
@@ -220,7 +230,7 @@ export default function QuotesPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredQuotes.map((quote) => (
+              {paginatedData.map((quote) => (
                 <TableRow key={quote.id} onClick={() => handleRowClick(quote)} className="cursor-pointer">
                   <TableCell className="font-medium">{quote.id}</TableCell>
                   <TableCell>{getCustomerName(quote.customerId)}</TableCell>
@@ -236,6 +246,25 @@ export default function QuotesPanel() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }} disabled={currentPage === 1} />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <PaginationItem key={page}>
+                            <PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>
+                                {page}
+                            </PaginationLink>
+                        </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }} disabled={currentPage === totalPages} />
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </CardFooter>
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
