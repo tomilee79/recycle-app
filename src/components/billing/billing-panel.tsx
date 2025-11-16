@@ -253,8 +253,10 @@ export default function BillingPanel() {
   const handleDeleteSettlement = (ids: string[]) => {
     setSettlementData(prev => prev.filter(s => !ids.includes(s.id)));
     toast({ title: "정산 내역 삭제됨", description: `${ids.length}개의 정산 내역이 삭제되었습니다.`, variant: "destructive" });
-    setIsSettlementModalOpen(false);
-    setEditingSettlement(null);
+    if(editingSettlement && ids.includes(editingSettlement.id)) {
+        setIsSettlementModalOpen(false);
+        setEditingSettlement(null);
+    }
     setSelectedSettlementRows(new Set());
   }
   
@@ -313,8 +315,10 @@ export default function BillingPanel() {
   const handleDeleteExpense = (ids: string[]) => {
     setExpensesData(prev => prev.filter(e => !ids.includes(e.id)));
     toast({ title: "비용 삭제됨", description: `${ids.length}개의 비용 항목이 삭제되었습니다.`, variant: "destructive" });
-    setIsExpenseModalOpen(false);
-    setEditingExpense(null);
+    if(editingExpense && ids.includes(editingExpense.id)) {
+        setIsExpenseModalOpen(false);
+        setEditingExpense(null);
+    }
     setSelectedExpenseRows(new Set());
   }
 
@@ -551,26 +555,41 @@ export default function BillingPanel() {
                               </SelectContent>
                           </Select>
                           {selectedExpenseRows.size > 0 && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="sm">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        선택 삭제 ({selectedExpenseRows.size})
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        일괄 작업 ({selectedExpenseRows.size}) <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            이 작업은 되돌릴 수 없습니다. 선택된 {selectedExpenseRows.size}개의 비용 내역이 영구적으로 삭제됩니다.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>취소</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteExpense(Array.from(selectedExpenseRows))}>삭제 확인</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    {expenseStatusOptions.map(status => (
+                                        <DropdownMenuItem key={status} onSelect={() => handleExpenseStatusChange(Array.from(selectedExpenseRows), status)}>
+                                            {expenseStatusMap[status]}으로 상태 변경
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                선택 삭제
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    이 작업은 되돌릴 수 없습니다. 선택된 {selectedExpenseRows.size}개의 비용 내역이 영구적으로 삭제됩니다.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>취소</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteExpense(Array.from(selectedExpenseRows))}>삭제 확인</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                         <div className="relative w-72">
