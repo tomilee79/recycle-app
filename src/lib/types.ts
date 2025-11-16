@@ -1,3 +1,4 @@
+
 export type Vehicle = {
   id: string;
   name: string;
@@ -37,4 +38,10 @@ export type Driver = {
   name: string;
   contact: string;
   isAvailable: boolean;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+  address: string;
 };

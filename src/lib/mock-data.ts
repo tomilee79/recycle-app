@@ -1,4 +1,5 @@
-import type { Vehicle, CollectionTask, ReportData, Driver } from './types';
+
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer } from './types';
 
 export const vehicles: Vehicle[] = [
   {
@@ -110,4 +111,11 @@ export const drivers: Driver[] = [
   { id: 'D005', name: 'Chris Brown', contact: '555-0105', isAvailable: true },
   { id: 'D006', name: 'Jessica Miller', contact: '555-0106', isAvailable: false },
   { id: 'D007', name: 'David Wilson', contact: '555-0107', isAvailable: true },
+];
+
+export const customers: Customer[] = [
+    { id: 'C001', name: 'BigBelly Inc.', address: '123 Main St' },
+    { id: 'C002', name: 'Recycle Corp', address: '456 Market St' },
+    { id: 'C003', name: 'Green Solutions', address: '789 Broadway' },
+    { id: 'C004', name: 'Eco Services', address: '101 Park Ave' },
 ];
