@@ -122,10 +122,10 @@ export default function TasksPanel() {
   };
 
   const handleSelectAllRows = () => {
-      if (selectedRowKeys.size === filteredTasks.length) {
+      if (selectedRowKeys.size === paginatedTasks.length && paginatedTasks.length > 0) {
           setSelectedRowKeys(new Set());
       } else {
-          setSelectedRowKeys(new Set(filteredTasks.map(t => t.id)));
+          setSelectedRowKeys(new Set(paginatedTasks.map(t => t.id)));
       }
   };
 
@@ -175,7 +175,13 @@ export default function TasksPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]"><Checkbox checked={selectedRowKeys.size > 0 && selectedRowKeys.size === filteredTasks.length} onCheckedChange={handleSelectAllRows}/></TableHead>
+                <TableHead className="w-[50px]">
+                    <Checkbox 
+                        checked={selectedRowKeys.size > 0 && selectedRowKeys.size === paginatedTasks.length}
+                        onCheckedChange={handleSelectAllRows}
+                        disabled={paginatedTasks.length === 0}
+                    />
+                </TableHead>
                 <TableHead>예정일</TableHead>
                 <TableHead>고객사</TableHead>
                 <TableHead>주소</TableHead>
@@ -187,13 +193,15 @@ export default function TasksPanel() {
             <TableBody>
               {paginatedTasks.map((task) => (
                 <TableRow key={task.id} data-state={selectedRowKeys.has(task.id) ? "selected" : ""}>
-                   <TableCell><Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/></TableCell>
+                   <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={selectedRowKeys.has(task.id)} onCheckedChange={() => handleSelectRow(task.id)}/>
+                   </TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.scheduledDate}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer font-medium">{getCustomerName(task.customerId)}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{task.address}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{materialTypeMap[task.materialType]}</TableCell>
                   <TableCell onClick={() => handleRowClick(task)} className="cursor-pointer">{getVehicle(task.vehicleId)?.name || '미배정'}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-auto p-0 font-normal">
