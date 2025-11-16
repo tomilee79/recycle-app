@@ -279,189 +279,195 @@ export default function CustomersPanel() {
   }
 
   return (
-    <Tabs defaultValue="list">
-      <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>고객 관리</CardTitle>
-              <CardDescription>고객 현황 대시보드 및 상세 목록을 관리합니다.</CardDescription>
-            </div>
-            <TabsList>
-                <TabsTrigger value="dashboard">대시보드</TabsTrigger>
-                <TabsTrigger value="list">목록</TabsTrigger>
-            </TabsList>
-          </div>
-      </CardHeader>
-      <TabsContent value="dashboard">
-          <CardContent>
-              <CustomerDashboard />
-          </CardContent>
-      </TabsContent>
-      <TabsContent value="list">
-          <CardContent>
-              <div className="flex items-center justify-between gap-2 my-4">
-                  <div className="flex gap-2">
-                      <Select value={filters.tier} onValueChange={(value) => setFilters(f => ({ ...f, tier: value }))}>
-                          <SelectTrigger className="w-[180px]"><SelectValue placeholder="등급 필터" /></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="All">모든 등급</SelectItem>
-                              {Object.keys(tierMap).map(t => <SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="relative w-64">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="고객명, 주소로 검색..." value={filters.search} onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))} className="pl-9" />
-                    </div>
-                    <Button onClick={handleNewCustomerClick}><PlusCircle className="mr-2" />신규 고객</Button>
-                  </div>
+    <Card className="shadow-lg">
+      <Tabs defaultValue="list">
+        <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>고객 관리</CardTitle>
+                <CardDescription>고객 현황 대시보드 및 상세 목록을 관리합니다.</CardDescription>
               </div>
-            <Table>
-              <TableHeader><TableRow><TableHead>고객명</TableHead><TableHead>등급</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {paginatedCustomers.map((customer) => {
-                  const contract = getCustomerContract(customer.id);
-                  const statusConfig = {
-                      'Active': { text: '활성', variant: 'default', icon: FileText },
-                      'Expiring': { text: '만료 예정', variant: 'destructive', icon: ShieldAlert },
-                  } as const;
-                  const contractDisplay = contract ? statusConfig[contract.status as keyof typeof statusConfig] : null;
-                  const tierInfo = tierMap[customer.tier];
+              <TabsList>
+                  <TabsTrigger value="dashboard">대시보드</TabsTrigger>
+                  <TabsTrigger value="list">목록</TabsTrigger>
+              </TabsList>
+            </div>
+        </CardHeader>
+        <TabsContent value="dashboard">
+            <CardContent>
+                <CustomerDashboard />
+            </CardContent>
+        </TabsContent>
+        <TabsContent value="list">
+            <CardContent>
+                <div className="flex items-center justify-between gap-2 my-4">
+                    <div className="flex gap-2">
+                        <Select value={filters.tier} onValueChange={(value) => setFilters(f => ({ ...f, tier: value }))}>
+                            <SelectTrigger className="w-[180px]"><SelectValue placeholder="등급 필터" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">모든 등급</SelectItem>
+                                {Object.keys(tierMap).map(t => <SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="고객명, 주소로 검색..." value={filters.search} onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))} className="pl-9" />
+                      </div>
+                      <Button onClick={handleNewCustomerClick}><PlusCircle className="mr-2" />신규 고객</Button>
+                    </div>
+                </div>
+              <Table>
+                <TableHeader><TableRow><TableHead>고객명</TableHead><TableHead>등급</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {paginatedCustomers.map((customer) => {
+                    const contract = getCustomerContract(customer.id);
+                    const statusConfig = {
+                        'Active': { text: '활성', variant: 'default', icon: FileText },
+                        'Expiring': { text: '만료 예정', variant: 'destructive', icon: ShieldAlert },
+                    } as const;
+                    const contractDisplay = contract ? statusConfig[contract.status as keyof typeof statusConfig] : null;
+                    const tierInfo = tierMap[customer.tier];
 
-                  return (
-                    <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                       <TableCell><Badge className={cn("gap-1 text-white", tierInfo.color)}>{React.createElement(tierInfo.icon, {className: 'size-3'})} {tierInfo.label}</Badge></TableCell>
-                      <TableCell>{customer.contactPerson}</TableCell>
-                      <TableCell>{customer.address}</TableCell>
-                      <TableCell>
-                        {contractDisplay ? (
-                          <Badge variant={contractDisplay.variant} className="gap-1">
-                            {React.createElement(contractDisplay.icon, { className: 'size-3' })}
-                            {contractDisplay.text}
-                          </Badge>
-                        ) : (<Badge variant="outline">계약 없음</Badge>)}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter>
-              <Pagination>
-                  <PaginationContent>
-                      <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }}/></PaginationItem>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
-                      <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}/></PaginationItem>
-                  </PaginationContent>
-              </Pagination>
-          </CardFooter>
-      </TabsContent>
+                    return (
+                      <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                         <TableCell><Badge className={cn("gap-1 text-white", tierInfo.color)}>{React.createElement(tierInfo.icon, {className: 'size-3'})} {tierInfo.label}</Badge></TableCell>
+                        <TableCell>{customer.contactPerson}</TableCell>
+                        <TableCell>{customer.address}</TableCell>
+                        <TableCell>
+                          {contractDisplay ? (
+                            <Badge variant={contractDisplay.variant} className="gap-1">
+                              {React.createElement(contractDisplay.icon, { className: 'size-3' })}
+                              {contractDisplay.text}
+                            </Badge>
+                          ) : (<Badge variant="outline">계약 없음</Badge>)}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter>
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.max(1, prev - 1)); }}/></PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (<PaginationItem key={page}><PaginationLink href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(page); }} isActive={currentPage === page}>{page}</PaginationLink></PaginationItem>))}
+                        <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}/></PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            </CardFooter>
+        </TabsContent>
+      </Tabs>
+
       <Sheet open={isSheetOpen} onOpenChange={handleSheetClose}>
         <SheetContent className="sm:max-w-2xl w-full">
-            {isEditingCustomer ? (
-                <Form {...customerForm}>
-                    <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)}>
-                        <SheetHeader>
-                            <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer ? '고객 정보 수정' : '신규 고객 추가'}</SheetTitle>
-                            <SheetDescription>{selectedCustomer ? '고객사의 기본 정보를 수정합니다.' : '새로운 고객사 정보를 입력합니다.'}</SheetDescription>
-                        </SheetHeader>
-                        <div className="mt-6 space-y-4">
-                            <FormField control={customerForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>고객사명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={customerForm.control} name="tier" render={({ field }) => (<FormItem><FormLabel>고객 등급</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{Object.keys(tierMap).map(t=><SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                            <FormField control={customerForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={customerForm.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>담당자명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        </div>
-                        <div className="mt-6 flex justify-between">
-                            <Button type="submit" disabled={customerForm.formState.isSubmitting}>{customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<Save className="mr-2"/>저장</Button>
-                            <Button type="button" variant="ghost" onClick={() => selectedCustomer ? setIsEditingCustomer(false) : handleSheetClose()}><X className="mr-2"/>취소</Button>
-                        </div>
-                    </form>
-                </Form>
-            ) : selectedCustomer && (
-                <>
-                <SheetHeader className="pr-12">
+            <ScrollArea className="h-full pr-6">
+                <SheetHeader>
                     <div className="flex justify-between items-start">
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
-                                <Badge className={cn("gap-1 text-white", tierMap[selectedCustomer.tier].color)}>{React.createElement(tierMap[selectedCustomer.tier].icon, {className: 'size-3'})} {tierMap[selectedCustomer.tier].label}</Badge>
-                            </div>
-                            <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
-                                <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
-                                <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
-                            </SheetDescription>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setIsEditingCustomer(true)}><Edit className="mr-2"/>수정</Button>
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2"/>삭제</Button></AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>정말로 이 고객을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 고객과 관련된 모든 활동 이력이 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCustomer}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
-                </SheetHeader>
-                <ScrollArea className="h-[calc(100%-8rem)] mt-6 pr-6">
-                <div className="space-y-8">
-                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-lg flex items-center gap-2"><NotepadText/> 활동 이력</CardTitle>
-                            {!isAddingActivity && <Button size="sm" variant="outline" onClick={() => setIsAddingActivity(true)}><CirclePlus className="mr-2"/>기록 추가</Button>}
-                        </CardHeader>
-                        <CardContent>
-                             {isAddingActivity && (
-                                <Form {...activityForm}>
-                                    <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="p-4 border rounded-md mb-6 space-y-4 bg-muted/50">
-                                        <FormField control={activityForm.control} name="type" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>활동 유형</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl>
-                                                    <SelectContent>{activityTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}/>
-                                        <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                        <div className="flex justify-end gap-2">
-                                            <Button type="button" variant="ghost" onClick={() => setIsAddingActivity(false)}>취소</Button>
-                                            <Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록</Button>
+                        {isEditingCustomer ? (
+                            <div className="w-full">
+                                <Form {...customerForm}>
+                                    <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)} className="space-y-4">
+                                        <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer ? '고객 정보 수정' : '신규 고객 추가'}</SheetTitle>
+                                        <SheetDescription>{selectedCustomer ? '고객사의 기본 정보를 수정합니다.' : '새로운 고객사 정보를 입력합니다.'}</SheetDescription>
+                                        <FormField control={customerForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>고객사명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="tier" render={({ field }) => (<FormItem><FormLabel>고객 등급</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{Object.keys(tierMap).map(t=><SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>담당자명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <div className="flex justify-end gap-2 pt-4">
+                                            <Button type="button" variant="ghost" onClick={() => selectedCustomer ? setIsEditingCustomer(false) : handleSheetClose()}>취소</Button>
+                                            <Button type="submit" disabled={customerForm.formState.isSubmitting}>{customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}저장</Button>
                                         </div>
                                     </form>
                                 </Form>
-                            )}
-
-                            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
-                            {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => {
-                                const ActivityIcon = activityTypeMap[activity.type].icon;
-                                const iconColor = activityTypeMap[activity.type].color;
-                                return (
-                                <div key={activity.id} className="relative">
-                                    <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background`}>
-                                      <ActivityIcon className={cn("size-5", iconColor)} />
-                                    </div>
-                                    <div className="pl-8">
-                                      <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
-                                      <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
-                                      <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
-                                    </div>
-                                </div>
-                                )
-                            }) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-                </ScrollArea>
-                </>
-            )}
+                        ) : selectedCustomer && (
+                            <>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer.name}</SheetTitle>
+                                    <Badge className={cn("gap-1 text-white", tierMap[selectedCustomer.tier].color)}>{React.createElement(tierMap[selectedCustomer.tier].icon, {className: 'size-3'})} {tierMap[selectedCustomer.tier].label}</Badge>
+                                </div>
+                                <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
+                                    <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
+                                    <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
+                                </SheetDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setIsEditingCustomer(true)}><Edit className="mr-2"/>수정</Button>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2"/>삭제</Button></AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>정말로 이 고객을 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 고객과 관련된 모든 활동 이력이 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCustomer}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                            </>
+                        )}
+                    </div>
+                </SheetHeader>
+                
+                {selectedCustomer && !isEditingCustomer && (
+                    <div className="mt-6 space-y-8">
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle className="text-lg flex items-center gap-2"><NotepadText/> 활동 이력</CardTitle>
+                                {!isAddingActivity && <Button size="sm" variant="outline" onClick={() => setIsAddingActivity(true)}><CirclePlus className="mr-2"/>기록 추가</Button>}
+                            </CardHeader>
+                            <CardContent>
+                                 {isAddingActivity && (
+                                    <Form {...activityForm}>
+                                        <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="p-4 border rounded-md mb-6 space-y-4 bg-muted/50">
+                                            <FormField control={activityForm.control} name="type" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>활동 유형</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl>
+                                                        <SelectContent>{activityTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}/>
+                                            <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <div className="flex justify-end gap-2">
+                                                <Button type="button" variant="ghost" onClick={() => setIsAddingActivity(false)}>취소</Button>
+                                                <Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록</Button>
+                                            </div>
+                                        </form>
+                                    </Form>
+                                )}
+
+                                <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
+                                {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => {
+                                    const ActivityIcon = activityTypeMap[activity.type].icon;
+                                    const iconColor = activityTypeMap[activity.type].color;
+                                    return (
+                                    <div key={activity.id} className="relative">
+                                        <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background`}>
+                                          <ActivityIcon className={cn("size-5", iconColor)} />
+                                        </div>
+                                        <div className="pl-8">
+                                          <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
+                                          <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
+                                          <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
+                                        </div>
+                                    </div>
+                                    )
+                                }) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </ScrollArea>
         </SheetContent>
       </Sheet>
-    </Tabs>
+    </Card>
   );
 }
+
+    
