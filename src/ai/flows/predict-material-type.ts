@@ -7,12 +7,28 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {
-  PredictMaterialTypeInputSchema,
-  type PredictMaterialTypeInput,
-  PredictMaterialTypeOutputSchema,
-  type PredictMaterialTypeOutput,
-} from '@/ai/flows/schemas';
+import { z } from 'genkit';
+
+
+const PredictMaterialTypeInputSchema = z.object({
+  location: z
+    .string()
+    .describe('The location where the recycling collection is taking place.'),
+  time: z
+    .string()
+    .describe('The time of day when the collection occurs.'),
+});
+export type PredictMaterialTypeInput = z.infer<typeof PredictMaterialTypeInputSchema>;
+
+const PredictMaterialTypeOutputSchema = z.object({
+  predictedMaterialType: z
+    .string()
+    .describe('The predicted type of recycled material being collected.'),
+  confidenceLevel: z
+    .number()
+    .describe('The confidence level of the prediction (0-1).'),
+});
+export type PredictMaterialTypeOutput = z.infer<typeof PredictMaterialTypeOutputSchema>;
 
 export async function predictMaterialType(
   input: PredictMaterialTypeInput

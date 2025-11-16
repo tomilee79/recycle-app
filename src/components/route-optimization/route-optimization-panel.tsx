@@ -8,8 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Route, Bot, Loader2, Wand2 } from 'lucide-react';
-import { optimizeRoute } from '@/ai/flows/optimize-route-flow';
-import type { OptimizeRouteOutput } from '@/ai/flows/schemas';
+import { optimizeRoute, type OptimizeRouteOutput } from '@/ai/flows/optimize-route-flow';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { RouteMap } from './route-map';
 

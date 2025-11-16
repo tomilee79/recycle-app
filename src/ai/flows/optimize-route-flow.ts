@@ -7,12 +7,25 @@
  */
 
 import { ai } from '@/ai/genkit';
-import {
-  OptimizeRouteInputSchema,
-  type OptimizeRouteInput,
-  OptimizeRouteOutputSchema,
-  type OptimizeRouteOutput,
-} from '@/ai/flows/schemas';
+import { z } from 'genkit';
+
+const OptimizeRouteLocationSchema = z.object({
+  id: z.string(),
+  address: z.string(),
+});
+
+const OptimizeRouteInputSchema = z.object({
+  startPoint: z.string().describe('The starting point of the route, e.g., "본사 차고지".'),
+  locations: z.array(OptimizeRouteLocationSchema).describe('An array of locations to be visited.'),
+});
+
+const OptimizeRouteOutputSchema = z.object({
+  optimizedRoute: z.array(OptimizeRouteLocationSchema).describe('The optimized route as an ordered array of locations.'),
+  reasoning: z.string().describe('A brief explanation of why this route is optimal.'),
+});
+
+export type OptimizeRouteInput = z.infer<typeof OptimizeRouteInputSchema>;
+export type OptimizeRouteOutput = z.infer<typeof OptimizeRouteOutputSchema>;
 
 
 export async function optimizeRoute(

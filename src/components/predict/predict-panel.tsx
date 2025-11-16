@@ -4,9 +4,8 @@
 import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { predictMaterialType } from '@/ai/flows/predict-material-type';
-import type { PredictMaterialTypeOutput } from '@/ai/flows/schemas';
-import { PredictMaterialTypeInputSchema, type PredictMaterialTypeInput } from '@/ai/flows/schemas';
+import { predictMaterialType, type PredictMaterialTypeOutput, type PredictMaterialTypeInput } from '@/ai/flows/predict-material-type';
+import { PredictMaterialTypeFormSchema } from '@/ai/flows/schemas';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,7 @@ export default function PredictPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<PredictMaterialTypeInput>({
-    resolver: zodResolver(PredictMaterialTypeInputSchema),
+    resolver: zodResolver(PredictMaterialTypeFormSchema),
     defaultValues: {
       location: "도심 주거 지역",
       time: "09:30",
