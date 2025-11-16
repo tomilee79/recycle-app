@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { customers, quotes as initialQuotes } from "@/lib/mock-data";
+import { customers, quotes as initialQuotes, users } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,11 +14,12 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, BarChart, PieChart, TrendingUp, FileCheck, CircleDotDashed } from 'lucide-react';
+import { Loader2, PlusCircle, FileText, Trash2, X, Search, FileSignature, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, BarChart, PieChart, TrendingUp, FileCheck, CircleDotDashed, Mail, Printer, History } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Quote, QuoteItem, QuoteStatus, Attachment } from '@/lib/types';
-import { format, addDays, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
+import type { Quote, QuoteItem, QuoteStatus, Attachment, StatusHistory } from '@/lib/types';
+import { format, addDays, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, formatISO, formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -50,6 +51,11 @@ const attachmentSchema = z.object({
   url: z.string(),
 });
 
+const statusHistorySchema = z.object({
+    status: z.enum(['Draft', 'Sent', 'Accepted', 'Rejected']),
+    date: z.string(),
+});
+
 const quoteItemSchema = z.object({
     id: z.string(),
     description: z.string().min(1, "항목을 입력해주세요."),
@@ -62,6 +68,7 @@ const quoteFormSchema = z.object({
   id: z.string(),
   customerId: z.string().min(1, "고객사를 선택해주세요."),
   status: z.enum(['Draft', 'Sent', 'Accepted', 'Rejected']),
+  statusHistory: z.array(statusHistorySchema).optional(),
   items: z.array(quoteItemSchema).min(1, "최소 1개의 항목을 추가해야 합니다."),
   notes: z.string().optional(),
   attachments: z.array(attachmentSchema).optional(),
@@ -74,6 +81,7 @@ export default function QuotesPanel() {
   const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [initialStatus, setInitialStatus] = useState<QuoteStatus | null>(null);
   const [filter, setFilter] = useState<'All' | QuoteStatus>('All');
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>(null);
@@ -97,6 +105,15 @@ export default function QuotesPanel() {
   
   const watchItems = form.watch('items');
   const watchedStatus = form.watch('status');
+
+  useEffect(() => {
+    if (watchedStatus && initialStatus && watchedStatus !== initialStatus) {
+      const newHistoryEntry: StatusHistory = { status: watchedStatus, date: formatISO(new Date()) };
+      const currentHistory = form.getValues('statusHistory') || [];
+      form.setValue('statusHistory', [...currentHistory, newHistoryEntry]);
+      setInitialStatus(watchedStatus); 
+    }
+  }, [watchedStatus, initialStatus, form]);
 
   const dashboardData = useMemo(() => {
     const totalQuotes = quotes.length;
@@ -180,10 +197,12 @@ export default function QuotesPanel() {
       id: newQuoteId,
       customerId: '',
       status: 'Draft',
+      statusHistory: [{ status: 'Draft', date: formatISO(new Date()) }],
       items: [{ id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 }],
       notes: '',
       attachments: [],
     });
+    setInitialStatus('Draft');
     setIsSheetOpen(true);
   };
   
@@ -194,7 +213,9 @@ export default function QuotesPanel() {
       ...quoteToClone,
       id: newQuoteId,
       status: 'Draft',
+      statusHistory: [{ status: 'Draft', date: formatISO(new Date()) }],
     });
+    setInitialStatus('Draft');
     setIsSheetOpen(true);
   };
 
@@ -204,10 +225,12 @@ export default function QuotesPanel() {
       id: quote.id,
       customerId: quote.customerId,
       status: quote.status,
+      statusHistory: quote.statusHistory || [{ status: quote.status, date: formatISO(parseISO(quote.quoteDate)) }],
       items: quote.items.map(item => ({...item})),
       notes: quote.notes || '',
       attachments: quote.attachments || [],
     });
+    setInitialStatus(quote.status);
     setIsSheetOpen(true);
   };
 
@@ -254,6 +277,32 @@ export default function QuotesPanel() {
       });
       setIsSheetOpen(false);
   }
+  
+  const handlePrint = () => {
+      window.print();
+  }
+
+  const handleEmail = () => {
+      if (!selectedQuote) return;
+      const customer = customers.find(c => c.id === selectedQuote.customerId);
+      const customerEmail = customer ? `${customer.contactPerson.toLowerCase()}@example.com` : '';
+      const subject = `[리사이클] 견적서 (${selectedQuote.id}) 송부의 건`;
+      const body = `
+안녕하세요, ${customer?.name || ''} ${customer?.contactPerson || ''}님.
+
+리사이클입니다.
+요청하신 견적서(${selectedQuote.id})를 첨부하여 보내드립니다.
+
+총 견적 금액: ${selectedQuote.total.toLocaleString()}원
+
+내용 확인 후 회신 부탁드립니다.
+
+감사합니다.
+리사이클 드림
+      `.trim().replace(/\n/g, '%0A');
+
+      window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
   
   const requestSort = (key: SortableField) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -461,8 +510,7 @@ export default function QuotesPanel() {
     </Card>
       
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-      <SheetContent className="sm:max-w-3xl w-full">
-        <div className="flex flex-col h-full">
+      <SheetContent className="sm:max-w-4xl w-full flex flex-col">
           <SheetHeader>
               <SheetTitle className="text-2xl flex items-center gap-2">
                   <FileText/> {selectedQuote ? `견적 수정: ${selectedQuote.id}` : '새 견적 작성'}
@@ -486,21 +534,21 @@ export default function QuotesPanel() {
                               <FormField control={form.control} name={`items.${index}.description`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel className={cn(index !== 0 && "sr-only")}>항목</FormLabel><Input {...field} placeholder="예: 폐 플라스틱 처리비"/><FormMessage /></FormItem>)}/>
                               <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => ( <FormItem className="w-20"><FormLabel className={cn(index !== 0 && "sr-only")}>수량</FormLabel><Input type="number" {...field} /><FormMessage /></FormItem>)}/>
                               <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => ( <FormItem className="w-32"><FormLabel className={cn(index !== 0 && "sr-only")}>단가</FormLabel><Input type="number" {...field} /><FormMessage /></FormItem>)}/>
-                              <div className="w-32"><p className={cn("text-sm font-medium leading-none sr-only", index === 0 && "not-sr-only")}>합계</p><p className="p-2 h-10 flex items-center">{((watchItems?.[index]?.total || 0)).toLocaleString()}원</p></div>
+                              <div className="w-32"><p className={cn("text-sm font-medium leading-none", index !== 0 && "sr-only")}>합계</p><p className="p-2 h-10 flex items-center">{((watchItems?.[index]?.total || 0)).toLocaleString()}원</p></div>
                               <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="size-4 text-destructive"/></Button>
                          </div>
                       ))}
                        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 })}>항목 추가</Button>
                        {form.formState.errors.items && typeof form.formState.errors.items === 'object' && 'message' in form.formState.errors.items && <p className="text-sm font-medium text-destructive">{form.formState.errors.items.message}</p>}
                   </CardContent>
+                  <CardFooter className="justify-end">
+                      <div className="w-64 space-y-2">
+                          <div className="flex justify-between"><span>소계</span><span>{subtotal.toLocaleString()}원</span></div>
+                          <div className="flex justify-between"><span>세금 (10%)</span><span>{tax.toLocaleString()}원</span></div>
+                          <div className="flex justify-between font-bold text-lg"><span>총계</span><span>{total.toLocaleString()}원</span></div>
+                      </div>
+                  </CardFooter>
               </Card>
-              <div className="flex justify-end">
-                  <div className="w-64 space-y-2">
-                      <div className="flex justify-between"><span>소계</span><span>{subtotal.toLocaleString()}원</span></div>
-                      <div className="flex justify-between"><span>세금 (10%)</span><span>{tax.toLocaleString()}원</span></div>
-                      <div className="flex justify-between font-bold text-lg"><span>총계</span><span>{total.toLocaleString()}원</span></div>
-                  </div>
-              </div>
               <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>메모</FormLabel><FormControl><Textarea placeholder="견적 관련 메모를 입력하세요..." {...field} /></FormControl></FormItem>)}/>
               <Card>
                   <CardHeader><CardTitle className="text-base flex items-center gap-2"><Paperclip/>첨부 파일</CardTitle></CardHeader>
@@ -513,18 +561,40 @@ export default function QuotesPanel() {
                       </div>
                   </CardContent>
               </Card>
+              <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><History />상태 변경 이력</CardTitle></CardHeader>
+                  <CardContent>
+                      <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
+                          {(form.getValues('statusHistory') || []).map((history, index) => (
+                              <div key={index} className="relative">
+                                  <div className="absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background"><FileCheck className="size-4 text-primary" /></div>
+                                  <div className="pl-8">
+                                      <p className="font-semibold text-sm">상태 변경: {quoteStatusMap[history.status]}</p>
+                                      <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(history.date), { addSuffix: true, locale: ko })}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </CardContent>
+              </Card>
             </div>
-              <div className="flex justify-between items-center pt-6 pr-6">
-                <div>
+              <div className="flex justify-between items-center pt-6 pr-6 mt-auto">
+                <div className="flex gap-2">
                   <Button type="submit" disabled={form.formState.isSubmitting || watchedStatus === 'Accepted'}>
                       {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {selectedQuote ? '견적 저장' : '견적 생성'}
                   </Button>
                    {selectedQuote && watchedStatus === 'Accepted' && (
-                       <Button type="button" variant="secondary" onClick={handleConvertToContract} className="ml-2">
+                       <Button type="button" variant="secondary" onClick={handleConvertToContract}>
                            <FileSignature className="mr-2" />
                            계약으로 전환
                        </Button>
+                   )}
+                   {selectedQuote && (
+                    <div className="flex gap-2">
+                       <Button type="button" variant="outline" onClick={handlePrint}><Printer className="mr-2"/>인쇄</Button>
+                       <Button type="button" variant="outline" onClick={handleEmail}><Mail className="mr-2"/>이메일 전송</Button>
+                    </div>
                    )}
                 </div>
                 {selectedQuote && (
@@ -556,7 +626,6 @@ export default function QuotesPanel() {
               </div>
           </form>
           </Form>
-         </div>
       </SheetContent>
     </Sheet>
     </>

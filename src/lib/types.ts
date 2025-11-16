@@ -137,6 +137,11 @@ export type Todo = {
 
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected';
 
+export type StatusHistory = {
+    status: QuoteStatus;
+    date: string; // ISO 8601 format
+};
+
 export type QuoteItem = {
     id: string;
     description: string;
@@ -159,6 +164,7 @@ export type Quote = {
     quoteDate: string;
     expiryDate: string;
     status: QuoteStatus;
+    statusHistory?: StatusHistory[];
     items: QuoteItem[];
     subtotal: number;
     tax: number;

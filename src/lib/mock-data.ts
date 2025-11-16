@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment, StatusHistory } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const users: User[] = [
@@ -443,16 +443,29 @@ const calculateQuoteTotals = (items: QuoteItem[]): { subtotal: number; tax: numb
 const createQuote = (id: string, customerId: string, status: QuoteStatus, date: Date): Quote => {
     const items = generateQuoteItems(Math.floor(Math.random() * 3) + 2);
     const { subtotal, tax, total } = calculateQuoteTotals(items);
+    
+    const statusHistory: StatusHistory[] = [
+        { status: 'Draft', date: formatISO(subDays(date, 2)) }
+    ];
+    if (status === 'Sent' || status === 'Accepted' || status === 'Rejected') {
+        statusHistory.push({ status: 'Sent', date: formatISO(subDays(date, 1)) });
+    }
+    if (status === 'Accepted' || status === 'Rejected') {
+        statusHistory.push({ status: status, date: formatISO(date) });
+    }
+    
     const attachments: Attachment[] = status === 'Accepted' ? [
         { id: `att-${id}`, name: '고객사_요청서.pdf', size: 1024 * 300, type: 'application/pdf', url: '#' },
         { id: `att2-${id}`, name: '현장_사진_01.jpg', size: 1024 * 800, type: 'image/jpeg', url: '#' },
     ] : [];
+    
     return {
         id,
         customerId,
         quoteDate: format(date, 'yyyy-MM-dd'),
         expiryDate: format(addDays(date, 30), 'yyyy-MM-dd'),
         status,
+        statusHistory,
         items,
         subtotal,
         tax,
@@ -463,7 +476,7 @@ const createQuote = (id: string, customerId: string, status: QuoteStatus, date: 
 };
 
 export const quotes: Quote[] = [
-    createQuote('Q-2024-001', 'C001', 'Accepted', subMonths(new Date(), 2)),
+    createQuote('Q-2024-001', 'C001', 'Accepted', subDays(new Date(), 5)),
     createQuote('Q-2024-002', 'C002', 'Sent', subDays(new Date(), 2)),
     createQuote('Q-2024-003', 'C003', 'Draft', subDays(new Date(), 1)),
     createQuote('Q-2024-004', 'C004', 'Rejected', subMonths(new Date(), 1)),
