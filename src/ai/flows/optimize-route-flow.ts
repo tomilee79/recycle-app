@@ -44,7 +44,7 @@ export async function optimizeRoute(
 
   Your goal is to reorder the list of collection addresses to create the most logical and efficient route.
 
-  IMPORTANT: The final 'optimizedRoute' array in your output MUST begin with the 'startPoint' location and also end with the 'startPoint' location. All other locations must be visited in between. The 'startPoint' should have an ID of 'start_end'.
+  IMPORTANT: The final 'optimizedRoute' array in your output MUST begin with the 'startPoint' location and also end with the 'startPoint' location. The 'startPoint' should have an ID of 'start_end'.
 
   Consider the geographic proximity of the addresses to each other to minimize travel time and distance. Use a common-sense approach based on typical city layouts (e.g., group addresses in the same neighborhood together).
 
