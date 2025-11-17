@@ -42,6 +42,7 @@ import {
   FolderKanban,
   Settings2,
   ExternalLink,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -65,7 +66,7 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
-type View = 'dashboard' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact';
+type View = 'dashboard' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact' | 'system-settings';
 
 type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
 
@@ -73,7 +74,7 @@ const menuGroups: Record<MenuGroup, View[]> = {
   operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['predict', 'admin'],
+  system: ['predict', 'admin', 'system-settings'],
 };
 
 
@@ -121,6 +122,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     quotes: '견적 관리',
     admin: '관리자 계정 관리',
     contact: '개발사 연락처',
+    'system-settings': '시스템 환경설정',
   };
   
   const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
@@ -207,7 +209,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'system-settings'} asChild><Link href="/system-settings"><SlidersHorizontal /><span>시스템 환경설정</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자 계정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>

@@ -10,7 +10,6 @@ import DashboardPanel from '@/components/dashboard/dashboard-panel';
 import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
-import PredictPanel from '@/components/predict/predict-panel';
 import QuotesPanel from '@/components/quotes/quotes-panel';
 import RouteOptimizationPanel from '@/components/route-optimization/route-optimization-panel';
 import SchedulePanel from '@/components/schedule/schedule-panel';
@@ -20,6 +19,7 @@ import TodosPanel from '@/components/todos/todos-panel';
 import AdminPanel from '@/components/admin/admin-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
+import SystemSettingsPanel from '@/components/system-settings/system-settings-panel';
 
 export default function ViewPage() {
   const params = useParams();
@@ -42,8 +42,6 @@ export default function ViewPage() {
       return <CustomersPanel />;
     case 'contracts':
       return <ContractsPanel />;
-    case 'predict':
-      return <PredictPanel />;
     case 'waste-analysis':
       return <WasteAnalysisPanel />;
     case 'route-optimization':
@@ -62,6 +60,8 @@ export default function ViewPage() {
       return <MyPagePanel />;
     case 'contact':
         return <ContactPanel />;
+    case 'system-settings':
+        return <SystemSettingsPanel />;
     default:
       return <DashboardPanel />;
   }
