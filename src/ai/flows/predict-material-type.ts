@@ -3,7 +3,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for predicting the type of recycled material based on location and time.
  *
- * - predictMaterialType - A function that accepts location and time and returns a predicted material type.
+ * - predictMaterial - A function that accepts location and time and returns a predicted material type.
  */
 
 import { ai } from '@/ai/genkit';
@@ -29,7 +29,7 @@ const PredictMaterialTypeOutputSchema = z.object({
 });
 export type PredictMaterialTypeOutput = z.infer<typeof PredictMaterialTypeOutputSchema>;
 
-export async function predictMaterialType(
+export async function predictMaterial(
   input: PredictMaterialTypeInput
 ): Promise<PredictMaterialTypeOutput> {
   const { output } = await ai.generate({

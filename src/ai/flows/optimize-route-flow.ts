@@ -3,7 +3,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for optimizing a collection route.
  *
- * - optimizeRoute - A function that accepts a list of locations and returns an optimized route.
+ * - optimizeRouteFlow - A function that accepts a list of locations and returns an optimized route.
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,7 +28,7 @@ export type OptimizeRouteInput = z.infer<typeof OptimizeRouteInputSchema>;
 export type OptimizeRouteOutput = z.infer<typeof OptimizeRouteOutputSchema>;
 
 
-export async function optimizeRoute(
+export async function optimizeRouteFlow(
   input: OptimizeRouteInput
 ): Promise<OptimizeRouteOutput> {
   const { output } = await ai.generate({
