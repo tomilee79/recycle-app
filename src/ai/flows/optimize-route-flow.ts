@@ -8,6 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { gemini15Flash } from 'genkit/models';
 
 const OptimizeRouteLocationSchema = z.object({
   id: z.string(),
@@ -31,22 +32,15 @@ export type OptimizeRouteOutput = z.infer<typeof OptimizeRouteOutputSchema>;
 export async function optimizeRoute(
   input: OptimizeRouteInput
 ): Promise<OptimizeRouteOutput> {
-  return optimizeRouteFlow(input);
-}
-
-const optimizeRoutePrompt = ai.definePrompt({
-  name: 'optimizeRoutePrompt',
-  input: {schema: OptimizeRouteInputSchema},
-  output: {schema: OptimizeRouteOutputSchema},
-  prompt: `You are an expert logistics coordinator for a waste management company. Your task is to determine the most efficient route for a collection truck.
+  const { output } = await ai.generate({
+    model: gemini15Flash,
+    prompt: `You are an expert logistics coordinator for a waste management company. Your task is to determine the most efficient route for a collection truck.
 
   You will be given a starting point and a list of collection addresses. The route must start at the startPoint, visit all locations, and finally return to the startPoint.
 
-  Starting Point: {{{startPoint}}}
+  Starting Point: ${input.startPoint}
   Collection Addresses:
-  {{#each locations}}
-  - {{this.address}} (ID: {{this.id}})
-  {{/each}}
+  ${input.locations.map(l => `- ${l.address} (ID: ${l.id})`).join('\n')}
 
   Your goal is to reorder the list of collection addresses to create the most logical and efficient route.
 
@@ -56,16 +50,10 @@ const optimizeRoutePrompt = ai.definePrompt({
 
   Return the full list of locations in the optimized order, including the start and end points. Also provide a brief, one-sentence reasoning for your chosen route.
   `,
-});
+    output: {
+        schema: OptimizeRouteOutputSchema,
+    }
+  });
 
-const optimizeRouteFlow = ai.defineFlow(
-  {
-    name: 'optimizeRouteFlow',
-    inputSchema: OptimizeRouteInputSchema,
-    outputSchema: OptimizeRouteOutputSchema,
-  },
-  async input => {
-    const { output } = await optimizeRoutePrompt(input);
-    return output!;
-  }
-);
+  return output!;
+}
