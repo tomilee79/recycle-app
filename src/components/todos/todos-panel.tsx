@@ -19,15 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { format, isPast, startOfToday, isSameDay } from 'date-fns';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form';
-
-const initialTodos: Todo[] = [
-  { id: 1, text: '주간 운영 보고서 작성', completed: false, priority: 'High', dueDate: new Date() },
-  { id: 2, text: '신규 고객사(Recycle Corp) 계약 조건 확인', completed: false, priority: 'High', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)) },
-  { id: 3, text: 'V004 차량 정비 일정 조율', completed: true, priority: 'Medium', dueDate: new Date(new Date().setDate(new Date().getDate() - 1)) },
-  { id: 4, text: '분기별 실적 데이터 분석', completed: false, priority: 'Medium', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)) },
-  { id: 5, text: '사무용품 재고 확인 및 주문', completed: false, priority: 'Low', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
-  { id: 6, text: '2분기 마케팅 캠페인 기획', completed: false, priority: 'High', dueDate: new Date(new Date().setDate(new Date().getDate() + 1)) },
-];
+import { todos as initialTodos } from '@/lib/mock-data';
 
 const priorityMap: { [key in Priority]: { text: string; color: string; value: number; } } = {
     High: { text: '높음', color: 'bg-red-500', value: 3 },
@@ -130,6 +122,8 @@ export default function TodosPanel() {
         if (a.dueDate && b.dueDate) {
             return a.dueDate.getTime() - b.dueDate.getTime();
         }
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
         return a.id - b.id;
       });
   }, [todos, filter]);
@@ -185,7 +179,7 @@ export default function TodosPanel() {
                     render={({ field }) => (
                       <FormItem><Popover>
                         <PopoverTrigger asChild>
-                          <FormControl><Button variant={"outline"} size="sm" className={cn("w-[150px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "MM/dd") : <span>마감일 설정</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                          <FormControl><Button variant={"outline"} size="sm" className={cn("w-[150px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "yyyy-MM-dd") : <span>마감일 설정</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
                       </Popover></FormItem>
@@ -228,7 +222,7 @@ export default function TodosPanel() {
                                   </RadioGroup></FormItem>
                               )}/>
                               <FormField control={editingForm.control} name="dueDate" render={({ field }) => (
-                                  <FormItem><Popover><PopoverTrigger asChild><Button variant={"outline"} size="sm" className={cn("h-7 text-xs w-[100px] pl-2 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "MM/dd") : <span>마감일</span>}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                                  <FormItem><Popover><PopoverTrigger asChild><Button variant={"outline"} size="sm" className={cn("h-7 text-xs w-[120px] pl-2 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "yyyy-MM-dd") : <span>마감일</span>}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                               )}/>
                           </div>
                           <div className='flex gap-2'>
@@ -252,7 +246,7 @@ export default function TodosPanel() {
                     {todo.dueDate && (
                         <div className={cn("text-xs flex items-center gap-1 mt-1", todo.completed ? "text-muted-foreground" : isPast(todo.dueDate) && !isSameDay(todo.dueDate, startOfToday()) ? "text-red-500" : "text-muted-foreground")}>
                             <CalendarIcon className="size-3"/>
-                            <span>{format(todo.dueDate, 'MM월 dd일')}</span>
+                            <span>{format(todo.dueDate, 'yyyy-MM-dd')}</span>
                             {isPast(todo.dueDate) && !isSameDay(todo.dueDate, startOfToday()) && !todo.completed && <AlertTriangle className="size-3"/>}
                         </div>
                     )}

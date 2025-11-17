@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment, StatusHistory } from './types';
+import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment, StatusHistory, Todo } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
 
 export const users: User[] = [
@@ -427,6 +427,15 @@ export const notifications: Notification[] = [
       isRead: true,
     },
   ];
+
+export const todos: Todo[] = [
+  { id: 1, text: '주간 운영 보고서 작성', completed: false, priority: 'High', dueDate: new Date() },
+  { id: 2, text: '신규 고객사(Recycle Corp) 계약 조건 확인', completed: false, priority: 'High', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)) },
+  { id: 3, text: 'V004 차량 정비 일정 조율', completed: true, priority: 'Medium', dueDate: new Date(new Date().setDate(new Date().getDate() - 1)) },
+  { id: 4, text: '분기별 실적 데이터 분석', completed: false, priority: 'Medium', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)) },
+  { id: 5, text: '사무용품 재고 확인 및 주문', completed: false, priority: 'Low', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
+  { id: 6, text: '2분기 마케팅 캠페인 기획', completed: false, priority: 'High', dueDate: new Date(new Date().setDate(new Date().getDate() + 1)) },
+];
 
   const generateQuoteItems = (count: number): QuoteItem[] => {
     const items: QuoteItem[] = [];

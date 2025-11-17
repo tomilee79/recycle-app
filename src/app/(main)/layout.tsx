@@ -70,10 +70,10 @@ type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' |
 type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
 
 const menuGroups: Record<MenuGroup, View[]> = {
-  operations: ['dashboard', 'schedule', 'tasks', 'route-optimization'],
+  operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['todos', 'notifications', 'predict', 'users', 'admin', 'mypage'],
+  system: ['notifications', 'predict', 'users', 'admin', 'mypage'],
 };
 
 
@@ -161,6 +161,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'dashboard'} asChild><Link href="/dashboard"><Truck /><span>실시간 배차 현황</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'schedule'} asChild><Link href="/schedule"><Calendar /><span>일정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'tasks'} asChild><Link href="/tasks"><ClipboardList /><span>작업 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'todos'} asChild><Link href="/todos"><CheckSquare /><span>할일 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'route-optimization'} asChild><Link href="/route-optimization"><Route /><span>경로 최적화</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>
@@ -210,7 +211,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'todos'} asChild><Link href="/todos"><CheckSquare /><span>할일 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'notifications'} asChild><Link href="/notifications"><Bell /><span>알림 센터</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'users'} asChild><Link href="/users"><Users /><span>사용자 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자</span></Link></SidebarMenuButton></SidebarMenuItem>
