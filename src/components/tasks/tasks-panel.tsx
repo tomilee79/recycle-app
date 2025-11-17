@@ -108,6 +108,7 @@ export default function TasksPanel() {
       resolver: zodResolver(newTaskFormSchema),
       defaultValues: {
           isRecurring: false,
+          scheduledDate: new Date(),
           recurringType: undefined,
           recurringEndDate: undefined,
       }
