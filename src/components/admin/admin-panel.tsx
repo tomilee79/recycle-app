@@ -111,7 +111,13 @@ export default function AdminPanel() {
   const openSheet = (user: User | null) => {
     setSelectedUser(user);
     if (user) {
-      form.reset(user);
+      form.reset({
+        ...user,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      });
     } else {
       form.reset({
         name: '',
