@@ -383,24 +383,6 @@ export default function VehiclesPanel() {
                   />
                 </div>
                 <div className="flex gap-2">
-                     <Dialog>
-                        <DialogTrigger asChild><Button variant="outline"><Upload className="mr-2"/>가져오기</Button></DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>CSV 파일에서 차량 가져오기</DialogTitle>
-                                <DialogDescription>
-                                    CSV 파일을 업로드하여 여러 차량을 한 번에 추가합니다. 파일은 'name', 'type', 'capacity' 열을 포함해야 합니다.
-                                </DialogDescription>
-                            </DialogHeader>
-                             <div className="space-y-4 py-4">
-                                <Input type="file" accept=".csv" />
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline">취소</Button>
-                                <Button>가져오기</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                     <Button variant="outline" onClick={handleVehicleExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
                         <DialogTrigger asChild><Button variant="outline" onClick={() => vehicleForm.reset()}><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
@@ -486,24 +468,6 @@ export default function VehiclesPanel() {
                   <Input placeholder="장비 ID 또는 위치로 검색..." value={equipmentSearch} onChange={(e) => setEquipmentSearch(e.target.value)} className="pl-9" />
                 </div>
                 <div className="flex gap-2">
-                    <Dialog>
-                        <DialogTrigger asChild><Button variant="outline"><Upload className="mr-2"/>가져오기</Button></DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>CSV 파일에서 장비 가져오기</DialogTitle>
-                                <DialogDescription>
-                                    CSV 파일을 업로드하여 여러 장비를 한 번에 추가합니다.
-                                </DialogDescription>
-                            </DialogHeader>
-                             <div className="space-y-4 py-4">
-                                <Input type="file" accept=".csv" />
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline">취소</Button>
-                                <Button>가져오기</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                     <Button variant="outline" onClick={handleEquipmentExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isEquipmentModalOpen} onOpenChange={setIsEquipmentModalOpen}>
                         <DialogTrigger asChild><Button onClick={() => equipmentForm.reset()}><PlusCircle className="mr-2"/>새 장비 등록</Button></DialogTrigger>
@@ -698,4 +662,3 @@ export default function VehiclesPanel() {
     </>
   );
 }
-

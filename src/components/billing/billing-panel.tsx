@@ -505,26 +505,6 @@ export default function BillingPanel() {
                             <CardDescription>고객사별 정산 내역 및 청구 상태를 관리합니다.</CardDescription>
                         </div>
                         <div className="flex gap-2">
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                    <DialogTitle>CSV 파일에서 정산 내역 가져오기</DialogTitle>
-                                    <DialogDescription>
-                                        CSV 파일을 업로드하여 여러 정산 내역을 한 번에 추가합니다.
-                                    </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <Input type="file" accept=".csv" />
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="outline">취소</Button>
-                                        <Button>가져오기</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
                             <Button variant="outline" onClick={handleSettlementExport}><Download className="mr-2"/>내보내기</Button>
                             <Button onClick={() => openSettlementDialog(null)}><PlusCircle className="mr-2"/>새 정산 추가</Button>
                         </div>
@@ -652,26 +632,6 @@ export default function BillingPanel() {
                           <CardDescription>차량 유류비, 정비비 등 모든 지출 내역을 관리합니다.</CardDescription>
                       </div>
                       <div className="flex gap-2">
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline"><Upload className="mr-2"/>가져오기</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                    <DialogTitle>CSV 파일에서 비용 내역 가져오기</DialogTitle>
-                                    <DialogDescription>
-                                        CSV 파일을 업로드하여 여러 비용 내역을 한 번에 추가합니다.
-                                    </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <Input type="file" accept=".csv" />
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="outline">취소</Button>
-                                        <Button>가져오기</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
                             <Button variant="outline" onClick={handleExpenseExport}><Download className="mr-2"/>내보내기</Button>
                             <Button onClick={() => openExpenseDialog(null)}><PlusCircle className="mr-2"/>새 비용 등록</Button>
                       </div>

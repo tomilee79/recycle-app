@@ -189,22 +189,6 @@ export default function AdminPanel() {
               <CardDescription>모든 관리자 계정을 생성, 조회, 수정 및 관리합니다.</CardDescription>
             </div>
              <div className="flex gap-2">
-                <Dialog>
-                    <DialogTrigger asChild><Button variant="outline"><Upload className="mr-2"/>가져오기</Button></DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>CSV 파일에서 사용자 가져오기</DialogTitle>
-                            <DialogDescription>CSV 파일을 업로드하여 여러 사용자를 한 번에 추가합니다.</DialogDescription>
-                        </DialogHeader>
-                         <div className="space-y-4 py-4">
-                            <Input type="file" accept=".csv" />
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline">취소</Button>
-                            <Button>가져오기</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
                 <Button variant="outline" onClick={handleExport}><Download className="mr-2"/>내보내기</Button>
                 <Button onClick={() => openSheet(null)}><UserPlus className="mr-2"/>새 관리자 추가</Button>
             </div>
