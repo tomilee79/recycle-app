@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDataStore } from "@/hooks/use-data-store";
@@ -52,7 +53,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
     const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
 
-    const [{ isDragging }, drag, preview] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag(() => ({
       type: ItemTypes.TASK,
       item: { id: task.id, index, columnId: vehicleId ? `InProgress_${vehicleId}` : 'Pending', vehicleId } as TaskDragItem,
       collect: (monitor) => ({
@@ -63,57 +64,64 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     const [, drop] = useDrop({
       accept: ItemTypes.TASK,
       hover: (item: TaskDragItem, monitor: DropTargetMonitor) => {
-        const internalRef = ref as React.RefObject<HTMLDivElement>;
-        if (!internalRef.current || item.id === task.id) return;
-        onMove(item.id, task.id, `InProgress_${vehicleId}`);
+        if (!ref || ('current' in ref && !ref.current) || item.id === task.id) {
+          return;
+        }
+        if (vehicleId) { // Only allow reordering within a vehicle lane
+            onMove(item.id, task.id, `InProgress_${vehicleId}`, vehicleId);
+        }
       },
     });
 
-    drag(drop(ref as Ref<HTMLDivElement>));
+    const combinedRef = (el: HTMLDivElement) => {
+      drag(el);
+      drop(el);
+      if (typeof ref === 'function') {
+        ref(el);
+      } else if (ref) {
+        ref.current = el;
+      }
+    };
 
     return (
-      <>
-        {preview(
-          <div ref={ref} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
-                  <GripVertical size={16} />
-              </div>
-              <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="size-3" /> {task.address}
-              </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <Trash2 className="size-3" /> {task.materialType}
-              </p>
-              {!vehicleId && (
-                  <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          {availableVehicles.length > 0 ? (
-                             availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
-                          ) : (
-                            <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                  </div>
-              )}
-          </div>
+      <div ref={combinedRef} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
+            <GripVertical size={16} />
+        </div>
+        <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
+        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+            <MapPin className="size-3" /> {task.address}
+        </p>
+        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+            <Trash2 className="size-3" /> {task.materialType}
+        </p>
+        {!vehicleId && (
+            <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {availableVehicles.length > 0 ? (
+                       availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
+                    ) : (
+                      <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
         )}
-      </>
+      </div>
     );
   }
 );
@@ -186,15 +194,13 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-  }), [vehicle.id, tasks]);
+  }), [vehicle.id, tasks, isAvailable, onMoveTask]);
   
   const statusMap: { [key in Vehicle['status']]: string } = { 'On Route': '운행중', 'Idle': '대기중', 'Maintenance': '정비중', 'Completed': '완료' };
   const statusVariant: { [key in Vehicle['status']]: "default" | "secondary" | "destructive" | "outline" } = { 'On Route': 'default', 'Idle': 'secondary', 'Maintenance': 'destructive', 'Completed': 'outline' };
 
-  const taskRefs = useRef(new Map<string, HTMLDivElement>());
-
   return (
-    <div ref={drop} className={cn("p-3 border rounded-lg", isOver && canDrop && "bg-primary/20", isOver && !canDrop && "bg-destructive/20")}>
+    <div ref={drop} className={cn("p-3 border rounded-lg", isOver && canDrop && "bg-primary/20", !isAvailable && "bg-muted/50 opacity-60", isOver && !canDrop && "bg-destructive/20")}>
         <div className="flex justify-between items-center mb-2">
             <p className="font-semibold flex items-center gap-2"><Truck className="size-4 text-primary"/>{vehicle.name}</p>
             <Badge variant={statusVariant[vehicle.status]}>{statusMap[vehicle.status]}</Badge>
@@ -205,9 +211,8 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
         </div>
         <div className="space-y-2 min-h-16">
             {tasks.map((task, index) => {
-                const ref = taskRefs.get(task.id) || React.createRef<HTMLDivElement>();
-                if (!taskRefs.has(task.id)) taskRefs.set(task.id, ref as any);
-                return <TaskCard key={task.id} ref={ref} task={task} index={index} vehicleId={vehicle.id} onMove={onMoveTask} onAssign={onAssignTask} onEdit={onEditTask} onDelete={onDeleteTask}/>
+                const ref = React.createRef<HTMLDivElement>();
+                return <TaskCard ref={ref} key={task.id} task={task} index={index} vehicleId={vehicle.id} onMove={onMoveTask} onAssign={onAssignTask} onEdit={onEditTask} onDelete={onDeleteTask}/>
             })}
         </div>
         {!canDrop && isOver && (
@@ -221,62 +226,50 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
 }
 
 export default function DispatchManagementPanel() {
-  const { collectionTasks, vehicles, updateTask, setDrivers, drivers, setTasks, deleteTask, customers } = useDataStore();
+  const { collectionTasks, vehicles, drivers, setTasks, deleteTask } = useDataStore();
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const handleMoveTask = (draggedId: string, targetId: string | null, targetColumn: string, targetVehicleId?: string) => {
-    const taskToMove = collectionTasks.find(t => t.id === draggedId);
-    if (!taskToMove) return;
+    setTasks(prevTasks => {
+      const taskToMove = prevTasks.find(t => t.id === draggedId);
+      if (!taskToMove) return prevTasks;
 
-    let newTasks = collectionTasks.filter(t => t.id !== draggedId);
-    let finalTask = { ...taskToMove };
-    let toastMessage = "";
+      let newTasks = prevTasks.filter(t => t.id !== draggedId);
 
-    const originalDriverName = taskToMove.driver;
+      if (targetColumn === 'Pending') {
+        const updatedTask = { ...taskToMove, vehicleId: '', driver: undefined, status: 'Pending' as const };
+        const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : 0;
+        newTasks.splice(targetIndex, 0, updatedTask);
+        toast({ title: "배차 취소", description: `작업 #${taskToMove.id} 배차가 취소되었습니다.` });
+      } else if (targetColumn.startsWith('InProgress_')) {
+        const vehicleId = targetVehicleId;
+        if (!vehicleId) return prevTasks;
 
-    if (targetColumn === 'Pending') {
-      finalTask = { ...finalTask, vehicleId: '', driver: undefined, status: 'Pending' };
-      const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : 0;
-      newTasks.splice(targetIndex, 0, finalTask);
-      if (originalDriverName) {
-        setDrivers(drivers.map(d => d.name === originalDriverName ? { ...d, isAvailable: true } : d));
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        const driver = drivers.find(d => d.name === vehicle?.driver);
+        if (!vehicle || !driver) return prevTasks;
+
+        const updatedTask = { ...taskToMove, vehicleId, driver: driver.name, status: 'In Progress' as const };
+        
+        let vehicleTasks = newTasks.filter(t => t.vehicleId === vehicleId);
+        const otherTasks = newTasks.filter(t => t.vehicleId !== vehicleId);
+
+        const targetIndexInVehicle = targetId ? vehicleTasks.findIndex(t => t.id === targetId) : vehicleTasks.length;
+        vehicleTasks.splice(targetIndexInVehicle, 0, updatedTask);
+        
+        newTasks = [...otherTasks, ...vehicleTasks];
+
+        toast({ title: "배차 업데이트", description: `작업 #${taskToMove.id}이(가) 차량 ${vehicle.name}에 배정되었습니다.` });
+      } else if (targetColumn === 'Issues') {
+          const updatedTask = { ...taskToMove, status: 'Cancelled' as const };
+          const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : newTasks.length;
+          newTasks.splice(targetIndex, 0, updatedTask);
+          toast({ title: "작업 상태 변경", description: `작업 #${taskToMove.id}이(가) 이슈로 등록되었습니다.` });
       }
-      toastMessage = `작업 #${taskToMove.id} 배차가 취소되었습니다.`;
 
-    } else if (targetColumn.startsWith('InProgress_')) {
-      const vehicleId = targetVehicleId;
-      if (!vehicleId) return;
-
-      const vehicle = vehicles.find(v => v.id === vehicleId);
-      const driver = drivers.find(d => d.name === vehicle?.driver);
-
-      if (!vehicle || !driver || !driver.isAvailable) {
-        toast({ title: "배차 불가", description: "선택한 차량 또는 운전자가 배차 가능한 상태가 아닙니다.", variant: "destructive" });
-        return;
-      }
-      
-      finalTask = { ...finalTask, vehicleId, driver: driver.name, status: 'In Progress' };
-      
-      let vehicleTasks = newTasks.filter(t => t.vehicleId === vehicleId);
-      const otherTasks = newTasks.filter(t => t.vehicleId !== vehicleId);
-      const targetIndex = targetId ? vehicleTasks.findIndex(t => t.id === targetId) : vehicleTasks.length;
-      vehicleTasks.splice(targetIndex, 0, finalTask);
-      
-      newTasks = [...otherTasks, ...vehicleTasks];
-
-      setDrivers(drivers.map(d => d.id === driver.id ? { ...d, isAvailable: false } : d));
-      toastMessage = `작업 #${taskToMove.id}이(가) 차량 ${vehicle.name}에 배정되었습니다.`;
-
-    } else if (targetColumn === 'Issues') {
-      finalTask = { ...finalTask, status: 'Cancelled' };
-      const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : newTasks.length;
-      newTasks.splice(targetIndex, 0, finalTask);
-      toastMessage = `작업 #${taskToMove.id}이(가) 이슈로 등록되었습니다.`;
-    }
-
-    setTasks(newTasks);
-    if(toastMessage) toast({ title: "배차 업데이트", description: toastMessage });
+      return newTasks;
+    });
   };
   
   const handleAssignTask = (taskId: string, vehicleId: string) => {
@@ -284,9 +277,6 @@ export default function DispatchManagementPanel() {
   }
   
   const handleEditTask = (task: CollectionTask) => {
-    // This would typically open a modal or sheet.
-    // For now, we just log it.
-    console.log("Editing task:", task.id);
      toast({ title: "작업 수정", description: "이 기능은 '작업 관리' 메뉴에서 지원됩니다." });
   };
 
@@ -299,8 +289,9 @@ export default function DispatchManagementPanel() {
     const issues = collectionTasks.filter(task => task.status === 'Cancelled');
     
     return { pendingTasks: pending, inProgressTasks: inProgress, issueTasks: issues };
-  }, [collectionTasks, vehicles, search, customers]);
+  }, [collectionTasks, vehicles, search]);
   
+  const { customers } = useDataStore();
   const totalTasks = pendingTasks.length + Object.values(inProgressTasks).flat().length + issueTasks.length;
   
   return (
