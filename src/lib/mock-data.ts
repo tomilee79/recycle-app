@@ -2,6 +2,7 @@
 
 import type { Vehicle, CollectionTask, ReportData, Driver, Customer, Notification, Equipment, MaintenanceRecord, SalesActivity, SettlementData, Quote, QuoteItem, QuoteStatus, Contract, ContractStatus, Expense, User, Comment, Attachment, StatusHistory, Todo } from './types';
 import { addDays, format, formatISO, subMinutes, subMonths, subDays, startOfMonth, addMonths, getDate } from 'date-fns';
+import { placeholderImages } from './placeholder-images';
 
 export const users: User[] = [
     { id: 'U001', name: '김관리', email: 'admin@ecotrack.com', role: 'Super Admin', status: 'Active', createdAt: format(subDays(new Date(), 120), 'yyyy-MM-dd'), avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhdmF0YXJ8ZW58MHx8fHwxNzY0NTI0MDYyfDA&ixlib=rb-4.1.0&q=80&w=1080' },
@@ -181,7 +182,7 @@ export const collectionTasks: CollectionTask[] = [
         reportDate: format(subDays(today, 1), 'yyyy-MM-dd'),
         collectedWeight: 2100,
         notes: '지정된 장소 외 추가 수거 요청 있었음.',
-        photoUrl: 'https://images.unsplash.com/photo-1574974671999-d57e5e059344?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+        photoUrl: placeholderImages.find(p => p.id === 'collection-site')?.imageUrl,
         comments: sampleComments,
     },
     distance: 45.1,
@@ -202,7 +203,7 @@ export const collectionTasks: CollectionTask[] = [
         reportDate: format(subDays(today, 2), 'yyyy-MM-dd'),
         collectedWeight: 1500,
         notes: '수거량 예상보다 많음.',
-        photoUrl: 'https://images.unsplash.com/photo-1611284446314-60a58ac08048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+        photoUrl: placeholderImages.find(p => p.id === 'collection-site-2')?.imageUrl,
         comments: [],
     },
     distance: 28.9,
@@ -558,3 +559,5 @@ export const expensesData: Expense[] = [
     { id: 'EXP004', date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), category: '기타', description: '사무용품 구매', amount: 85000, status: 'Paid' },
     { id: 'EXP005', date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), category: '유류비', description: '리사이클 로버 주유', amount: 95000, vehicleId: 'V003', status: 'Pending' },
 ];
+
+    

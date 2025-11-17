@@ -9,7 +9,13 @@
     {
       "id": "collection-site",
       "description": "A photo of a recycling collection site",
-      "imageUrl": "https://images.unsplash.com/photo-1611284446314-60a58ac08048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1574974671999-d57e5e059344?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "recycling plant"
+    },
+    {
+      "id": "collection-site-2",
+      "description": "Another photo of a recycling collection site",
+      "imageUrl": "https://images.unsplash.com/photo-1606037150583-fb842a55bae7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHwlRUMlOTMlQjAlRUIlQTAlODglRUElQjglQjB8ZW58MHx8fHwxNzYzMzQzMDU4fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "recycling plant"
     }
   ]
