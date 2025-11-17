@@ -1,5 +1,6 @@
 
 
+
 export type MaintenanceRecord = {
   date: string;
   description: string;
@@ -27,11 +28,12 @@ export type Equipment = {
   type: 'Roll-off Box' | 'Container';
   status: 'In Use' | 'Available' | 'Maintenance';
   location: string; // Vehicle ID or Yard Name
-  lastInspected: string; // YYYY-MM-DD
+  lastInspected: string; // Y-MM-DD
   createdAt: string; // YYYY-MM-DD
 };
 
 export type TaskStatus = 'Pending' | 'In Progress' | 'Completed' | 'Cancelled';
+export type Priority = 'High' | 'Medium' | 'Low';
 
 export type Comment = {
   id: string;
@@ -66,6 +68,8 @@ export type CollectionTask = {
   collectedWeight: number;
   report: TaskReport | null;
   distance?: number;
+  priority: Priority;
+  estimatedDuration?: number; // in minutes
 };
 
 export type ReportData = {
@@ -125,8 +129,6 @@ export type Notification = {
   type: 'Warning' | 'Info' | 'Error';
   isRead: boolean;
 };
-
-export type Priority = 'High' | 'Medium' | 'Low';
 
 export type Todo = {
   id: number;
