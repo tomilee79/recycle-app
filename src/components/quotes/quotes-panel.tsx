@@ -29,7 +29,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -282,7 +282,7 @@ export default function QuotesPanel() {
   }
   
   const handlePrint = () => {
-      window.print();
+      // This function is disabled.
   }
 
   const handleEmail = () => {
@@ -319,7 +319,7 @@ export default function QuotesPanel() {
   }
 
   return (
-    <>
+    <TooltipProvider>
     <Card className="shadow-lg">
       <Tabs defaultValue="dashboard">
         <CardHeader>
@@ -577,17 +577,26 @@ export default function QuotesPanel() {
                    )}
                    {selectedQuote && (
                     <div className="flex gap-2">
-                       <Button type="button" variant="outline" onClick={handlePrint}><Printer className="mr-2"/>인쇄</Button>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button type="button" variant="outline" onClick={handleEmail} disabled>
-                                    <Mail className="mr-2"/>이메일 전송
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>이 기능은 개발중입니다</p>
-                            </TooltipContent>
-                        </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button type="button" variant="outline" onClick={handlePrint} disabled>
+                              <Printer className="mr-2"/>인쇄
+                           </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                           <p>이 기능은 개발중입니다</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button type="button" variant="outline" onClick={handleEmail} disabled>
+                                  <Mail className="mr-2"/>이메일 전송
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                              <p>이 기능은 개발중입니다</p>
+                          </TooltipContent>
+                      </Tooltip>
                     </div>
                    )}
                 </div>
@@ -622,6 +631,6 @@ export default function QuotesPanel() {
           </Form>
       </SheetContent>
     </Sheet>
-    </>
+    </TooltipProvider>
   );
 }
