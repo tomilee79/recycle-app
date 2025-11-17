@@ -66,7 +66,7 @@ const newTaskFormSchema = z.object({
     address: z.string().min(5, "주소를 5자 이상 입력해주세요."),
     scheduledDate: z.date({ required_error: "수거 예정일을 선택해주세요." }),
     isRecurring: z.boolean().default(false),
-    recurringType: z.enum(['weekly', 'monthly']).optional(),
+    recurringType: z.enum(['daily', 'weekly', 'monthly']).optional(),
     recurringEndDate: z.date().optional(),
 }).refine(data => {
     if (data.isRecurring) {
@@ -234,7 +234,9 @@ export default function TasksPanel() {
                   id: `T${Date.now()}-${newTasks.length}`,
                   scheduledDate: format(currentDate, 'yyyy-MM-dd'),
               });
-              if (data.recurringType === 'weekly') {
+              if (data.recurringType === 'daily') {
+                  currentDate = addDays(currentDate, 1);
+              } else if (data.recurringType === 'weekly') {
                   currentDate = addWeeks(currentDate, 1);
               } else if (data.recurringType === 'monthly') {
                   currentDate = addMonths(currentDate, 1);
@@ -409,7 +411,7 @@ export default function TasksPanel() {
                                   <div className="grid grid-cols-3 gap-4 items-end">
                                       <FormField control={newForm.control} name="scheduledDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>시작일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
                                       <FormField control={newForm.control} name="recurringType" render={({ field }) => (
-                                          <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
+                                          <FormItem><FormLabel>반복 주기</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-2 h-10"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="daily" /></FormControl><FormLabel className="font-normal">매일</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="weekly" /></FormControl><FormLabel className="font-normal">매주</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="monthly" /></FormControl><FormLabel className="font-normal">매월</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
                                       )}/>
                                       <FormField control={newForm.control} name="recurringEndDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>종료일</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>날짜 선택</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < (newForm.getValues('scheduledDate') || new Date())} initialFocus/></PopoverContent></Popover><FormMessage /></FormItem>)}/>
                                   </div>
