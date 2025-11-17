@@ -38,7 +38,8 @@ export default function DriverPerformancePanel() {
     }
     
     if (selectedDriver !== 'all') {
-        tasks = tasks.filter(task => task.driver === selectedDriver);
+        const driver = drivers.find(d => d.id === selectedDriver);
+        tasks = tasks.filter(task => task.driver === driver?.name);
     }
 
     return tasks;
@@ -135,7 +136,7 @@ export default function DriverPerformancePanel() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">모든 직원</SelectItem>
-                  {drivers.map(driver => <SelectItem key={driver.id} value={driver.name}>{driver.name}</SelectItem>)}
+                  {drivers.map(driver => <SelectItem key={driver.id} value={driver.id}>{driver.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -145,7 +146,7 @@ export default function DriverPerformancePanel() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">이달의 우수 운전자</CardTitle><Medal className="h-4 w-4 text-amber-500" /></CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{driverStats[0]?.name || 'N/A'}</div>
+                <div className="text-2xl font-bold">{driverStats[0]?.completedTasks > 0 ? driverStats[0].name : 'N/A'}</div>
                 <p className="text-xs text-muted-foreground">총 {driverStats[0]?.totalWeight.toLocaleString() || 0} kg 수거</p>
             </CardContent>
         </Card>
@@ -226,7 +227,7 @@ export default function DriverPerformancePanel() {
                 <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} stroke="#888888" fontSize={12} />
                 <YAxis yAxisId="left" stroke="var(--color-totalWeight)" tickFormatter={(value) => `${value / 1000}t`} />
                 <YAxis yAxisId="right" orientation="right" stroke="var(--color-avgWeight)" tickFormatter={(value) => `${value.toLocaleString()} kg`}/>
-                <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
+                <RechartsTooltip content={<ChartTooltipContent indicator="dot" formatter={(value, name) => `${(value as number).toLocaleString()} kg`} />} />
                 <Legend />
                 <Line yAxisId="left" type="monotone" dataKey="totalWeight" name="월 총 수거량" stroke="var(--color-totalWeight)" strokeWidth={2} />
                 <Line yAxisId="right" type="monotone" dataKey="avgWeight" name="건당 평균 수거량" stroke="var(--color-avgWeight)" strokeWidth={2} strokeDasharray="5 5" />
@@ -255,21 +256,22 @@ export default function DriverPerformancePanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {driverStats.filter(d => d.completedTasks > 0).map((driver, index) => (
-                <TableRow key={driver.id}>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    {index < 3 ? <Medal className={cn("size-4", index === 0 && "text-amber-400", index === 1 && "text-slate-400", index === 2 && "text-orange-400")}/> : <span className='w-4 inline-block'></span>}
-                    {index + 1}
+              {driverStats.filter(d => d.completedTasks > 0).length > 0 ? (
+                driverStats.filter(d => d.completedTasks > 0).map((driver, index) => (
+                  <TableRow key={driver.id}>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      {index < 3 ? <Medal className={cn("size-4", index === 0 && "text-amber-400", index === 1 && "text-slate-400", index === 2 && "text-orange-400")}/> : <span className='w-4 inline-block'></span>}
+                      {index + 1}
                     </TableCell>
-                  <TableCell className="font-medium">{driver.name}</TableCell>
-                  <TableCell>{driver.completedTasks}</TableCell>
-                  <TableCell>{driver.totalWeight.toLocaleString()}</TableCell>
-                  <TableCell>{driver.avgWeightPerTask.toFixed(1)}</TableCell>
-                  <TableCell>{driver.totalDistance.toFixed(1)}</TableCell>
-                  <TableCell>{driver.assignedVehicle}</TableCell>
-                </TableRow>
-              ))}
-               {driverStats.filter(d => d.completedTasks > 0).length === 0 && (
+                    <TableCell className="font-medium">{driver.name}</TableCell>
+                    <TableCell>{driver.completedTasks}</TableCell>
+                    <TableCell>{driver.totalWeight.toLocaleString()}</TableCell>
+                    <TableCell>{driver.avgWeightPerTask.toFixed(1)}</TableCell>
+                    <TableCell>{driver.totalDistance.toFixed(1)}</TableCell>
+                    <TableCell>{driver.assignedVehicle}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">선택된 기간에 해당하는 성과 데이터가 없습니다.</TableCell>
                 </TableRow>
