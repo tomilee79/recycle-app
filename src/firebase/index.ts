@@ -8,6 +8,13 @@ import { getFirestore } from 'firebase/firestore'
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
+    // When in a development environment, always initialize with the config object.
+    // In production, Firebase App Hosting integrates with initializeApp() to provide
+    // the necessary environment variables.
+    if (process.env.NODE_ENV !== 'production') {
+      return getSdks(initializeApp(firebaseConfig));
+    }
+
     // Important! initializeApp() is called without any arguments because Firebase App Hosting
     // integrates with the initializeApp() function to provide the environment variables needed to
     // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
