@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { drivers, vehicles, collectionTasks } from "@/lib/mock-data";
-import { Medal, Users, CheckCircle, Truck, TrendingUp, Drafting } from 'lucide-react';
+import { Medal, Users, CheckCircle, Truck, TrendingUp, DraftingCompass } from 'lucide-react';
 import type { Driver, CollectionTask } from '@/lib/types';
 import { format, parseISO, startOfMonth } from 'date-fns';
 
@@ -111,7 +111,7 @@ export default function DriverPerformancePanel() {
             </CardContent>
         </Card>
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">건당 평균 수거량</CardTitle><Drafting className="h-4 w-4 text-purple-500" /></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">건당 평균 수거량</CardTitle><DraftingCompass className="h-4 w-4 text-purple-500" /></CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{totalCompletedTasks > 0 ? (totalCompletedWeight / totalCompletedTasks).toFixed(1) : 0} kg</div>
                 <p className="text-xs text-muted-foreground">전체 평균 수거 효율</p>
