@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -326,6 +325,8 @@ export default function TasksPanel() {
           address: taskToClone.address,
           scheduledDate: new Date(),
           isRecurring: false,
+          recurringType: undefined,
+          recurringEndDate: undefined,
       });
       setIsNewTaskModalOpen(true);
   }

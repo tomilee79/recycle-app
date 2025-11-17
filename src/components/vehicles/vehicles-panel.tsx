@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { format } from 'date-fns';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 
 const statusMap: { [key in Vehicle['status']]: string } = {
@@ -57,11 +57,6 @@ const equipmentTypeMap: { [key in Equipment['type']]: string } = {
 };
 const equipmentTypeOptions = Object.keys(equipmentTypeMap) as Equipment['type'][];
 
-const dispatchFormSchema = z.object({
-  customerId: z.string().min(1, "고객을 선택해주세요."),
-  vehicleId: z.string().min(1, "차량을 선택해주세요."),
-  driverId: z.string().min(1, "운전자를 선택해주세요."),
-});
 
 const vehicleFormSchema = z.object({
     name: z.string().min(3, "차량 이름은 3자 이상이어야 합니다."),
@@ -76,13 +71,11 @@ const equipmentFormSchema = z.object({
     location: z.string().min(2, "위치를 입력해주세요."),
 });
 
-type DispatchFormValues = z.infer<typeof dispatchFormSchema>;
 type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
 
 
 export default function VehiclesPanel() {
-  const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
   const [isEditingVehicle, setIsEditingVehicle] = useState(false);
@@ -95,11 +88,6 @@ export default function VehiclesPanel() {
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const { toast } = useToast();
-
-  const dispatchForm = useForm<DispatchFormValues>({
-    resolver: zodResolver(dispatchFormSchema),
-    defaultValues: { customerId: '', vehicleId: '', driverId: '' }
-  });
 
   const vehicleForm = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -207,23 +195,6 @@ export default function VehiclesPanel() {
       description: `차량의 상태가 '${statusMap[newStatus]}'(으)로 변경되었습니다.`,
     })
   }, [toast]);
-
-  const onDispatchSubmit: SubmitHandler<DispatchFormValues> = (data) => {
-    dispatchForm.formState.isSubmitting;
-    setTimeout(() => {
-      const selectedVehicleData = vehicles.find(v => v.id === data.vehicleId);
-      const selectedDriver = drivers.find(d => d.id === data.driverId);
-
-      if (selectedVehicleData && selectedDriver) {
-        handleStatusChange(data.vehicleId, 'On Route');
-        handleDriverChange(data.vehicleId, data.driverId);
-      }
-
-      toast({ title: "배차 등록 완료", description: "새로운 배차 정보가 성공적으로 등록되었습니다." });
-      setIsDispatchModalOpen(false);
-      dispatchForm.reset();
-    }, 1000);
-  };
   
   const onVehicleSubmit: SubmitHandler<VehicleFormValues> = (data) => {
     if (selectedVehicle && isEditingVehicle) { // Update vehicle
@@ -385,7 +356,7 @@ export default function VehiclesPanel() {
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={handleVehicleExport}><Download className="mr-2"/>내보내기</Button>
                     <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
-                        <DialogTrigger asChild><Button variant="outline" onClick={() => vehicleForm.reset()}><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button onClick={() => vehicleForm.reset()}><PlusCircle className="mr-2"/>새 차량 등록</Button></DialogTrigger>
                         <DialogContent>
                              <DialogHeader><DialogTitle>새 차량 등록</DialogTitle><DialogDescription>새로운 차량 자산을 시스템에 등록합니다.</DialogDescription></DialogHeader>
                              <Form {...vehicleForm}>
@@ -399,20 +370,6 @@ export default function VehiclesPanel() {
                                 </form>
                              </Form>
                         </DialogContent>
-                    </Dialog>
-                    <Dialog open={isDispatchModalOpen} onOpenChange={setIsDispatchModalOpen}>
-                      <DialogTrigger asChild><Button><PlusCircle className="mr-2"/>새 배차 등록</Button></DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader><DialogTitle>새 배차 등록</DialogTitle><DialogDescription>새로운 배차 정보를 입력해주세요.</DialogDescription></DialogHeader>
-                        <Form {...dispatchForm}>
-                          <form onSubmit={dispatchForm.handleSubmit(onDispatchSubmit)} className="space-y-4 py-4">
-                            <FormField control={dispatchForm.control} name="customerId" render={({ field }) => (<FormItem><FormLabel>고객사</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="고객사를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                            <FormField control={dispatchForm.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>차량</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="배차할 차량을 선택하세요" /></SelectTrigger></FormControl><SelectContent>{vehicles.filter(v => v.status === 'Idle').map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                            <FormField control={dispatchForm.control} name="driverId" render={({ field }) => (<FormItem><FormLabel>운전자</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="담당 운전자를 선택하세요" /></SelectTrigger></FormControl><SelectContent>{availableDrivers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                            <DialogFooter><Button type="submit" disabled={dispatchForm.formState.isSubmitting}>{dispatchForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}배차 등록</Button></DialogFooter>
-                          </form>
-                        </Form>
-                      </DialogContent>
                     </Dialog>
                 </div>
               </div>
