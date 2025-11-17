@@ -86,28 +86,20 @@ export default function WasteAnalysisPanel() {
     };
   }, []);
 
-  const chartConfigWasteType = {
+  const chartConfig = {
     value: { label: "수거량 (kg)" },
-    ...Object.fromEntries(Object.keys(materialTypeMap).map((key) => [materialTypeMap[key], { label: materialTypeMap[key], color: materialTypeColors[materialTypeMap[key]] }]))
-  };
-  
-  const chartConfigCustomer = {
-    value: { label: "수거량 (kg)", color: "hsl(var(--primary))" }
-  };
-  
-  const chartConfigCustomerType = {
-    ...chartConfigWasteType,
-    total: { label: "총 수거량", color: "hsl(var(--primary))" }
-  }
-
-  const chartConfigTime = {
     total: { label: "총 수거량", color: "hsl(var(--primary))" },
     plastic: { label: "플라스틱", color: materialTypeColors['플라스틱'] },
     glass: { label: "유리", color: materialTypeColors['유리'] },
     paper: { label: "종이", color: materialTypeColors['종이'] },
     metal: { label: "금속", color: materialTypeColors['금속'] },
     mixed: { label: "혼합", color: materialTypeColors['혼합'] },
-  };
+    플라스틱: { label: "플라스틱", color: materialTypeColors['플라스틱'] },
+    유리: { label: "유리", color: materialTypeColors['유리'] },
+    종이: { label: "종이", color: materialTypeColors['종이'] },
+    금속: { label: "금속", color: materialTypeColors['금속'] },
+    혼합: { label: "혼합", color: materialTypeColors['혼합'] },
+  } as const;
 
   return (
     <Tabs defaultValue="type" className="space-y-4">
@@ -124,7 +116,7 @@ export default function WasteAnalysisPanel() {
                     <CardDescription>수거 완료된 폐기물의 종류별 분포입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer config={chartConfigWasteType} className="h-[400px] w-full">
+                    <ChartContainer config={chartConfig} className="h-[400px] w-full">
                         <ResponsiveContainer>
                         <PieChart>
                             <RechartsTooltip 
@@ -133,7 +125,7 @@ export default function WasteAnalysisPanel() {
                             />
                             <Pie data={wasteByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={120} labelLine={false} label={({ percent, name }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
                             {wasteByType.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={chartConfigWasteType[entry.name]?.color} />
+                                <Cell key={`cell-${entry.name}`} fill={chartConfig[entry.name as keyof typeof chartConfig]?.color} />
                             ))}
                             </Pie>
                             <Legend />
@@ -151,7 +143,7 @@ export default function WasteAnalysisPanel() {
                     <CardDescription>상위 10개 고객사의 총 수거량(kg) 순위입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer config={chartConfigCustomer} className="h-[400px] w-full">
+                    <ChartContainer config={{ value: { label: "수거량 (kg)", color: "hsl(var(--primary))" } }} className="h-[400px] w-full">
                         <ResponsiveContainer>
                         <BarChart data={wasteByCustomer} layout="vertical" margin={{ left: 10, right: 30 }}>
                             <CartesianGrid horizontal={false} />
@@ -173,7 +165,7 @@ export default function WasteAnalysisPanel() {
                     <CardDescription>상위 10개 고객사의 폐기물 종류별 구성 비율입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer config={chartConfigCustomerType} className="h-[400px] w-full">
+                    <ChartContainer config={chartConfig} className="h-[400px] w-full">
                         <ResponsiveContainer>
                             <BarChart data={wasteByCustomerByType} layout="vertical" stackOffset="expand" margin={{ left: 10, right: 30 }}>
                                 <CartesianGrid horizontal={false} />
@@ -181,7 +173,7 @@ export default function WasteAnalysisPanel() {
                                 <XAxis type="number" tickFormatter={(value) => `${value * 100}%`} />
                                 <ChartTooltip content={<ChartTooltipContent formatter={(value, name, props) => {
                                   const total = props.payload.total;
-                                  const percentage = (value as number / total * 100).toFixed(1);
+                                  const percentage = total > 0 ? (value as number / total * 100).toFixed(1) : 0;
                                   return `${(value as number).toLocaleString()} kg (${percentage}%)`;
                                 }} />} />
                                 <Legend />
@@ -204,7 +196,7 @@ export default function WasteAnalysisPanel() {
                     <CardDescription>시간대별 총 수거량 및 종류별 수거량(kg) 추이입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer config={chartConfigTime} className="h-[400px] w-full">
+                    <ChartContainer config={chartConfig} className="h-[400px] w-full">
                         <ResponsiveContainer>
                         <ComposedChart data={wasteByTime}>
                             <CartesianGrid vertical={false} />
