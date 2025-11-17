@@ -29,6 +29,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 const quoteStatusMap: { [key in QuoteStatus]: string } = {
   'Draft': '초안',
@@ -285,25 +286,7 @@ export default function QuotesPanel() {
   }
 
   const handleEmail = () => {
-      if (!selectedQuote) return;
-      const customer = customers.find(c => c.id === selectedQuote.customerId);
-      const customerEmail = customer ? `${customer.contactPerson.toLowerCase().replace(' ', '.')}@example.com` : '';
-      const subject = `[리사이클] 견적서 (${selectedQuote.id}) 송부의 건`;
-      const body = `
-안녕하세요, ${customer?.name || ''} ${customer?.contactPerson || ''}님.
-
-리사이클입니다.
-요청하신 견적서(${selectedQuote.id})를 첨부하여 보내드립니다.
-
-총 견적 금액: ${selectedQuote.total.toLocaleString()}원
-
-내용 확인 후 회신 부탁드립니다.
-
-감사합니다.
-리사이클 드림
-      `.trim().replace(/\n/g, '%0A');
-
-      window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // This function is disabled.
   };
   
   const requestSort = (key: SortableField) => {
@@ -595,7 +578,16 @@ export default function QuotesPanel() {
                    {selectedQuote && (
                     <div className="flex gap-2">
                        <Button type="button" variant="outline" onClick={handlePrint}><Printer className="mr-2"/>인쇄</Button>
-                       <Button type="button" variant="outline" onClick={handleEmail}><Mail className="mr-2"/>이메일 전송</Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button type="button" variant="outline" onClick={handleEmail} disabled>
+                                    <Mail className="mr-2"/>이메일 전송
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>이 기능은 개발중입니다</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                    )}
                 </div>
