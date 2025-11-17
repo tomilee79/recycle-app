@@ -108,6 +108,8 @@ export default function TasksPanel() {
       resolver: zodResolver(newTaskFormSchema),
       defaultValues: {
           isRecurring: false,
+          recurringType: undefined,
+          recurringEndDate: undefined,
       }
   });
 
@@ -383,7 +385,7 @@ export default function TasksPanel() {
               </div>
                <Dialog open={isNewTaskModalOpen} onOpenChange={setIsNewTaskModalOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => newForm.reset({ isRecurring: false, scheduledDate: new Date() })}>
+                  <Button onClick={() => newForm.reset({ isRecurring: false, scheduledDate: new Date(), recurringType: undefined, recurringEndDate: undefined })}>
                     <PlusCircle className="mr-2 h-4 w-4" />새 작업 추가
                   </Button>
                 </DialogTrigger>
