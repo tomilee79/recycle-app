@@ -10,6 +10,7 @@ import { drivers, vehicles, collectionTasks } from "@/lib/mock-data";
 import { Medal, Users, CheckCircle, Truck, TrendingUp, DraftingCompass } from 'lucide-react';
 import type { Driver, CollectionTask } from '@/lib/types';
 import { format, parseISO, startOfMonth } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface DriverStats extends Driver {
   completedTasks: number;
