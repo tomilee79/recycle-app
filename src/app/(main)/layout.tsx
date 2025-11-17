@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState } from 'react';
@@ -21,10 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   LayoutDashboard,
   Truck,
-  Settings,
   LogOut,
   Users,
-  Building2,
   Bot,
   Bell,
   PieChart,
@@ -64,6 +61,8 @@ import {
 import { Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'admin' | 'contact';
 
@@ -73,7 +72,7 @@ const menuGroups: Record<MenuGroup, View[]> = {
   operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['notifications', 'predict', 'users', 'admin', 'mypage'],
+  system: ['predict', 'users', 'admin', 'mypage'],
 };
 
 
@@ -211,7 +210,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'notifications'} asChild><Link href="/notifications"><Bell /><span>알림 센터</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'users'} asChild><Link href="/users"><Users /><span>사용자 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'mypage'} asChild><Link href="/mypage"><User /><span>마이페이지</span></Link></SidebarMenuButton></SidebarMenuItem>
@@ -227,47 +225,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <Separator className="my-2 bg-sidebar-border" />
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <div className="flex w-full items-center gap-2">
-                  <Avatar className="size-8">
-                    <AvatarImage src={userAvatar?.imageUrl} alt="User" data-ai-hint={userAvatar?.imageHint}/>
-                    <AvatarFallback>관리자</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold">관리자</span>
-                    <span className="text-xs text-sidebar-foreground/70">
-                      Administrator
-                    </span>
-                  </div>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
-                    <LogOut />
-                    <span>로그아웃</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>정말로 로그아웃 하시겠습니까?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      로그인 페이지로 돌아갑니다.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>취소</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>로그아웃</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </SidebarMenuItem>
-          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
 
@@ -283,6 +240,55 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <p className="text-xs text-muted-foreground hidden md:block">
               본 리사이클 업무 관리 솔루션은 DX 컨설팅이 개발하였습니다. 시연 목적의 Demo 이므로 일부는 작동하지 않을 수 있습니다.
             </p>
+            <Button variant="ghost" size="icon" asChild>
+                <Link href="/notifications">
+                    <Bell />
+                    <span className="sr-only">알림 센터</span>
+                </Link>
+            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={userAvatar?.imageUrl} alt="User" data-ai-hint={userAvatar?.imageHint}/>
+                            <AvatarFallback>관리자</AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">관리자</p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                                Administrator
+                            </p>
+                        </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/mypage"><User className="mr-2 h-4 w-4" /><span>마이페이지</span></Link>
+                    </DropdownMenuItem>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <LogOut className="mr-2 h-4 w-4" /><span>로그아웃</span>
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>정말로 로그아웃 하시겠습니까?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            로그인 페이지로 돌아갑니다.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleLogout}>로그아웃</AlertDialogAction>
+                        </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <div className="flex-1 overflow-auto p-4 md:p-6">
@@ -292,4 +298,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
-
