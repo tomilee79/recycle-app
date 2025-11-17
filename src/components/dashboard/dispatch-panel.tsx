@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { placeholderImages } from '@/lib/placeholder-images';
-import type { Vehicle } from '@/lib/types';
+import type { Vehicle, CollectionTask } from '@/lib/types';
+import { useMemo } from 'react';
 
 const statusMap: { [key: string]: string } = {
   'On Route': '운행중',
@@ -38,11 +39,30 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
       onVehicleSelect(null);
     }
   };
-  
-  const selectedTask = collectionTasks.find(task => task.vehicleId === selectedVehicle?.id);
-  const sitePhoto = selectedTask?.report?.photoUrl;
-  const sitePhotoHint = placeholderImages.find(p => p.imageUrl === sitePhoto)?.imageHint || 'recycling site';
 
+  const { taskWithPhoto, associatedTask } = useMemo(() => {
+    if (!selectedVehicle) {
+      return { taskWithPhoto: null, associatedTask: null };
+    }
+    const vehicleTasks = collectionTasks.filter(task => task.vehicleId === selectedVehicle.id);
+    
+    // Find the most relevant task with a photo
+    const taskWithPhoto = vehicleTasks
+      .filter(task => task.report?.photoUrl)
+      .sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime())[0] || null;
+
+    // Find the most relevant associated task for details (could be the same or different)
+     const associatedTask = vehicleTasks
+      .sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime())[0] || null;
+
+    return { taskWithPhoto, associatedTask };
+  }, [selectedVehicle]);
+
+  const sitePhotoUrl = taskWithPhoto?.report?.photoUrl;
+  const sitePhotoHint = useMemo(() => {
+      if (!sitePhotoUrl) return 'recycling site';
+      return placeholderImages.find(p => p.imageUrl === sitePhotoUrl)?.imageHint || 'recycling site';
+  }, [sitePhotoUrl]);
 
   return (
     <>
@@ -108,14 +128,14 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-6">
-                {sitePhoto && (
+                {sitePhotoUrl && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">수거 현장 사진</CardTitle>
                     </CardHeader>
                     <CardContent>
                        <Image
-                        src={sitePhoto}
+                        src={sitePhotoUrl}
                         alt="수거 현장 사진"
                         width={600}
                         height={400}
@@ -139,22 +159,22 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
                           selectedVehicle.status === 'Maintenance' ? 'destructive' : 'outline'
                         }>{statusMap[selectedVehicle.status]}</Badge>
                      </div>
-                     {selectedTask && (
+                     {associatedTask && (
                        <>
                          <div className="flex items-center gap-3">
                             <MapPin className="size-5 text-muted-foreground" />
                             <span className="font-medium">수거지:</span>
-                            <span>{selectedTask.address}</span>
+                            <span>{associatedTask.address}</span>
                          </div>
                          <div className="flex items-center gap-3">
                             <Trash2 className="size-5 text-muted-foreground" />
                             <span className="font-medium">폐기물 종류:</span>
-                            <span>{selectedTask.materialType}</span>
+                            <span>{associatedTask.materialType}</span>
                          </div>
                          <div className="flex items-center gap-3">
                             <Weight className="size-5 text-muted-foreground" />
                             <span className="font-medium">수거량:</span>
-                            <span>{selectedTask.collectedWeight > 0 ? `${selectedTask.collectedWeight} kg` : '미집계'}</span>
+                            <span>{associatedTask.collectedWeight > 0 ? `${associatedTask.collectedWeight} kg` : '미집계'}</span>
                          </div>
                        </>
                      )}
