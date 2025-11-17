@@ -8,7 +8,7 @@ import { drivers as initialDrivers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal, Save, X, Upload, Download } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Trash2, Edit, MoreHorizontal, Save, X, Upload, Download, ArrowDown, ArrowUp } from "lucide-react";
 import type { Driver } from '@/lib/types';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -33,13 +33,11 @@ const driverFormSchema = z.object({
   name: z.string().min(2, "이름은 2자 이상이어야 합니다."),
   contact: z.string().regex(/^[0-9]{3}-[0-9]{3,4}-[0-9]{4}$/, "010-1234-5678 형식으로 입력해주세요."),
   email: z.string().email("유효한 이메일 주소여야 합니다."),
-  password: z.string().optional().refine(val => !val || val.length >= 6, {
-    message: "비밀번호는 최소 6자 이상이어야 합니다.",
-  }),
   isAvailable: z.boolean(),
 });
 
 type DriverFormValues = z.infer<typeof driverFormSchema>;
+type SortableField = 'name' | 'email' | 'contact';
 
 export default function DriversPanel() {
   const router = useRouter();
@@ -47,27 +45,41 @@ export default function DriversPanel() {
   const [search, setSearch] = useState('');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>(null);
   const { toast } = useToast();
 
   const form = useForm<DriverFormValues>({
     resolver: zodResolver(driverFormSchema),
   });
 
-  const filteredDrivers = useMemo(() =>
-    drivers.filter(d =>
+  const sortedAndFilteredDrivers = useMemo(() => {
+    let filtered = drivers.filter(d =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.contact.includes(search) ||
       d.email.toLowerCase().includes(search.toLowerCase())
-    ),
-    [drivers, search]
-  );
+    );
+
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [drivers, search, sortConfig]);
   
   const {
     currentPage,
     setCurrentPage,
     paginatedData,
     totalPages,
-  } = usePagination(filteredDrivers, 8);
+  } = usePagination(sortedAndFilteredDrivers, 8);
 
 
   const openSheet = (driver: Driver | null) => {
@@ -78,11 +90,10 @@ export default function DriversPanel() {
         name: driver.name,
         contact: driver.contact,
         email: driver.email,
-        password: '',
         isAvailable: driver.isAvailable,
       });
     } else {
-      form.reset({ id: undefined, name: '', contact: '', email: '', password: '', isAvailable: true });
+      form.reset({ id: undefined, name: '', contact: '', email: '', isAvailable: true });
     }
     setIsSheetOpen(true);
   };
@@ -123,12 +134,27 @@ export default function DriversPanel() {
       description: `직원의 배차 가능 상태가 ${isAvailable ? "'가능'" : "'배차중'"}으로 변경되었습니다.`,
     });
   }
+  
+  const requestSort = (key: SortableField) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIcon = (key: SortableField) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
 
   const handleExport = () => {
     const headers = ["ID", "Name", "Email", "Contact", "Available"];
     const csvContent = [
       headers.join(','),
-      ...filteredDrivers.map(d => [d.id, d.name, d.email, d.contact, d.isAvailable].join(','))
+      ...sortedAndFilteredDrivers.map(d => [d.id, d.name, d.email, d.contact, d.isAvailable].join(','))
     ].join('\n');
     
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
@@ -200,20 +226,20 @@ export default function DriversPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>이름</TableHead>
-                <TableHead>이메일</TableHead>
-                <TableHead>연락처</TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>이름{getSortIcon('name')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('email')}>이메일{getSortIcon('email')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('contact')}>연락처{getSortIcon('contact')}</Button></TableHead>
                 <TableHead className="w-[120px]">배차 가능</TableHead>
                 <TableHead className="text-right w-[80px]">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedData.map((driver) => (
-                <TableRow key={driver.id} onClick={() => openSheet(driver)} className="cursor-pointer">
+                <TableRow key={driver.id}>
                   <TableCell className="font-medium">{driver.name}</TableCell>
                   <TableCell>{driver.email}</TableCell>
                   <TableCell>{driver.contact}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell>
                     <div className="flex items-center space-x-2">
                        <Switch
                         id={`available-${driver.id}`}
@@ -225,7 +251,7 @@ export default function DriversPanel() {
                       </Label>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="text-right">
                     <AlertDialog>
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -234,6 +260,10 @@ export default function DriversPanel() {
                               </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => openSheet(driver)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>수정</span>
+                              </DropdownMenuItem>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -284,7 +314,6 @@ export default function DriversPanel() {
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="contact" render={({ field }) => (<FormItem><FormLabel>연락처</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>이메일 (로그인 ID)</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="password" render={({ field }) => (<FormItem><FormLabel>비밀번호</FormLabel><FormControl><Input type="password" placeholder={selectedDriver ? '변경할 경우에만 입력' : '••••••••'} {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField
                     control={form.control}
                     name="isAvailable"
