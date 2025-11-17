@@ -65,6 +65,7 @@ export type CollectionTask = {
   completedTime?: string;
   collectedWeight: number;
   report: TaskReport | null;
+  distance?: number;
 };
 
 export type ReportData = {

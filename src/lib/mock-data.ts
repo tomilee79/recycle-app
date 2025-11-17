@@ -30,7 +30,7 @@ export const vehicles: Vehicle[] = [
   {
     id: 'V002',
     name: '그린카 2호',
-    driver: '미배정',
+    driver: '이서아',
     status: 'Idle',
     location: { lat: 37.5665, lng: 126.9780 }, // 서울 시청
     capacity: 5000,
@@ -70,7 +70,7 @@ export const vehicles: Vehicle[] = [
   {
     id: 'V005',
     name: '어스 웨건 5호',
-    driver: '미배정',
+    driver: '정하은',
     status: 'Completed',
     location: { lat: 37.478, lng: 126.9515 }, // 관악
     capacity: 5000,
@@ -133,6 +133,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 25.5,
   },
   {
     id: 'T02',
@@ -147,6 +148,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 18.2,
   },
   {
     id: 'T03',
@@ -161,6 +163,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 32.0,
   },
   {
     id: 'T04',
@@ -180,7 +183,8 @@ export const collectionTasks: CollectionTask[] = [
         notes: '지정된 장소 외 추가 수거 요청 있었음.',
         photoUrl: 'https://images.unsplash.com/photo-1574974671999-d57e5e059344?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
         comments: sampleComments,
-    }
+    },
+    distance: 45.1,
   },
    {
     id: 'T05',
@@ -201,6 +205,7 @@ export const collectionTasks: CollectionTask[] = [
         photoUrl: 'https://images.unsplash.com/photo-1611284446314-60a58ac08048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxyZWN5Y2xpbmclMjBwbGFudHxlbnwwfHx8fDE3NjM3NjI4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
         comments: [],
     },
+    distance: 28.9,
   },
   {
     id: 'T06',
@@ -215,6 +220,7 @@ export const collectionTasks: CollectionTask[] = [
     completedTime: '12:45',
     collectedWeight: 3000,
     report: null,
+    distance: 22.4,
   },
   {
     id: 'T07',
@@ -229,6 +235,7 @@ export const collectionTasks: CollectionTask[] = [
     completedTime: '13:30',
     collectedWeight: 1800,
     report: null,
+    distance: 38.6,
   },
    {
     id: 'T08',
@@ -243,6 +250,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 15.0,
   },
   {
     id: 'T09',
@@ -257,6 +265,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 19.8,
   },
   {
     id: 'T10',
@@ -271,6 +280,7 @@ export const collectionTasks: CollectionTask[] = [
     completedTime: '14:30',
     collectedWeight: 2200,
     report: null,
+    distance: 12.3,
   },
   {
     id: 'T11',
@@ -285,6 +295,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 41.5,
   },
   {
     id: 'T12',
@@ -299,6 +310,7 @@ export const collectionTasks: CollectionTask[] = [
     collectedWeight: 0,
     report: null,
     completedTime: undefined,
+    distance: 28.0,
   },
 ];
 
