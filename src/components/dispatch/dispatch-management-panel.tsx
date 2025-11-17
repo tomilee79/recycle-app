@@ -48,7 +48,9 @@ interface TaskCardProps {
 
 const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
   ({ task, index, vehicleId, onMove, onAssign, onEdit, onDelete }, ref) => {
-    const { customers, vehicles, drivers } = useDataStore();
+    const customers = useDataStore((state) => state.customers);
+    const vehicles = useDataStore((state) => state.vehicles);
+    const drivers = useDataStore((state) => state.drivers);
     const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
     const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
 
@@ -179,7 +181,7 @@ interface VehicleLaneProps {
 }
 
 const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onAssignTask }: VehicleLaneProps) => {
-  const { drivers } = useDataStore();
+  const drivers = useDataStore((state) => state.drivers);
   const isAvailable = vehicle.status === 'Idle' && (drivers.find(d => d.name === vehicle.driver)?.isAvailable ?? false);
   const loadPercentage = (vehicle.load / vehicle.capacity) * 100;
   
@@ -225,7 +227,13 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
 }
 
 export default function DispatchManagementPanel() {
-  const { collectionTasks, vehicles, drivers, customers, setTasks, deleteTask } = useDataStore();
+  const collectionTasks = useDataStore((state) => state.collectionTasks);
+  const vehicles = useDataStore((state) => state.vehicles);
+  const drivers = useDataStore((state) => state.drivers);
+  const customers = useDataStore((state) => state.customers);
+  const setTasks = useDataStore((state) => state.setTasks);
+  const deleteTask = useDataStore((state) => state.deleteTask);
+
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
@@ -343,4 +351,3 @@ export default function DispatchManagementPanel() {
     </DndProvider>
   );
 }
-
