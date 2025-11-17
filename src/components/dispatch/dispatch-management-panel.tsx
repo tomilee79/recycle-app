@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDataStore } from "@/hooks/use-data-store";
 import type { CollectionTask, Vehicle, Priority, Driver } from "@/lib/types";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, forwardRef, Ref } from "react";
 import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Truck, MapPin, Trash2, GripVertical, AlertTriangle, Search, PlusCircle, Edit, MoreHorizontal, CheckCircle } from "lucide-react";
@@ -46,76 +46,78 @@ interface TaskCardProps {
   onDelete: (task: CollectionTask) => void;
 }
 
-const TaskCard = ({ task, index, vehicleId, onMove, onAssign, onEdit, onDelete }: TaskCardProps) => {
-  const { customers, vehicles, drivers } = useDataStore();
-  const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
-  const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
+const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
+  ({ task, index, vehicleId, onMove, onAssign, onEdit, onDelete }, ref) => {
+    const { customers, vehicles, drivers } = useDataStore();
+    const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
+    const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
 
-  const ref = useRef<HTMLDivElement>(null);
+    const [{ isDragging }, drag, preview] = useDrag(() => ({
+      type: ItemTypes.TASK,
+      item: { id: task.id, index, columnId: vehicleId ? `InProgress_${vehicleId}` : 'Pending', vehicleId } as TaskDragItem,
+      collect: (monitor) => ({
+        isDragging: !!monitor.isDragging(),
+      }),
+    }));
 
-  const [{ isDragging }, drag, preview] = useDrag(() => ({
-    type: ItemTypes.TASK,
-    item: { id: task.id, index, columnId: vehicleId ? `InProgress_${vehicleId}` : 'Pending', vehicleId } as TaskDragItem,
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
-  
-  const [, drop] = useDrop({
-    accept: ItemTypes.TASK,
-    hover: (item: TaskDragItem, monitor: DropTargetMonitor) => {
-      if (!ref.current || item.id === task.id) return;
-      onMove(item.id, task.id, `InProgress_${vehicleId}`);
-    },
-  });
+    const [, drop] = useDrop({
+      accept: ItemTypes.TASK,
+      hover: (item: TaskDragItem, monitor: DropTargetMonitor) => {
+        const internalRef = ref as React.RefObject<HTMLDivElement>;
+        if (!internalRef.current || item.id === task.id) return;
+        onMove(item.id, task.id, `InProgress_${vehicleId}`);
+      },
+    });
 
-  drag(drop(ref));
+    drag(drop(ref as Ref<HTMLDivElement>));
 
-  return (
-    <>
-      {preview(
-        <div ref={ref} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
-                <GripVertical size={16} />
-            </div>
-            <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <MapPin className="size-3" /> {task.address}
-            </p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <Trash2 className="size-3" /> {task.materialType}
-            </p>
-            {!vehicleId && (
-                <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {availableVehicles.length > 0 ? (
-                           availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
-                        ) : (
-                          <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-            )}
-        </div>
-      )}
-    </>
-  );
-};
+    return (
+      <>
+        {preview(
+          <div ref={ref} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
+                  <GripVertical size={16} />
+              </div>
+              <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <MapPin className="size-3" /> {task.address}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <Trash2 className="size-3" /> {task.materialType}
+              </p>
+              {!vehicleId && (
+                  <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {availableVehicles.length > 0 ? (
+                             availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
+                          ) : (
+                            <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                  </div>
+              )}
+          </div>
+        )}
+      </>
+    );
+  }
+);
+TaskCard.displayName = 'TaskCard';
 
 
 interface KanbanColumnProps {
@@ -164,9 +166,12 @@ interface VehicleLaneProps {
   vehicle: Vehicle;
   tasks: CollectionTask[];
   onMoveTask: (draggedId: string, targetId: string | null, targetColumn: string, targetVehicleId?: string) => void;
+  onEditTask: (task: CollectionTask) => void;
+  onDeleteTask: (task: CollectionTask) => void;
+  onAssignTask: (taskId: string, vehicleId: string) => void;
 }
 
-const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
+const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onAssignTask }: VehicleLaneProps) => {
   const { drivers } = useDataStore();
   const isAvailable = vehicle.status === 'Idle' && (drivers.find(d => d.name === vehicle.driver)?.isAvailable ?? false);
   const loadPercentage = (vehicle.load / vehicle.capacity) * 100;
@@ -186,6 +191,8 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
   const statusMap: { [key in Vehicle['status']]: string } = { 'On Route': '운행중', 'Idle': '대기중', 'Maintenance': '정비중', 'Completed': '완료' };
   const statusVariant: { [key in Vehicle['status']]: "default" | "secondary" | "destructive" | "outline" } = { 'On Route': 'default', 'Idle': 'secondary', 'Maintenance': 'destructive', 'Completed': 'outline' };
 
+  const taskRefs = useRef(new Map<string, HTMLDivElement>());
+
   return (
     <div ref={drop} className={cn("p-3 border rounded-lg", isOver && canDrop && "bg-primary/20", isOver && !canDrop && "bg-destructive/20")}>
         <div className="flex justify-between items-center mb-2">
@@ -197,9 +204,11 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
             <p className="text-xs text-right text-muted-foreground">{vehicle.load}kg / {vehicle.capacity}kg</p>
         </div>
         <div className="space-y-2 min-h-16">
-            {tasks.map((task, index) => (
-                <TaskCard key={task.id} task={task} index={index} vehicleId={vehicle.id} onMove={onMoveTask} onAssign={() => {}} onEdit={() => {}} onDelete={() => {}}/>
-            ))}
+            {tasks.map((task, index) => {
+                const ref = taskRefs.get(task.id) || React.createRef<HTMLDivElement>();
+                if (!taskRefs.has(task.id)) taskRefs.set(task.id, ref as any);
+                return <TaskCard key={task.id} ref={ref} task={task} index={index} vehicleId={vehicle.id} onMove={onMoveTask} onAssign={onAssignTask} onEdit={onEditTask} onDelete={onDeleteTask}/>
+            })}
         </div>
         {!canDrop && isOver && (
             <div className="flex items-center gap-2 text-xs text-destructive mt-2">
@@ -212,7 +221,7 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
 }
 
 export default function DispatchManagementPanel() {
-  const { collectionTasks, vehicles, updateTask, setDrivers, drivers, setTasks, deleteTask } = useDataStore();
+  const { collectionTasks, vehicles, updateTask, setDrivers, drivers, setTasks, deleteTask, customers } = useDataStore();
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
@@ -249,11 +258,12 @@ export default function DispatchManagementPanel() {
       
       finalTask = { ...finalTask, vehicleId, driver: driver.name, status: 'In Progress' };
       
-      const vehicleTasks = newTasks.filter(t => t.vehicleId === vehicleId);
+      let vehicleTasks = newTasks.filter(t => t.vehicleId === vehicleId);
+      const otherTasks = newTasks.filter(t => t.vehicleId !== vehicleId);
       const targetIndex = targetId ? vehicleTasks.findIndex(t => t.id === targetId) : vehicleTasks.length;
       vehicleTasks.splice(targetIndex, 0, finalTask);
       
-      newTasks = [...newTasks.filter(t => t.vehicleId !== vehicleId), ...vehicleTasks];
+      newTasks = [...otherTasks, ...vehicleTasks];
 
       setDrivers(drivers.map(d => d.id === driver.id ? { ...d, isAvailable: false } : d));
       toastMessage = `작업 #${taskToMove.id}이(가) 차량 ${vehicle.name}에 배정되었습니다.`;
@@ -272,9 +282,16 @@ export default function DispatchManagementPanel() {
   const handleAssignTask = (taskId: string, vehicleId: string) => {
     handleMoveTask(taskId, null, `InProgress_${vehicleId}`, vehicleId);
   }
+  
+  const handleEditTask = (task: CollectionTask) => {
+    // This would typically open a modal or sheet.
+    // For now, we just log it.
+    console.log("Editing task:", task.id);
+     toast({ title: "작업 수정", description: "이 기능은 '작업 관리' 메뉴에서 지원됩니다." });
+  };
 
   const { pendingTasks, inProgressTasks, issueTasks } = useMemo(() => {
-    const pending = collectionTasks.filter(task => (task.status === 'Pending' && !task.vehicleId) && (task.address.toLowerCase().includes(search.toLowerCase())));
+    const pending = collectionTasks.filter(task => (task.status === 'Pending' && !task.vehicleId) && (customers.find(c => c.id === task.customerId)?.name.toLowerCase().includes(search.toLowerCase()) || task.address.toLowerCase().includes(search.toLowerCase())));
     const inProgress: { [key: string]: CollectionTask[] } = {};
     vehicles.forEach(v => {
       inProgress[v.id] = collectionTasks.filter(t => t.vehicleId === v.id && t.status === 'In Progress').sort((a, b) => a.id.localeCompare(b.id)); // Should use order field
@@ -282,7 +299,7 @@ export default function DispatchManagementPanel() {
     const issues = collectionTasks.filter(task => task.status === 'Cancelled');
     
     return { pendingTasks: pending, inProgressTasks: inProgress, issueTasks: issues };
-  }, [collectionTasks, vehicles, search]);
+  }, [collectionTasks, vehicles, search, customers]);
   
   const totalTasks = pendingTasks.length + Object.values(inProgressTasks).flat().length + issueTasks.length;
   
@@ -293,12 +310,13 @@ export default function DispatchManagementPanel() {
           <KanbanColumn id="Pending" title="대기 작업" description="배차 대기 중인 작업 목록" taskCount={pendingTasks.length} totalTasks={totalTasks} onDrop={(item) => handleMoveTask(item.id, null, 'Pending')}>
             <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="주소로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                <Input placeholder="고객사명, 주소로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             {pendingTasks.length > 0 ? (
-                pendingTasks.map((task, index) => (
-                    <TaskCard key={task.id} task={task} index={index} onMove={handleMoveTask} onAssign={handleAssignTask} onEdit={()=>{}} onDelete={(task) => deleteTask(task.id)}/>
-                ))
+                pendingTasks.map((task, index) => {
+                    const ref = React.createRef<HTMLDivElement>();
+                    return <TaskCard ref={ref} key={task.id} task={task} index={index} onMove={handleMoveTask} onAssign={handleAssignTask} onEdit={handleEditTask} onDelete={(task) => deleteTask(task.id)}/>
+                })
             ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
                     <p>배정 대기 중인 작업이 없습니다.</p>
@@ -309,16 +327,22 @@ export default function DispatchManagementPanel() {
         <Card className="shadow-lg h-full flex flex-col">
             <KanbanColumn id="InProgress" title="차량별 경로" description="운행 중인 차량 및 배정된 작업" taskCount={Object.values(inProgressTasks).flat().length} totalTasks={totalTasks} onDrop={() => {}}>
               {vehicles.map(vehicle => (
-                <VehicleLane key={vehicle.id} vehicle={vehicle} tasks={inProgressTasks[vehicle.id] || []} onMoveTask={handleMoveTask} />
+                <VehicleLane key={vehicle.id} vehicle={vehicle} tasks={inProgressTasks[vehicle.id] || []} onMoveTask={handleMoveTask} onEditTask={handleEditTask} onDeleteTask={(task) => deleteTask(task.id)} onAssignTask={handleAssignTask} />
               ))}
+               {vehicles.length === 0 && (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
+                    <p>등록된 차량이 없습니다.</p>
+                </div>
+              )}
             </KanbanColumn>
         </Card>
          <Card className="shadow-lg h-full flex flex-col">
             <KanbanColumn id="Issues" title="이슈 작업" description="취소되거나 문제가 발생한 작업" taskCount={issueTasks.length} totalTasks={totalTasks} onDrop={(item) => handleMoveTask(item.id, null, 'Issues')}>
                 {issueTasks.length > 0 ? (
-                    issueTasks.map((task, index) => (
-                        <TaskCard key={task.id} task={{...task, priority: 'High'}} index={index} onMove={handleMoveTask} onAssign={()=>{}} onEdit={()=>{}} onDelete={(task) => deleteTask(task.id)}/>
-                    ))
+                    issueTasks.map((task, index) => {
+                      const ref = React.createRef<HTMLDivElement>();
+                      return <TaskCard ref={ref} key={task.id} task={{...task, priority: 'High'}} index={index} onMove={handleMoveTask} onAssign={()=>{}} onEdit={handleEditTask} onDelete={(task) => deleteTask(task.id)}/>
+                    })
                  ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
                         <p>이슈가 발생한 작업이 없습니다.</p>
@@ -330,5 +354,3 @@ export default function DispatchManagementPanel() {
     </DndProvider>
   );
 }
-
-    
