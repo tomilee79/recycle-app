@@ -98,18 +98,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
             </p>
             {!vehicleId && (
                 <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {availableVehicles.length > 0 ? (
-                           availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
-                        ) : (
-                          <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -227,12 +216,12 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
 }
 
 export default function DispatchManagementPanel() {
-  const collectionTasks = useDataStore((state) => state.collectionTasks);
-  const vehicles = useDataStore((state) => state.vehicles);
-  const drivers = useDataStore((state) => state.drivers);
-  const customers = useDataStore((state) => state.customers);
-  const setTasks = useDataStore((state) => state.setTasks);
-  const deleteTask = useDataStore((state) => state.deleteTask);
+  const collectionTasks = useDataStore(state => state.collectionTasks);
+  const vehicles = useDataStore(state => state.vehicles);
+  const drivers = useDataStore(state => state.drivers);
+  const customers = useDataStore(state => state.customers);
+  const setTasks = useDataStore(state => state.setTasks);
+  const deleteTask = useDataStore(state => state.deleteTask);
 
   const [search, setSearch] = useState('');
   const { toast } = useToast();
