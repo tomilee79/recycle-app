@@ -30,6 +30,8 @@ const roleMap: { [key in UserRole]: { label: string; icon: React.ElementType, va
   'User': { label: '일반 사용자', icon: UserCog, variant: 'outline' },
 };
 const roles = Object.keys(roleMap) as UserRole[];
+const addableRoles = roles.filter(role => role !== 'Super Admin');
+
 
 const statusMap: { [key in UserStatus]: { label: string, variant: "default" | "destructive" } } = {
   'Active': { label: '활성', variant: 'default' },
@@ -296,7 +298,9 @@ export default function AdminPanel() {
                     <FormItem><FormLabel>역할</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="역할을 선택하세요" /></SelectTrigger></FormControl>
-                            <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{roleMap[r].label}</SelectItem>)}</SelectContent>
+                            <SelectContent>
+                              {(selectedUser ? roles : addableRoles).map(r => <SelectItem key={r} value={r}>{roleMap[r].label}</SelectItem>)}
+                            </SelectContent>
                         </Select><FormMessage />
                     </FormItem>
                 )}/>
