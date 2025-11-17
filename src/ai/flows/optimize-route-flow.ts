@@ -36,8 +36,8 @@ export async function optimizeRoute(
 
 const optimizeRoutePrompt = ai.definePrompt({
   name: 'optimizeRoutePrompt',
-  input: { schema: OptimizeRouteInputSchema },
-  output: { schema: OptimizeRouteOutputSchema },
+  input: {schema: OptimizeRouteInputSchema},
+  output: {schema: OptimizeRouteOutputSchema},
   prompt: `You are an expert logistics coordinator for a waste management company. Your task is to determine the most efficient route for a collection truck.
 
   You will be given a starting point and a list of collection addresses. The route must start at the startPoint, visit all locations, and finally return to the startPoint.
