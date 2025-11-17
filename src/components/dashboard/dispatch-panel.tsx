@@ -32,8 +32,7 @@ interface DispatchPanelProps {
 }
 
 export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: DispatchPanelProps) {
-  const sitePhoto = placeholderImages.find(p => p.id === 'collection-site');
-
+  
   const handleSheetClose = (open: boolean) => {
     if (!open) {
       onVehicleSelect(null);
@@ -41,6 +40,9 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
   };
   
   const selectedTask = collectionTasks.find(task => task.vehicleId === selectedVehicle?.id);
+  const sitePhoto = selectedTask?.report?.photoUrl;
+  const sitePhotoHint = placeholderImages.find(p => p.imageUrl === sitePhoto)?.imageHint || 'recycling site';
+
 
   return (
     <>
@@ -106,23 +108,23 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">수거 현장 사진</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {sitePhoto && (
+                {sitePhoto && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">수거 현장 사진</CardTitle>
+                    </CardHeader>
+                    <CardContent>
                        <Image
-                        src={sitePhoto.imageUrl}
+                        src={sitePhoto}
                         alt="수거 현장 사진"
                         width={600}
                         height={400}
                         className="rounded-lg object-cover w-full aspect-video"
-                        data-ai-hint={sitePhoto.imageHint}
+                        data-ai-hint={sitePhotoHint}
                       />
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardHeader>
                      <CardTitle className="text-lg">상세 정보</CardTitle>
@@ -152,7 +154,7 @@ export default function DispatchPanel({ selectedVehicle, onVehicleSelect }: Disp
                          <div className="flex items-center gap-3">
                             <Weight className="size-5 text-muted-foreground" />
                             <span className="font-medium">수거량:</span>
-                            <span>{selectedTask.collectedWeight} kg</span>
+                            <span>{selectedTask.collectedWeight > 0 ? `${selectedTask.collectedWeight} kg` : '미집계'}</span>
                          </div>
                        </>
                      )}
