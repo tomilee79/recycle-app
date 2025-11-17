@@ -5,7 +5,6 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { users as initialUsers } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -22,6 +21,7 @@ import { format } from 'date-fns';
 import { usePagination } from '@/hooks/use-pagination';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { useDataStore } from '@/hooks/use-data-store';
 
 
 const roleMap: { [key in UserRole]: { label: string; icon: React.ElementType, variant: "default" | "secondary" | "outline" } } = {
@@ -51,7 +51,7 @@ type SortableField = 'name' | 'email' | 'role' | 'status' | 'createdAt';
 const CURRENT_USER_ID = 'U001'; // Mock current user for safety check
 
 export default function AdminPanel() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const { users, addUser, updateUser, deleteUser } = useDataStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filters, setFilters] = useState({ role: 'All', status: 'All' });
@@ -136,7 +136,7 @@ export default function AdminPanel() {
   const onSubmit: SubmitHandler<UserFormValues> = (data) => {
     if (selectedUser) {
       // Update User
-      setUsers(users.map(u => (u.id === selectedUser.id ? { ...u, ...data } : u)));
+      updateUser(selectedUser.id, data);
       toast({ title: "관리자 업데이트됨", description: `${data.name}의 정보가 성공적으로 수정되었습니다.` });
     } else {
       // Create User
@@ -146,7 +146,7 @@ export default function AdminPanel() {
         status: 'Active',
         createdAt: format(new Date(), 'yyyy-MM-dd'),
       };
-      setUsers([newUser, ...users]);
+      addUser(newUser);
       toast({ title: "관리자 생성됨", description: `${data.name} 계정이 성공적으로 생성되었습니다.` });
     }
     closeSheet();
@@ -154,7 +154,7 @@ export default function AdminPanel() {
 
   const handleDelete = () => {
     if (!selectedUser) return;
-    setUsers(users.filter(u => u.id !== selectedUser.id));
+    deleteUser(selectedUser.id);
     toast({
       title: "관리자 삭제됨",
       description: `${selectedUser.name} 계정이 영구적으로 삭제되었습니다.`,

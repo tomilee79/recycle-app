@@ -19,8 +19,8 @@ export function RouteMap({ pendingTasks, selectedTasks, optimizedRoute, onTaskSe
     <Card className="h-full w-full overflow-hidden shadow-lg relative flex items-center justify-center bg-muted/30">
         <div className="text-center text-muted-foreground">
             <Route className="mx-auto h-12 w-12 mb-4" />
-            <h3 className="text-lg font-semibold">AI 경로 최적화</h3>
-            <p className="text-sm">향후 AI 경로 최적화 개발 예정입니다.</p>
+            <h3 className="text-lg font-semibold">AI 경로 최적화 지도</h3>
+            <p className="text-sm">지도 기능은 데모를 위해 비활성화되었습니다.</p>
         </div>
     </Card>
   );

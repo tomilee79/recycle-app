@@ -7,6 +7,7 @@ import ContactPanel from '@/components/contact/contact-panel';
 import ContractsPanel from '@/components/contracts/contracts-panel';
 import CustomersPanel from '@/components/customers/customers-panel';
 import DashboardPanel from '@/components/dashboard/dashboard-panel';
+import DispatchManagementPanel from '@/components/dispatch/dispatch-management-panel';
 import DriverPerformancePanel from '@/components/drivers/driver-performance-panel';
 import DriversPanel from '@/components/drivers/drivers-panel';
 import NotificationsPanel from '@/components/notifications/notifications-panel';
@@ -28,6 +29,8 @@ export default function ViewPage() {
   switch (view) {
     case 'dashboard':
       return <DashboardPanel />;
+    case 'dispatch':
+      return <DispatchManagementPanel />;
     case 'billing':
       return <BillingPanel />;
     case 'notifications':

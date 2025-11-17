@@ -5,23 +5,6 @@
  */
 import { z } from 'zod';
 
-/**
- * Schema for the predict material type form.
- */
-export const PredictMaterialTypeFormSchema = z.object({
-  location: z
-    .string()
-    .min(3, "위치는 최소 3자 이상이어야 합니다.")
-    .describe('The location where the recycling collection is taking place.'),
-  time: z
-    .string()
-    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "시간을 HH:MM 형식으로 입력해주세요.")
-    .describe('The time of day when the collection occurs.'),
-});
-
-// Note: The related server-side types (PredictMaterialTypeInput, PredictMaterialTypeOutput)
-// are defined and exported directly from 'src/ai/flows/predict-material-type.ts'.
-
 const OptimizeRouteLocationSchema = z.object({
   id: z.string(),
   address: z.string(),

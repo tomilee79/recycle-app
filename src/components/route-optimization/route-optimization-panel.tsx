@@ -3,7 +3,6 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { collectionTasks } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Route, Bot, Loader2, Wand2, Plus, X, Trash2 } from 'lucide-react';
@@ -13,9 +12,11 @@ import { RouteMap } from './route-map';
 import type { OptimizeRouteLocation } from '@/ai/flows/schemas';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { useDataStore } from '@/hooks/use-data-store';
 
 
 export default function RouteOptimizationPanel() {
+    const { collectionTasks } = useDataStore();
     const [selectedTasks, setSelectedTasks] = useState<OptimizeRouteLocation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export default function RouteOptimizationPanel() {
         setError(null);
     }
     
-    const pendingTasks = useMemo(() => collectionTasks.filter(task => task.status === 'Pending' || task.status === 'In Progress'), []);
+    const pendingTasks = useMemo(() => collectionTasks.filter(task => task.status === 'Pending' || task.status === 'In Progress'), [collectionTasks]);
     const selectedTaskIds = useMemo(() => new Set(selectedTasks.map(t => t.id)), [selectedTasks]);
 
     return (
@@ -170,4 +171,3 @@ export default function RouteOptimizationPanel() {
         </div>
     );
 }
-

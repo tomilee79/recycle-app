@@ -43,6 +43,7 @@ import {
   Settings2,
   ExternalLink,
   SlidersHorizontal,
+  ClipboardEdit,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -66,15 +67,15 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
-type View = 'dashboard' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact' | 'system-settings';
+type View = 'dashboard' | 'dispatch' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact' | 'system-settings';
 
 type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
 
 const menuGroups: Record<MenuGroup, View[]> = {
-  operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
+  operations: ['dashboard', 'dispatch', 'schedule', 'tasks', 'todos'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['predict', 'admin', 'system-settings'],
+  system: ['route-optimization', 'admin', 'system-settings'],
 };
 
 
@@ -88,7 +89,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             return group as MenuGroup;
         }
     }
-    return null;
+    return 'operations';
   });
   
   const auth = useAuth();
@@ -106,14 +107,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   const viewTitles: { [key in View]: string } = {
-    dashboard: '실시간 배차 현황',
+    dashboard: '통합 대시보드',
+    dispatch: '배차 관리',
     billing: '정산 관리',
     vehicles: '차량 및 장비 관리',
     drivers: '직원 관리',
     'driver-performance': '성과 대시보드',
     customers: '고객 관리',
     contracts: '계약 관리',
-    predict: 'AI 예측',
     'waste-analysis': '상세 폐기물 분석',
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
@@ -157,11 +158,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
-                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'dashboard'} asChild><Link href="/dashboard"><Truck /><span>실시간 배차 현황</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'dashboard'} asChild><Link href="/dashboard"><LayoutDashboard /><span>통합 대시보드</span></Link></SidebarMenuButton></SidebarMenuItem>
+                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'dispatch'} asChild><Link href="/dispatch"><ClipboardEdit /><span>배차 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'schedule'} asChild><Link href="/schedule"><Calendar /><span>일정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'tasks'} asChild><Link href="/tasks"><ClipboardList /><span>작업 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                   <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'todos'} asChild><Link href="/todos"><CheckSquare /><span>할일 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
-                  <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'route-optimization'} asChild><Link href="/route-optimization"><Route /><span>경로 최적화</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>
             </Collapsible>
@@ -209,6 +210,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'route-optimization'} asChild><Link href="/route-optimization"><Route /><span>AI 경로 최적화</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'system-settings'} asChild><Link href="/system-settings"><SlidersHorizontal /><span>시스템 환경설정</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자 계정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>

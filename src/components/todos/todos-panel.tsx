@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { format, isPast, startOfToday, isSameDay } from 'date-fns';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form';
-import { todos as initialTodos } from '@/lib/mock-data';
+import { useDataStore } from '@/hooks/use-data-store';
 
 const priorityMap: { [key in Priority]: { text: string; color: string; value: number; } } = {
     High: { text: '높음', color: 'bg-red-500', value: 3 },
@@ -36,7 +36,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function TodosPanel() {
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const { todos, addTodo, updateTodo, deleteTodo } = useDataStore();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
 
@@ -71,20 +71,19 @@ export default function TodosPanel() {
       priority: data.priority,
       dueDate: data.dueDate,
     };
-    setTodos(prevTodos => [newTodoItem, ...prevTodos]);
+    addTodo(newTodoItem);
     form.reset({ text: '', priority: 'Medium', dueDate: undefined });
   };
 
   const handleToggleTodo = (id: number) => {
-    setTodos(
-      todos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      updateTodo(id, { ...todo, completed: !todo.completed });
+    }
   };
 
   const handleDeleteTodo = (id: number) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+    deleteTodo(id);
   };
   
   const handleEditStart = (todo: Todo) => {
@@ -97,11 +96,7 @@ export default function TodosPanel() {
 
   const handleEditSave: SubmitHandler<FormValues> = (data) => {
     if (!editingTodo) return;
-    setTodos(
-      todos.map(todo =>
-        todo.id === editingTodo.id ? { ...todo, ...data } : todo
-      )
-    );
+    updateTodo(editingTodo.id, data);
     setEditingTodo(null);
   };
 
