@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 
 const notificationSettingsSchema = z.object({
   taskAssigned: z.object({ email: z.boolean(), inApp: z.boolean() }),
-  dailyReport: z.object({ email: z.boolean(), inApp: zboolean() }),
+  dailyReport: z.object({ email: z.boolean(), inApp: z.boolean() }),
   contractExpiring: z.object({ email: z.boolean(), inApp: z.boolean() }),
 });
 
