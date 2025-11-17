@@ -210,7 +210,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <SidebarMenu className="pl-6">
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자 계정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'mypage'} asChild><Link href="/mypage"><User /><span>마이페이지</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>
             </Collapsible>
