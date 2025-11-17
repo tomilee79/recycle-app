@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Route, Bot, Loader2, Wand2, Plus, X, Trash2 } from 'lucide-react';
-import { optimizeRoute, type OptimizeRouteOutput } from '@/ai/flows/optimize-route-flow';
+import { optimizeRouteFlow, type OptimizeRouteOutput } from '@/ai/flows/optimize-route-flow';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { RouteMap } from './route-map';
 import type { OptimizeRouteLocation } from '@/ai/flows/schemas';
@@ -42,7 +42,7 @@ export default function RouteOptimizationPanel() {
         setOptimizedRoute(null);
 
         try {
-            const result = await optimizeRoute({
+            const result = await optimizeRouteFlow({
                 startPoint: startPoint.address,
                 locations: selectedTasks,
             });
