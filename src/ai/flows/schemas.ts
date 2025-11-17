@@ -11,12 +11,12 @@ const OptimizeRouteLocationSchema = z.object({
 });
 
 export const OptimizeRouteInputSchema = z.object({
-  startPoint: z.string().describe('The starting point of the route, e.g., "본사 차고지".'),
+  startPoint: z.string().describe('The starting and ending point of the route, e.g., "본사 차고지".'),
   locations: z.array(OptimizeRouteLocationSchema).describe('An array of locations to be visited.'),
 });
 
 export const OptimizeRouteOutputSchema = z.object({
-  optimizedRoute: z.array(OptimizeRouteLocationSchema).describe('The optimized route as an ordered array of locations.'),
+  optimizedRoute: z.array(OptimizeRouteLocationSchema).describe('The optimized route as an ordered array of locations, including the start/end point.'),
   reasoning: z.string().describe('A brief explanation of why this route is optimal.'),
 });
 
