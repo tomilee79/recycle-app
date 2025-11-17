@@ -8,7 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { gemini15Flash } from 'genkit/models';
 
 const PredictMaterialTypeInputSchema = z.object({
   location: z
@@ -34,7 +33,7 @@ export async function predictMaterialType(
   input: PredictMaterialTypeInput
 ): Promise<PredictMaterialTypeOutput> {
   const { output } = await ai.generate({
-    model: gemini15Flash,
+    model: ai.model('googleai/gemini-1.5-flash-latest'),
     prompt: `You are an expert in predicting the type of recycled material being collected based on the location and time of day.
 
   Given the following information, predict the most likely type of recycled material being collected and your confidence level in the prediction.

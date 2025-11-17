@@ -8,7 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { gemini15Flash } from 'genkit/models';
 
 const OptimizeRouteLocationSchema = z.object({
   id: z.string(),
@@ -33,7 +32,7 @@ export async function optimizeRoute(
   input: OptimizeRouteInput
 ): Promise<OptimizeRouteOutput> {
   const { output } = await ai.generate({
-    model: gemini15Flash,
+    model: ai.model('googleai/gemini-1.5-flash-latest'),
     prompt: `You are an expert logistics coordinator for a waste management company. Your task is to determine the most efficient route for a collection truck.
 
   You will be given a starting point and a list of collection addresses. The route must start at the startPoint, visit all locations, and finally return to the startPoint.
