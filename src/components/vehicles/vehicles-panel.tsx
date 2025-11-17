@@ -91,10 +91,21 @@ export default function VehiclesPanel() {
 
   const vehicleForm = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
+    defaultValues: {
+      name: '',
+      type: 'Truck',
+      capacity: 5000,
+    },
   });
 
   const equipmentForm = useForm<EquipmentFormValues>({
       resolver: zodResolver(equipmentFormSchema),
+      defaultValues: {
+        id: '',
+        type: 'Roll-off Box',
+        status: 'Available',
+        location: '',
+      },
   });
 
   const handleVehicleClick = (vehicle: Vehicle) => {
@@ -619,3 +630,5 @@ export default function VehiclesPanel() {
     </>
   );
 }
+
+    
