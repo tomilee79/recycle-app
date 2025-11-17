@@ -373,10 +373,10 @@ export default function CustomersPanel() {
                                     <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)} className="space-y-4">
                                         <SheetTitle className="font-headline text-2xl flex items-center gap-2"><Users2/> {selectedCustomer ? '고객 정보 수정' : '신규 고객 추가'}</SheetTitle>
                                         <SheetDescription>{selectedCustomer ? '고객사의 기본 정보를 수정합니다.' : '새로운 고객사 정보를 입력합니다.'}</SheetDescription>
-                                        <FormField control={customerForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>고객사명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                        <FormField control={customerForm.control} name="tier" render={({ field }) => (<FormItem><FormLabel>고객 등급</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{Object.keys(tierMap).map(t=><SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                                        <FormField control={customerForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                        <FormField control={customerForm.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>담당자명</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>고객사명 <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="tier" render={({ field }) => (<FormItem><FormLabel>고객 등급 <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{Object.keys(tierMap).map(t=><SelectItem key={t} value={t}>{tierMap[t as CustomerTier].label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>주소 <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={customerForm.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>담당자명 <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                         <div className="flex justify-end gap-2 pt-4">
                                             <Button type="button" variant="ghost" onClick={() => selectedCustomer ? setIsEditingCustomer(false) : handleSheetClose()}>취소</Button>
                                             <Button type="submit" disabled={customerForm.formState.isSubmitting}>{customerForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}저장</Button>
@@ -469,7 +469,3 @@ export default function CustomersPanel() {
     </Card>
   );
 }
-
-    
-
-    
