@@ -1,16 +1,17 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { drivers, vehicles, collectionTasks } from "@/lib/mock-data";
+import { drivers, vehicles, collectionTasks as allCollectionTasks } from "@/lib/mock-data";
 import { Medal, Users, CheckCircle, Truck, TrendingUp, DraftingCompass } from 'lucide-react';
 import type { Driver, CollectionTask } from '@/lib/types';
-import { format, parseISO, startOfMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 
 interface DriverStats extends Driver {
   completedTasks: number;
@@ -20,9 +21,31 @@ interface DriverStats extends Driver {
   assignedVehicle: string;
 }
 
+type Period = 'all' | '7d' | '30d';
+
 export default function DriverPerformancePanel() {
+  const [period, setPeriod] = useState<Period>('all');
+  const [selectedDriver, setSelectedDriver] = useState<string>('all');
+
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+    let tasks = allCollectionTasks.filter(task => task.status === 'Completed');
+
+    if (period !== 'all') {
+      const daysToSubtract = period === '7d' ? 7 : 30;
+      const startDate = subDays(now, daysToSubtract);
+      tasks = tasks.filter(task => parseISO(task.scheduledDate) >= startDate);
+    }
+    
+    if (selectedDriver !== 'all') {
+        tasks = tasks.filter(task => task.driver === selectedDriver);
+    }
+
+    return tasks;
+  }, [period, selectedDriver]);
+
   const { driverStats, vehicleStats, monthlyStats } = useMemo(() => {
-    const completedTasks = collectionTasks.filter(task => task.status === 'Completed');
+    const completedTasks = filteredTasks;
 
     // Driver-centric stats
     const driverStatsMap: { [key: string]: { tasks: CollectionTask[], totalWeight: number, totalDistance: number } } = {};
@@ -78,7 +101,7 @@ export default function DriverPerformancePanel() {
     })).sort((a, b) => a.month.localeCompare(b.month));
 
     return { driverStats: finalDriverStats, vehicleStats: finalVehicleStats, monthlyStats: finalMonthlyStats };
-  }, []);
+  }, [filteredTasks]);
 
   const totalCompletedTasks = driverStats.reduce((acc, driver) => acc + driver.completedTasks, 0);
   const totalCompletedWeight = driverStats.reduce((acc, driver) => acc + driver.totalWeight, 0);
@@ -89,6 +112,35 @@ export default function DriverPerformancePanel() {
   
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader className='flex-row items-center justify-between'>
+            <div>
+              <CardTitle>성과 필터</CardTitle>
+              <CardDescription>기간 및 직원별로 성과 데이터를 필터링합니다.</CardDescription>
+            </div>
+            <div className='flex gap-2'>
+              <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="기간 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 기간</SelectItem>
+                  <SelectItem value="30d">최근 30일</SelectItem>
+                  <SelectItem value="7d">최근 7일</SelectItem>
+                </SelectContent>
+              </Select>
+               <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="직원 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 직원</SelectItem>
+                  {drivers.map(driver => <SelectItem key={driver.id} value={driver.name}>{driver.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+        </CardHeader>
+      </Card>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">이달의 우수 운전자</CardTitle><Medal className="h-4 w-4 text-amber-500" /></CardHeader>
@@ -129,7 +181,7 @@ export default function DriverPerformancePanel() {
             <CardContent>
             <ChartContainer config={chartConfigDriver} className="h-[350px] w-full">
                 <ResponsiveContainer>
-                <BarChart data={driverStats} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <BarChart data={driverStats.filter(d => d.totalWeight > 0)} layout="vertical" margin={{ left: 10, right: 30 }}>
                     <CartesianGrid horizontal={false} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={60} interval={0}/>
                     <XAxis type="number" dataKey="totalWeight" tickFormatter={(value) => `${value / 1000}t`} />
@@ -148,7 +200,7 @@ export default function DriverPerformancePanel() {
             <CardContent>
                 <ChartContainer config={chartConfigVehicle} className="h-[350px] w-full">
                     <ResponsiveContainer>
-                    <BarChart data={vehicleStats} layout="vertical" margin={{ left: 10, right: 30 }}>
+                    <BarChart data={vehicleStats.filter(v => v.totalWeight > 0)} layout="vertical" margin={{ left: 10, right: 30 }}>
                         <CartesianGrid horizontal={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={80} interval={0}/>
                         <XAxis type="number" dataKey="totalWeight" tickFormatter={(value) => `${value / 1000}t`} />
@@ -203,7 +255,7 @@ export default function DriverPerformancePanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {driverStats.map((driver, index) => (
+              {driverStats.filter(d => d.completedTasks > 0).map((driver, index) => (
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium flex items-center gap-2">
                     {index < 3 ? <Medal className={cn("size-4", index === 0 && "text-amber-400", index === 1 && "text-slate-400", index === 2 && "text-orange-400")}/> : <span className='w-4 inline-block'></span>}
@@ -217,6 +269,11 @@ export default function DriverPerformancePanel() {
                   <TableCell>{driver.assignedVehicle}</TableCell>
                 </TableRow>
               ))}
+               {driverStats.filter(d => d.completedTasks > 0).length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">선택된 기간에 해당하는 성과 데이터가 없습니다.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
