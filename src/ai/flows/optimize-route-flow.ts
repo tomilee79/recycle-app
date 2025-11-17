@@ -37,9 +37,10 @@ export async function optimizeRoute(
 
   You will be given a starting point and a list of collection addresses. The route must start at the startPoint, visit all locations, and finally return to the startPoint.
 
-  Starting Point: ${input.startPoint}
+  Starting Point: {{{startPoint}}}
   Collection Addresses:
-  ${input.locations.map(l => `- ${l.address} (ID: ${l.id})`).join('\n')}
+  {{#each locations}}- {{this.address}} (ID: {{this.id}})
+  {{/each}}
 
   Your goal is to reorder the list of collection addresses to create the most logical and efficient route.
 
@@ -49,6 +50,7 @@ export async function optimizeRoute(
 
   Return the full list of locations in the optimized order, including the start and end points. Also provide a brief, one-sentence reasoning for your chosen route.
   `,
+    input: input,
     output: {
         schema: OptimizeRouteOutputSchema,
     }

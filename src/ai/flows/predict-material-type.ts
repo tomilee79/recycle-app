@@ -38,12 +38,13 @@ export async function predictMaterialType(
 
   Given the following information, predict the most likely type of recycled material being collected and your confidence level in the prediction.
 
-  Location: ${input.location}
-  Time: ${input.time}
+  Location: {{{location}}}
+  Time: {{{time}}}
 
   Consider factors such as typical recycling habits in the area and common waste disposal patterns at the given time.
   Set the predictedMaterialType to the predicted material and confidenceLevel to a number between 0 and 1 representing the certainty.
   `,
+    input: input,
     output: {
       schema: PredictMaterialTypeOutputSchema,
     },
