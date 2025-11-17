@@ -1,19 +1,23 @@
 
-
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDataStore } from "@/hooks/use-data-store";
-import type { CollectionTask, Vehicle, Priority } from "@/lib/types";
-import { useMemo, useState } from "react";
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import type { CollectionTask, Vehicle, Priority, Driver } from "@/lib/types";
+import { useMemo, useState, useRef } from "react";
+import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Truck, MapPin, Trash2, GripVertical, AlertTriangle } from "lucide-react";
+import { Truck, MapPin, Trash2, GripVertical, AlertTriangle, Search, PlusCircle, Edit, MoreHorizontal, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
+import { Input } from "../ui/input";
+import { Progress } from "../ui/progress";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+
 
 const ItemTypes = {
   TASK: 'task',
@@ -25,31 +29,53 @@ const priorityMap: { [key in Priority]: { text: string; color: string; } } = {
     'Low': { text: '낮음', color: 'border-gray-300 bg-gray-50' },
 };
 
+interface TaskDragItem {
+  id: string;
+  index: number;
+  columnId: string;
+  vehicleId?: string;
+}
 
 interface TaskCardProps {
   task: CollectionTask;
   index: number;
-  columnId: string;
-  onMove: (taskId: string, targetColumnId: string, targetIndex?: number, targetVehicleId?: string) => void;
+  vehicleId?: string;
+  onMove: (draggedId: string, targetId: string | null, targetColumn: string, targetVehicleId?: string) => void;
+  onAssign: (taskId: string, vehicleId: string) => void;
+  onEdit: (task: CollectionTask) => void;
+  onDelete: (task: CollectionTask) => void;
 }
 
-const TaskCard = ({ task, index, columnId, onMove }: TaskCardProps) => {
-  const { customers } = useDataStore();
+const TaskCard = ({ task, index, vehicleId, onMove, onAssign, onEdit, onDelete }: TaskCardProps) => {
+  const { customers, vehicles, drivers } = useDataStore();
   const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
-  
+  const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
+
+  const ref = useRef<HTMLDivElement>(null);
+
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.TASK,
-    item: { id: task.id, index, columnId, vehicleId: task.vehicleId },
+    item: { id: task.id, index, columnId: vehicleId ? `InProgress_${vehicleId}` : 'Pending', vehicleId } as TaskDragItem,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
+  
+  const [, drop] = useDrop({
+    accept: ItemTypes.TASK,
+    hover: (item: TaskDragItem, monitor: DropTargetMonitor) => {
+      if (!ref.current || item.id === task.id) return;
+      onMove(item.id, task.id, `InProgress_${vehicleId}`);
+    },
+  });
+
+  drag(drop(ref));
 
   return (
     <>
       {preview(
-        <div className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <div ref={drag} className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
+        <div ref={ref} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
                 <GripVertical size={16} />
             </div>
             <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
@@ -59,6 +85,32 @@ const TaskCard = ({ task, index, columnId, onMove }: TaskCardProps) => {
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 <Trash2 className="size-3" /> {task.materialType}
             </p>
+            {!vehicleId && (
+                <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {availableVehicles.length > 0 ? (
+                           availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
+                        ) : (
+                          <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            )}
         </div>
       )}
     </>
@@ -66,30 +118,41 @@ const TaskCard = ({ task, index, columnId, onMove }: TaskCardProps) => {
 };
 
 
-interface ColumnProps {
+interface KanbanColumnProps {
   id: string;
   title: string;
+  description: string;
+  taskCount: number;
+  totalTasks: number;
   children: React.ReactNode;
-  onDrop: (item: { id: string, columnId: string, vehicleId?: string }) => void;
+  onDrop: (item: TaskDragItem) => void;
   className?: string;
 }
 
-const KanbanColumn = ({ id, title, children, onDrop, className }: ColumnProps) => {
-  const [{ isOver }, drop] = useDrop(() => ({
+const KanbanColumn = ({ id, title, description, taskCount, totalTasks, children, onDrop, className }: KanbanColumnProps) => {
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ItemTypes.TASK,
-    drop: (item: { id: string, columnId: string, vehicleId?: string }) => onDrop(item),
+    drop: (item: TaskDragItem) => onDrop(item),
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
     }),
-  }));
+  }), [onDrop]);
+
+  const progress = totalTasks > 0 ? (taskCount / totalTasks) * 100 : 0;
 
   return (
-    <div ref={drop} className={cn("rounded-lg flex flex-col", isOver && 'bg-muted')}>
+    <div ref={drop} className={cn("rounded-lg flex flex-col h-full", isOver && canDrop && 'bg-muted/50')}>
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">{title} ({taskCount})</CardTitle>
+            <span className="text-sm text-muted-foreground">{progress.toFixed(0)}%</span>
+        </div>
+        <CardDescription>{description}</CardDescription>
+        <Progress value={progress}/>
       </CardHeader>
       <ScrollArea className="flex-grow p-4 pt-0">
-        <div className={cn("space-y-3", className)}>
+        <div className={cn("space-y-3 min-h-[100px]", className)}>
           {children}
         </div>
       </ScrollArea>
@@ -100,24 +163,25 @@ const KanbanColumn = ({ id, title, children, onDrop, className }: ColumnProps) =
 interface VehicleLaneProps {
   vehicle: Vehicle;
   tasks: CollectionTask[];
-  onMoveTask: (taskId: string, targetColumnId: string, targetIndex: number, targetVehicleId: string) => void;
+  onMoveTask: (draggedId: string, targetId: string | null, targetColumn: string, targetVehicleId?: string) => void;
 }
 
 const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
   const { drivers } = useDataStore();
   const isAvailable = vehicle.status === 'Idle' && (drivers.find(d => d.name === vehicle.driver)?.isAvailable ?? false);
+  const loadPercentage = (vehicle.load / vehicle.capacity) * 100;
   
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ItemTypes.TASK,
     canDrop: () => isAvailable,
-    drop: (item: { id: string }) => {
-      onMoveTask(item.id, 'InProgress', tasks.length, vehicle.id);
+    drop: (item: TaskDragItem) => {
+      onMoveTask(item.id, null, `InProgress_${vehicle.id}`, vehicle.id);
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-  }), [vehicle.id, tasks.length]);
+  }), [vehicle.id, tasks]);
   
   const statusMap: { [key in Vehicle['status']]: string } = { 'On Route': '운행중', 'Idle': '대기중', 'Maintenance': '정비중', 'Completed': '완료' };
   const statusVariant: { [key in Vehicle['status']]: "default" | "secondary" | "destructive" | "outline" } = { 'On Route': 'default', 'Idle': 'secondary', 'Maintenance': 'destructive', 'Completed': 'outline' };
@@ -128,9 +192,13 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
             <p className="font-semibold flex items-center gap-2"><Truck className="size-4 text-primary"/>{vehicle.name}</p>
             <Badge variant={statusVariant[vehicle.status]}>{statusMap[vehicle.status]}</Badge>
         </div>
+        <div className="space-y-1 mb-2">
+            <Progress value={loadPercentage} className={cn("h-2", loadPercentage > 80 && "bg-yellow-400")}/>
+            <p className="text-xs text-right text-muted-foreground">{vehicle.load}kg / {vehicle.capacity}kg</p>
+        </div>
         <div className="space-y-2 min-h-16">
             {tasks.map((task, index) => (
-                <TaskCard key={task.id} task={task} index={index} columnId={`InProgress_${vehicle.id}`} onMove={(taskId, targetCol, targetIndex) => onMoveTask(taskId, targetCol, targetIndex ?? 0, vehicle.id)} />
+                <TaskCard key={task.id} task={task} index={index} vehicleId={vehicle.id} onMove={onMoveTask} onAssign={() => {}} onEdit={() => {}} onDelete={() => {}}/>
             ))}
         </div>
         {!canDrop && isOver && (
@@ -144,98 +212,115 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask }: VehicleLaneProps) => {
 }
 
 export default function DispatchManagementPanel() {
-  const { collectionTasks, vehicles, updateTask, setDrivers, drivers, setTasks } = useDataStore();
+  const { collectionTasks, vehicles, updateTask, setDrivers, drivers, setTasks, deleteTask } = useDataStore();
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
-  const handleMoveTask = (taskId: string, targetColumnId: string, targetIndex: number, targetVehicleId?: string) => {
-    const task = collectionTasks.find(t => t.id === taskId);
-    if (!task) return;
+  const handleMoveTask = (draggedId: string, targetId: string | null, targetColumn: string, targetVehicleId?: string) => {
+    const taskToMove = collectionTasks.find(t => t.id === draggedId);
+    if (!taskToMove) return;
 
-    let newTasks = [...collectionTasks];
-    const sourceTaskIndex = newTasks.findIndex(t => t.id === taskId);
-    newTasks.splice(sourceTaskIndex, 1);
+    let newTasks = collectionTasks.filter(t => t.id !== draggedId);
+    let finalTask = { ...taskToMove };
+    let toastMessage = "";
 
-    if (targetColumnId === 'InProgress') {
-      if (!targetVehicleId) return;
+    const originalDriverName = taskToMove.driver;
 
-      const vehicle = vehicles.find(v => v.id === targetVehicleId);
+    if (targetColumn === 'Pending') {
+      finalTask = { ...finalTask, vehicleId: '', driver: undefined, status: 'Pending' };
+      const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : 0;
+      newTasks.splice(targetIndex, 0, finalTask);
+      if (originalDriverName) {
+        setDrivers(drivers.map(d => d.name === originalDriverName ? { ...d, isAvailable: true } : d));
+      }
+      toastMessage = `작업 #${taskToMove.id} 배차가 취소되었습니다.`;
+
+    } else if (targetColumn.startsWith('InProgress_')) {
+      const vehicleId = targetVehicleId;
+      if (!vehicleId) return;
+
+      const vehicle = vehicles.find(v => v.id === vehicleId);
       const driver = drivers.find(d => d.name === vehicle?.driver);
-      
+
       if (!vehicle || !driver || !driver.isAvailable) {
         toast({ title: "배차 불가", description: "선택한 차량 또는 운전자가 배차 가능한 상태가 아닙니다.", variant: "destructive" });
-        return; // Do not move
+        return;
       }
-
-      task.vehicleId = targetVehicleId;
-      task.driver = driver.name;
-      task.status = 'In Progress';
-      const vehicleTasks = newTasks.filter(t => t.vehicleId === targetVehicleId);
-      vehicleTasks.splice(targetIndex, 0, task);
-      newTasks = [...newTasks.filter(t => t.vehicleId !== targetVehicleId), ...vehicleTasks];
+      
+      finalTask = { ...finalTask, vehicleId, driver: driver.name, status: 'In Progress' };
+      
+      const vehicleTasks = newTasks.filter(t => t.vehicleId === vehicleId);
+      const targetIndex = targetId ? vehicleTasks.findIndex(t => t.id === targetId) : vehicleTasks.length;
+      vehicleTasks.splice(targetIndex, 0, finalTask);
+      
+      newTasks = [...newTasks.filter(t => t.vehicleId !== vehicleId), ...vehicleTasks];
 
       setDrivers(drivers.map(d => d.id === driver.id ? { ...d, isAvailable: false } : d));
-      toast({ title: "배차 완료", description: `작업 #${task.id}이(가) 차량 ${vehicle.name}에 배정되었습니다.` });
+      toastMessage = `작업 #${taskToMove.id}이(가) 차량 ${vehicle.name}에 배정되었습니다.`;
 
-    } else if (targetColumnId === 'Pending') {
-        const oldDriverName = task.driver;
-        task.vehicleId = '';
-        task.driver = undefined;
-        task.status = 'Pending';
-        newTasks.splice(targetIndex, 0, task);
-        if(oldDriverName) {
-            setDrivers(drivers.map(d => d.name === oldDriverName ? {...d, isAvailable: true} : d));
-        }
-
-    } else if (targetColumnId === 'Issues') {
-        task.status = 'Cancelled'; // Or a new 'Issue' status
-        newTasks.splice(targetIndex, 0, task);
+    } else if (targetColumn === 'Issues') {
+      finalTask = { ...finalTask, status: 'Cancelled' };
+      const targetIndex = targetId ? newTasks.findIndex(t => t.id === targetId) : newTasks.length;
+      newTasks.splice(targetIndex, 0, finalTask);
+      toastMessage = `작업 #${taskToMove.id}이(가) 이슈로 등록되었습니다.`;
     }
 
     setTasks(newTasks);
+    if(toastMessage) toast({ title: "배차 업데이트", description: toastMessage });
   };
   
+  const handleAssignTask = (taskId: string, vehicleId: string) => {
+    handleMoveTask(taskId, null, `InProgress_${vehicleId}`, vehicleId);
+  }
+
   const { pendingTasks, inProgressTasks, issueTasks } = useMemo(() => {
-    const pending = collectionTasks.filter(task => task.status === 'Pending' && !task.vehicleId);
+    const pending = collectionTasks.filter(task => (task.status === 'Pending' && !task.vehicleId) && (task.address.toLowerCase().includes(search.toLowerCase())));
     const inProgress: { [key: string]: CollectionTask[] } = {};
     vehicles.forEach(v => {
       inProgress[v.id] = collectionTasks.filter(t => t.vehicleId === v.id && t.status === 'In Progress').sort((a, b) => a.id.localeCompare(b.id)); // Should use order field
     });
-    const issues = collectionTasks.filter(task => task.status === 'Cancelled'); // Using Cancelled as Issue for now
+    const issues = collectionTasks.filter(task => task.status === 'Cancelled');
     
     return { pendingTasks: pending, inProgressTasks: inProgress, issueTasks: issues };
-  }, [collectionTasks, vehicles]);
+  }, [collectionTasks, vehicles, search]);
+  
+  const totalTasks = pendingTasks.length + Object.values(inProgressTasks).flat().length + issueTasks.length;
   
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full min-h-[calc(100vh-12rem)]">
-        <Card className="shadow-lg">
-            <KanbanColumn id="Pending" title={`대기 작업 (${pendingTasks.length})`} onDrop={(item) => handleMoveTask(item.id, 'Pending', 0)}>
-                {pendingTasks.length > 0 ? (
-                    pendingTasks.map((task, index) => (
-                        <TaskCard key={task.id} task={task} index={index} columnId="Pending" onMove={handleMoveTask} />
-                    ))
-                ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-center">
-                        <p>배정 대기 중인 작업이 없습니다.</p>
-                    </div>
-                )}
-            </KanbanColumn>
+        <Card className="shadow-lg h-full flex flex-col">
+          <KanbanColumn id="Pending" title="대기 작업" description="배차 대기 중인 작업 목록" taskCount={pendingTasks.length} totalTasks={totalTasks} onDrop={(item) => handleMoveTask(item.id, null, 'Pending')}>
+            <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="주소로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+            {pendingTasks.length > 0 ? (
+                pendingTasks.map((task, index) => (
+                    <TaskCard key={task.id} task={task} index={index} onMove={handleMoveTask} onAssign={handleAssignTask} onEdit={()=>{}} onDelete={(task) => deleteTask(task.id)}/>
+                ))
+            ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
+                    <p>배정 대기 중인 작업이 없습니다.</p>
+                </div>
+            )}
+          </KanbanColumn>
         </Card>
-        <Card className="shadow-lg">
-            <KanbanColumn id="InProgress" title="차량별 경로" onDrop={() => {}}>
-              {vehicles.filter(v => v.status === 'Idle' || v.status === 'On Route').map(vehicle => (
+        <Card className="shadow-lg h-full flex flex-col">
+            <KanbanColumn id="InProgress" title="차량별 경로" description="운행 중인 차량 및 배정된 작업" taskCount={Object.values(inProgressTasks).flat().length} totalTasks={totalTasks} onDrop={() => {}}>
+              {vehicles.map(vehicle => (
                 <VehicleLane key={vehicle.id} vehicle={vehicle} tasks={inProgressTasks[vehicle.id] || []} onMoveTask={handleMoveTask} />
               ))}
             </KanbanColumn>
         </Card>
-         <Card className="shadow-lg">
-            <KanbanColumn id="Issues" title={`이슈 작업 (${issueTasks.length})`} onDrop={(item) => handleMoveTask(item.id, 'Issues', 0)}>
+         <Card className="shadow-lg h-full flex flex-col">
+            <KanbanColumn id="Issues" title="이슈 작업" description="취소되거나 문제가 발생한 작업" taskCount={issueTasks.length} totalTasks={totalTasks} onDrop={(item) => handleMoveTask(item.id, null, 'Issues')}>
                 {issueTasks.length > 0 ? (
                     issueTasks.map((task, index) => (
-                        <TaskCard key={task.id} task={{...task, priority: 'High'}} index={index} columnId="Issues" onMove={handleMoveTask} />
+                        <TaskCard key={task.id} task={{...task, priority: 'High'}} index={index} onMove={handleMoveTask} onAssign={()=>{}} onEdit={()=>{}} onDelete={(task) => deleteTask(task.id)}/>
                     ))
                  ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-center">
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
                         <p>이슈가 발생한 작업이 없습니다.</p>
                     </div>
                 )}
@@ -245,3 +330,5 @@ export default function DispatchManagementPanel() {
     </DndProvider>
   );
 }
+
+    

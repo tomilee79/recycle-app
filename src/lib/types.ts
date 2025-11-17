@@ -1,6 +1,7 @@
 
 
 
+
 export type MaintenanceRecord = {
   date: string;
   description: string;
@@ -222,3 +223,5 @@ export type User = {
     createdAt: string;
     avatarUrl?: string;
 }
+
+    
