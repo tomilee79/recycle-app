@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -16,13 +16,10 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   LayoutDashboard,
   Truck,
-  LogOut,
   Users,
-  Bot,
   Bell,
   PieChart,
   Medal,
@@ -47,24 +44,9 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
-import { placeholderImages } from '@/lib/placeholder-images';
-import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 type View = 'dashboard' | 'dispatch' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact' | 'system-settings';
@@ -92,19 +74,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return 'operations';
   });
   
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  React.useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [isUserLoading, user, router]);
-
-  const handleLogout = () => {
-    auth.signOut();
-  };
 
   const viewTitles: { [key in View]: string } = {
     dashboard: '통합 대시보드',
@@ -125,16 +94,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     contact: '개발사 연락처',
     'system-settings': '시스템 환경설정',
   };
-  
-  const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
-
-  if (isUserLoading || !user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
   
   const isGroupActive = (group: MenuGroup) => menuGroups[group].includes(activeView);
 
@@ -251,49 +210,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <span className="sr-only">알림 센터</span>
                 </Link>
             </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={userAvatar?.imageUrl} alt="User" data-ai-hint={userAvatar?.imageHint}/>
-                            <AvatarFallback>관리자</AvatarFallback>
-                        </Avatar>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">관리자</p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                                Administrator
-                            </p>
-                        </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                        <Link href="/mypage"><User className="mr-2 h-4 w-4" /><span>마이페이지</span></Link>
-                    </DropdownMenuItem>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <LogOut className="mr-2 h-4 w-4" /><span>로그아웃</span>
-                            </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>정말로 로그아웃 하시겠습니까?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            로그인 페이지로 돌아갑니다.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>취소</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleLogout}>로그아웃</AlertDialogAction>
-                        </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            {/* User authentication UI removed */}
           </div>
         </header>
         <div className="flex-1 overflow-auto p-4 md:p-6">
