@@ -269,7 +269,7 @@ export default function AdminPanel() {
             </TableBody>
           </Table>
         </CardContent>
-         <CardFooter>
+         <CardFooter className="justify-center">
             <Pagination>
                 <PaginationContent>
                     <PaginationItem>
@@ -321,8 +321,7 @@ export default function AdminPanel() {
                   )}/>
                 )}
                 <div className="flex justify-between items-center pt-6">
-                  <Button type="submit">{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{selectedUser ? '저장' : '추가'}</Button>
-                  {selectedUser && (
+                  {selectedUser ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button type="button" variant="destructive" disabled={selectedUser.id === CURRENT_USER_ID}>
@@ -334,7 +333,10 @@ export default function AdminPanel() {
                         <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={handleDelete}>삭제 확인</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                  ) : (
+                    <div></div>
                   )}
+                  <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{selectedUser ? '저장' : '추가'}</Button>
                 </div>
             </form>
             </Form>
@@ -343,5 +345,3 @@ export default function AdminPanel() {
     </>
   );
 }
-
-    
