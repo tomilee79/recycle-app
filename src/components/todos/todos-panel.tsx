@@ -51,6 +51,11 @@ export default function TodosPanel() {
 
   const editingForm = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+        text: '',
+        priority: 'Medium',
+        dueDate: undefined,
+    }
   });
 
   useEffect(() => {
@@ -207,7 +212,7 @@ export default function TodosPanel() {
                   <Form {...editingForm}>
                   <form onSubmit={editingForm.handleSubmit(handleEditSave)} className="flex flex-col gap-3 p-3 rounded-md border bg-muted/50">
                       <div className="flex-1">
-                          <FormField control={editingForm.control} name="text" render={({ field }) => (<FormItem><Input {...field} autoFocus/></FormItem>)}/>
+                          <FormField control={editingForm.control} name="text" render={({ field }) => (<FormItem><FormControl><Input {...field} autoFocus/></FormControl></FormItem>)}/>
                       </div>
                       <div className="flex justify-between items-center">
                           <div className="flex items-center gap-4">
