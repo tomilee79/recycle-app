@@ -64,7 +64,7 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'users' | 'admin' | 'contact';
+type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'admin' | 'contact';
 
 type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
 
@@ -72,7 +72,7 @@ const menuGroups: Record<MenuGroup, View[]> = {
   operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['predict', 'users', 'admin', 'mypage'],
+  system: ['predict', 'admin', 'mypage'],
 };
 
 
@@ -120,8 +120,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     mypage: '마이페이지',
     todos: '할일 관리',
     quotes: '견적 관리',
-    users: '사용자 관리',
-    admin: '관리자',
+    admin: '관리자 계정 관리',
     contact: '개발사 연락처',
   };
   
@@ -210,8 +209,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <CollapsibleContent>
                 <SidebarMenu className="pl-6">
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'predict'} asChild><Link href="/predict"><Bot /><span>AI 예측</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'users'} asChild><Link href="/users"><Users /><span>사용자 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자</span></Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'admin'} asChild><Link href="/admin"><UserCog /><span>관리자 계정 관리</span></Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton isActive={activeView === 'mypage'} asChild><Link href="/mypage"><User /><span>마이페이지</span></Link></SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
               </CollapsibleContent>

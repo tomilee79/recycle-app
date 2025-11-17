@@ -17,7 +17,6 @@ import SchedulePanel from '@/components/schedule/schedule-panel';
 import MyPagePanel from '@/components/mypage/my-page-panel';
 import TasksPanel from '@/components/tasks/tasks-panel';
 import TodosPanel from '@/components/todos/todos-panel';
-import UsersPanel from '@/components/users/users-panel';
 import AdminPanel from '@/components/admin/admin-panel';
 import VehiclesPanel from '@/components/vehicles/vehicles-panel';
 import WasteAnalysisPanel from '@/components/waste-analysis/waste-analysis-panel';
@@ -57,8 +56,6 @@ export default function ViewPage() {
       return <TodosPanel />;
     case 'quotes':
       return <QuotesPanel />;
-    case 'users':
-      return <UsersPanel />;
     case 'admin':
       return <AdminPanel />;
     case 'mypage':
