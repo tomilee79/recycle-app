@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { customers, contracts as initialContracts, users } from "@/lib/mock-data";
+import { customers, users } from "@/lib/mock-data";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,7 +14,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Search, FileSignature, Trash2, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, MessageSquare, FileText, X, TrendingUp, FileCheck, CircleDotDashed } from 'lucide-react';
+import { Loader2, PlusCircle, FileSignature, Trash2, X, Search, MoreHorizontal, Copy, ArrowUp, ArrowDown, Upload, Paperclip, MessageSquare, FileText, TrendingUp, FileCheck, CircleDotDashed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Contract, ContractItem, ContractStatus, Comment, User, Attachment } from '@/lib/types';
@@ -34,6 +33,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart as RechartsBarChart, PieChart as RechartsPieChart, Bar, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useDataStore } from '@/hooks/use-data-store';
 
 
 const contractStatusMap: { [key in ContractStatus]: string } = {
@@ -87,7 +87,7 @@ type ContractFormValues = z.infer<typeof contractFormSchema>;
 type SortableField = 'contractNumber' | 'customerName' | 'startDate' | 'endDate' | 'status';
 
 export default function ContractsPanel() {
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+  const { contracts, addContract, updateContract, deleteContract } = useDataStore();
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filter, setFilter] = useState<'All' | ContractStatus>('All');
@@ -228,25 +228,25 @@ export default function ContractsPanel() {
   };
 
   const onSubmit: SubmitHandler<ContractFormValues> = (data) => {
-    const newContract: Contract = {
+    const newContractData = {
         ...data,
         startDate: format(data.startDate, 'yyyy-MM-dd'),
         endDate: format(data.endDate, 'yyyy-MM-dd'),
     };
 
     if (selectedContract) {
-      setContracts(contracts.map(c => c.id === newContract.id ? newContract : c));
-      setSelectedContract(newContract);
-      toast({ title: "계약 수정됨", description: `${newContract.contractNumber} 계약이 성공적으로 수정되었습니다.` });
+      updateContract(newContractData.id, newContractData);
+      setSelectedContract(newContractData);
+      toast({ title: "계약 수정됨", description: `${newContractData.contractNumber} 계약이 성공적으로 수정되었습니다.` });
     } else {
-      setContracts([newContract, ...contracts]);
-      toast({ title: "계약 생성됨", description: `${newContract.contractNumber} 계약이 성공적으로 생성되었습니다.` });
+      addContract(newContractData);
+      toast({ title: "계약 생성됨", description: `${newContractData.contractNumber} 계약이 성공적으로 생성되었습니다.` });
       closeSheet();
     }
   };
   
   const handleDelete = (contractIds: string[]) => {
-      setContracts(contracts.filter(c => !contractIds.includes(c.id)));
+      deleteContract(contractIds);
       toast({
           title: "계약 삭제됨",
           description: `${contractIds.length}개의 계약이 삭제되었습니다.`,
@@ -308,35 +308,20 @@ export default function ContractsPanel() {
   };
 
   const handleSaveComment = (contractId: string, comment: Comment) => {
-      const updatedContracts = contracts.map(c => {
-          if(c.id === contractId) {
-              return {...c, comments: [...(c.comments || []), comment]};
-          }
-          return c;
-      });
-      setContracts(updatedContracts);
-      if(selectedContract?.id === contractId) {
-          setSelectedContract(updatedContracts.find(c => c.id === contractId) || null);
-      }
+      updateContract(contractId, { comments: [...(contracts.find(c => c.id === contractId)?.comments || []), comment] });
   };
 
   const handleSaveReply = (contractId: string, commentId: string, reply: Comment) => {
-      const updatedContracts = contracts.map(c => {
-          if(c.id === contractId) {
-              const updatedComments = (c.comments || []).map(comment => {
-                  if(comment.id === commentId) {
-                      return {...comment, replies: [...(comment.replies || []), reply]};
-                  }
-                  return comment;
-              });
-              return {...c, comments: updatedComments};
+      const contract = contracts.find(c => c.id === contractId);
+      if (!contract) return;
+
+      const updatedComments = (contract.comments || []).map(c => {
+          if (c.id === commentId) {
+              return { ...c, replies: [...(c.replies || []), reply] };
           }
           return c;
       });
-      setContracts(updatedContracts);
-       if(selectedContract?.id === contractId) {
-          setSelectedContract(updatedContracts.find(c => c.id === contractId) || null);
-      }
+      updateContract(contractId, { comments: updatedComments });
   };
 
 
@@ -670,7 +655,7 @@ export default function ContractsPanel() {
                         <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare/>소통 기록</CardTitle></CardHeader>
                         <CardContent>
                             <Comments 
-                                comments={selectedContract.comments || []} 
+                                comments={form.getValues('comments') || []} 
                                 users={users as User[]}
                                 currentUser={users[0] as User}
                                 taskId={selectedContract.id}
@@ -684,7 +669,7 @@ export default function ContractsPanel() {
                 </div>
                 </ScrollArea>
                 <div className="flex justify-between items-center pt-4 mt-auto">
-                    <Button type="submit">
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {selectedContract ? '계약 저장' : '계약 생성'}
                     </Button>

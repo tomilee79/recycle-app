@@ -7,7 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
-import { reportData, settlementData as initialSettlementData, expensesData as initialExpensesData, vehicles, customers } from "@/lib/mock-data";
+import { reportData, vehicles, customers } from "@/lib/mock-data";
 import type { SettlementData, SettlementStatus, Expense, ExpenseStatus, ExpenseCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +31,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MonthPicker } from '../ui/month-picker';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Checkbox } from '../ui/checkbox';
+import { useDataStore } from '@/hooks/use-data-store';
 
 
 const settlementStatusMap: { [key in SettlementStatus]: string } = {
@@ -140,8 +141,9 @@ const ExpensesSummary = ({ data }: { data: Expense[] }) => {
 
 
 export default function BillingPanel() {
-  const [settlementData, setSettlementData] = useState<SettlementData[]>(initialSettlementData);
-  const [expensesData, setExpensesData] = useState<Expense[]>(initialExpensesData);
+  const { settlementData, addSettlement, updateSettlement, deleteSettlement, updateSettlementStatus } = useDataStore();
+  const { expensesData, addExpense, updateExpense, deleteExpense, updateExpenseStatus } = useDataStore();
+  
   const [editingSettlement, setEditingSettlement] = useState<SettlementData | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
@@ -263,12 +265,10 @@ export default function BillingPanel() {
 
   const onSettlementSubmit: SubmitHandler<SettlementFormValues> = (data) => {
     if (editingSettlement) {
-      const updatedSettlement: SettlementData = { 
-        ...editingSettlement,
+      updateSettlement(editingSettlement.id, {
         ...data,
         month: format(data.month, 'yyyy-MM'),
-      };
-      setSettlementData(prev => prev.map(s => s.id === editingSettlement.id ? updatedSettlement : s));
+      });
       toast({ title: "정산 내역 수정됨", description: "정산 내역이 성공적으로 수정되었습니다." });
     } else {
       const newSettlement: SettlementData = {
@@ -277,14 +277,14 @@ export default function BillingPanel() {
         month: format(data.month, 'yyyy-MM'),
         status: 'Pending',
       };
-      setSettlementData([newSettlement, ...settlementData]);
+      addSettlement(newSettlement);
       toast({ title: "정산 내역 등록됨", description: "새로운 정산 내역이 성공적으로 등록되었습니다." });
     }
     setIsSettlementModalOpen(false);
   };
 
-  const handleDeleteSettlement = (ids: string[]) => {
-    setSettlementData(prev => prev.filter(s => !ids.includes(s.id)));
+  const handleDeleteSettlementLocal = (ids: string[]) => {
+    deleteSettlement(ids);
     toast({ title: "정산 내역 삭제됨", description: `${ids.length}개의 정산 내역이 삭제되었습니다.`, variant: "destructive" });
     if(editingSettlement && ids.includes(editingSettlement.id)) {
         setIsSettlementModalOpen(false);
@@ -294,11 +294,7 @@ export default function BillingPanel() {
   }
   
   const handleSettlementStatusChange = (ids: string[], newStatus: SettlementStatus) => {
-    setSettlementData(prevData =>
-      prevData.map(item =>
-        ids.includes(item.id) ? { ...item, status: newStatus } : item
-      )
-    );
+    updateSettlementStatus(ids, newStatus);
     toast({
       title: '상태 변경 완료',
       description: `${ids.length}개 항목의 상태가 '${settlementStatusMap[newStatus]}'(으)로 변경되었습니다.`,
@@ -307,11 +303,7 @@ export default function BillingPanel() {
   };
 
   const handleExpenseStatusChange = (ids: string[], newStatus: ExpenseStatus) => {
-    setExpensesData(prevData =>
-        prevData.map(item =>
-            ids.includes(item.id) ? { ...item, status: newStatus } : item
-        )
-    );
+    updateExpenseStatus(ids, newStatus);
     toast({
         title: '상태 변경 완료',
         description: `${ids.length}개 항목의 상태가 '${expenseStatusMap[newStatus]}'(으)로 변경되었습니다.`,
@@ -320,33 +312,29 @@ export default function BillingPanel() {
   };
 
   const onExpenseSubmit: SubmitHandler<ExpenseFormValues> = (data) => {
-    const expenseData = {
+    const expensePayload = {
         ...data,
-        vehicleId: data.vehicleId === 'none' ? undefined : data.vehicleId
+        vehicleId: data.vehicleId === 'none' ? undefined : data.vehicleId,
+        date: format(data.date, 'yyyy-MM-dd'),
     };
 
     if (editingExpense) {
-      const updatedExpense = { ...editingExpense, ...expenseData, date: format(data.date, 'yyyy-MM-dd') };
-      setExpensesData(prev => prev.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      updateExpense(editingExpense.id, expensePayload);
       toast({ title: "비용 수정됨", description: "비용 항목이 성공적으로 수정되었습니다." });
     } else {
       const newExpense: Expense = {
         id: `EXP${String(expensesData.length + 1).padStart(3, '0')}`,
-        date: format(data.date, 'yyyy-MM-dd'),
-        category: data.category as ExpenseCategory,
-        description: data.description,
-        amount: data.amount,
-        vehicleId: expenseData.vehicleId,
+        ...expensePayload,
         status: 'Pending',
       };
-      setExpensesData([newExpense, ...expensesData]);
+      addExpense(newExpense);
       toast({ title: "비용 등록됨", description: "새로운 비용 항목이 성공적으로 등록되었습니다." });
     }
     setIsExpenseModalOpen(false);
   };
   
-  const handleDeleteExpense = (ids: string[]) => {
-    setExpensesData(prev => prev.filter(e => !ids.includes(e.id)));
+  const handleDeleteExpenseLocal = (ids: string[]) => {
+    deleteExpense(ids);
     toast({ title: "비용 삭제됨", description: `${ids.length}개의 비용 항목이 삭제되었습니다.`, variant: "destructive" });
     if(editingExpense && ids.includes(editingExpense.id)) {
         setIsExpenseModalOpen(false);
@@ -542,7 +530,7 @@ export default function BillingPanel() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>취소</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteSettlement(Array.from(selectedSettlementRows))}>삭제 확인</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => handleDeleteSettlementLocal(Array.from(selectedSettlementRows))}>삭제 확인</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -599,7 +587,7 @@ export default function BillingPanel() {
                                                 <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 정산 내역은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlement([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlementLocal([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         </DropdownMenuContent>
@@ -682,7 +670,7 @@ export default function BillingPanel() {
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>취소</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteExpense(Array.from(selectedExpenseRows))}>삭제 확인</AlertDialogAction>
+                                                <AlertDialogAction onClick={() => handleDeleteExpenseLocal(Array.from(selectedExpenseRows))}>삭제 확인</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -743,7 +731,7 @@ export default function BillingPanel() {
                                                             <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">삭제</DropdownMenuItem></AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                                                                <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpense([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                                                                <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpenseLocal([item.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter>
                                                             </AlertDialogContent>
                                                         </AlertDialog>
                                                     </DropdownMenuContent>
@@ -790,8 +778,8 @@ export default function BillingPanel() {
                     </div>
                     <FormField control={settlementForm.control} name="amount" render={({ field }) => (<FormItem><FormLabel>정산 금액(원)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <DialogFooter className="pt-4 sm:justify-between">
-                         {editingSettlement ? (<AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2" /> 삭제</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 정산 내역은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlement([editingSettlement!.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>) : <div></div>}
-                        <Button type="submit" disabled={settlementForm.formState.isSubmitting}>{settlementForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingSettlement ? '저장' : '등록'}</Button>
+                         {editingSettlement ? (<AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2" /> 삭제</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 정산 내역은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSettlementLocal([editingSettlement!.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>) : <div></div>}
+                        <Button type="submit" disabled={settlementForm.formState.isSubmitting}>{settlementForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {editingSettlement ? '저장' : '등록'}</Button>
                     </DialogFooter>
                 </form>
                 </Form>
@@ -811,8 +799,8 @@ export default function BillingPanel() {
                     <FormField control={expenseForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>상세 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={expenseForm.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>관련 차량 (선택)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? 'none'}><FormControl><SelectTrigger><SelectValue placeholder="관련 차량을 선택하세요" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">없음</SelectItem>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
                     <DialogFooter className="pt-4 sm:justify-between">
-                         {editingExpense ? (<AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2" /> 삭제</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpense([editingExpense!.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>) : <div></div>}
-                        <Button type="submit" disabled={expenseForm.formState.isSubmitting}>{expenseForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingExpense ? '저장' : '비용 등록'}</Button>
+                         {editingExpense ? (<AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2" /> 삭제</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 비용 항목은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteExpenseLocal([editingExpense!.id])}>삭제 확인</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>) : <div></div>}
+                        <Button type="submit" disabled={expenseForm.formState.isSubmitting}>{expenseForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {editingExpense ? '저장' : '비용 등록'}</Button>
                     </DialogFooter>
                 </form>
                 </Form>
