@@ -41,6 +41,7 @@ import {
   BookUser,
   FolderKanban,
   Settings2,
+  ExternalLink,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { EcoTrackLogo } from '@/components/icons';
@@ -64,7 +65,7 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
-type View = 'dashboard' | 'billing' | 'notifications' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'mypage' | 'todos' | 'quotes' | 'admin' | 'contact';
+type View = 'dashboard' | 'billing' | 'vehicles' | 'drivers' | 'driver-performance' | 'customers' | 'contracts' | 'predict' | 'waste-analysis' | 'route-optimization' | 'schedule' | 'tasks' | 'todos' | 'quotes' | 'admin' | 'contact';
 
 type MenuGroup = 'operations' | 'crm' | 'resources' | 'system';
 
@@ -72,7 +73,7 @@ const menuGroups: Record<MenuGroup, View[]> = {
   operations: ['dashboard', 'schedule', 'tasks', 'todos', 'route-optimization'],
   crm: ['customers', 'quotes', 'contracts', 'billing'],
   resources: ['vehicles', 'drivers', 'driver-performance', 'waste-analysis'],
-  system: ['predict', 'admin', 'mypage'],
+  system: ['predict', 'admin'],
 };
 
 
@@ -106,7 +107,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const viewTitles: { [key in View]: string } = {
     dashboard: '실시간 배차 현황',
     billing: '정산 관리',
-    notifications: '알림 센터',
     vehicles: '차량 및 장비 관리',
     drivers: '직원 관리',
     'driver-performance': '성과 대시보드',
@@ -117,7 +117,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     'route-optimization': 'AI 경로 최적화',
     schedule: '일정 관리',
     tasks: '작업 관리',
-    mypage: '마이페이지',
     todos: '할일 관리',
     quotes: '견적 관리',
     admin: '관리자 계정 관리',
@@ -217,6 +216,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <SidebarMenuItem>
               <SidebarMenuButton isActive={activeView === 'contact'} asChild>
                 <Link href="/contact"><Info /><span>개발사 연락처</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <a href="https://tally.so/r/jaayl6" target="_blank" rel="noopener noreferrer"><ExternalLink /><span>개발문의</span></a>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
