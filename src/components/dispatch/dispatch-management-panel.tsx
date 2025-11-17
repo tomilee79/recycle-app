@@ -1,15 +1,14 @@
 
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDataStore } from "@/hooks/use-data-store";
 import type { CollectionTask, Vehicle, Priority, Driver } from "@/lib/types";
-import { useMemo, useState, useRef, forwardRef, Ref } from "react";
-import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
+import { DndProvider, useDrag, useDrop, type DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Truck, MapPin, Trash2, GripVertical, AlertTriangle, Search, PlusCircle, Edit, MoreHorizontal, CheckCircle } from "lucide-react";
+import { Truck, MapPin, Trash2, GripVertical, AlertTriangle, Search, PlusCircle, Edit, MoreHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -47,13 +46,13 @@ interface TaskCardProps {
   onDelete: (task: CollectionTask) => void;
 }
 
-const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
+const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
   ({ task, index, vehicleId, onMove, onAssign, onEdit, onDelete }, ref) => {
     const { customers, vehicles, drivers } = useDataStore();
     const getCustomerName = (customerId: string) => customers.find(c => c.id === customerId)?.name || 'N/A';
     const availableVehicles = useMemo(() => vehicles.filter(v => (drivers.find(d => d.name === v.driver)?.isAvailable ?? false)), [vehicles, drivers]);
 
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag, preview] = useDrag(() => ({
       type: ItemTypes.TASK,
       item: { id: task.id, index, columnId: vehicleId ? `InProgress_${vehicleId}` : 'Pending', vehicleId } as TaskDragItem,
       collect: (monitor) => ({
@@ -64,7 +63,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     const [, drop] = useDrop({
       accept: ItemTypes.TASK,
       hover: (item: TaskDragItem, monitor: DropTargetMonitor) => {
-        if (!ref || ('current' in ref && !ref.current) || item.id === task.id) {
+        if (!ref || (typeof ref === 'object' && !ref.current) || item.id === task.id) {
           return;
         }
         if (vehicleId) { // Only allow reordering within a vehicle lane
@@ -82,46 +81,46 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
         ref.current = el;
       }
     };
-
+  
     return (
-      <div ref={combinedRef} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
-            <GripVertical size={16} />
-        </div>
-        <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
-        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-            <MapPin className="size-3" /> {task.address}
-        </p>
-        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-            <Trash2 className="size-3" /> {task.materialType}
-        </p>
-        {!vehicleId && (
-            <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {availableVehicles.length > 0 ? (
-                       availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
-                    ) : (
-                      <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+        <div ref={combinedRef} className={cn("p-3 border-l-4 rounded-lg bg-card shadow-sm cursor-grab relative group", priorityMap[task.priority].color)} style={{ opacity: isDragging ? 0.5 : 1 }}>
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground hover:text-foreground">
+                <GripVertical size={16} />
             </div>
-        )}
-      </div>
+            <p className="font-semibold text-sm pr-4">{getCustomerName(task.customerId)}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                <MapPin className="size-3" /> {task.address}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                <Trash2 className="size-3" /> {task.materialType}
+            </p>
+            {!vehicleId && (
+                <div className="flex justify-end items-center mt-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs">배정</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {availableVehicles.length > 0 ? (
+                           availableVehicles.map(v => <DropdownMenuItem key={v.id} onSelect={() => onAssign(task.id, v.id)}>{v.name}</DropdownMenuItem>)
+                        ) : (
+                          <DropdownMenuItem disabled>배차 가능 차량 없음</DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}><Edit className="size-4"/></Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"><Trash2 className="size-4"/></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle><AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 이 작업은 영구적으로 삭제됩니다.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(task)}>삭제 확인</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            )}
+        </div>
     );
   }
 );
@@ -226,7 +225,7 @@ const VehicleLane = ({ vehicle, tasks, onMoveTask, onEditTask, onDeleteTask, onA
 }
 
 export default function DispatchManagementPanel() {
-  const { collectionTasks, vehicles, drivers, setTasks, deleteTask } = useDataStore();
+  const { collectionTasks, vehicles, drivers, customers, setTasks, deleteTask } = useDataStore();
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
@@ -289,9 +288,8 @@ export default function DispatchManagementPanel() {
     const issues = collectionTasks.filter(task => task.status === 'Cancelled');
     
     return { pendingTasks: pending, inProgressTasks: inProgress, issueTasks: issues };
-  }, [collectionTasks, vehicles, search]);
+  }, [collectionTasks, vehicles, search, customers]);
   
-  const { customers } = useDataStore();
   const totalTasks = pendingTasks.length + Object.values(inProgressTasks).flat().length + issueTasks.length;
   
   return (
@@ -345,3 +343,4 @@ export default function DispatchManagementPanel() {
     </DndProvider>
   );
 }
+
