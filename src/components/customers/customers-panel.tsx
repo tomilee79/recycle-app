@@ -1,15 +1,14 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { customers as initialCustomers, contracts } from "@/lib/mock-data";
+import { customers as initialCustomers, contracts, quotes, collectionTasks as allCollectionTasks } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, MessageSquare, Handshake, ShieldAlert, CirclePlus, NotepadText, Star, TrendingUp, HandCoins } from "lucide-react";
-import type { Customer, SalesActivity, Contract, CustomerTier } from '@/lib/types';
+import { PlusCircle, Building, User, FileText, Loader2, Users2, Search, Trash2, Edit, Save, X, MessageSquare, Handshake, ShieldAlert, CirclePlus, NotepadText, Star, TrendingUp, HandCoins, History, Briefcase, ListTodo } from "lucide-react";
+import type { Customer, SalesActivity, Contract, CustomerTier, Quote, CollectionTask } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
@@ -157,7 +156,7 @@ export default function CustomersPanel() {
       date: new Date().toISOString().split('T')[0],
       type: data.type as SalesActivity['type'],
       content: data.content,
-      manager: '관리자' // Mock manager
+      manager: '관리자'
     };
     
     const updatedCustomer = { ...selectedCustomer, activityHistory: [newActivity, ...selectedCustomer.activityHistory] };
@@ -175,12 +174,12 @@ export default function CustomersPanel() {
   };
 
   const onCustomerSubmit: SubmitHandler<CustomerFormValues> = (data) => {
-    if (selectedCustomer) { // Update
+    if (selectedCustomer) {
         const updatedCustomer = { ...selectedCustomer, ...data };
         setCustomers(customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c));
         setSelectedCustomer(updatedCustomer);
         toast({ title: "고객 정보 수정됨", description: `${data.name}의 정보가 수정되었습니다.` });
-    } else { // Create
+    } else {
         const newCustomer: Customer = {
             id: `C${String(customers.length + 1).padStart(3, '0')}`,
             name: data.name,
@@ -323,7 +322,7 @@ export default function CustomersPanel() {
                     </div>
                 </div>
               <Table>
-                <TableHeader><TableRow><TableHead>고객명</TableHead><TableHead>등급</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>고객사명</TableHead><TableHead>등급</TableHead><TableHead>담당자</TableHead><TableHead>주소</TableHead><TableHead>계약 상태</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {paginatedCustomers.map((customer) => {
                     const contract = getCustomerContract(customer.id);
@@ -396,8 +395,8 @@ export default function CustomersPanel() {
                                     <Badge className={cn("gap-1 text-white", tierMap[selectedCustomer.tier].color)}>{React.createElement(tierMap[selectedCustomer.tier].icon, {className: 'size-3'})} {tierMap[selectedCustomer.tier].label}</Badge>
                                 </div>
                                 <SheetDescription className="flex flex-col gap-1.5 pt-2 text-sm">
-                                    <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson}</span>
-                                    <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address}</span>
+                                    <span className="flex items-center gap-2"><User className="size-4 text-muted-foreground"/> {selectedCustomer.contactPerson || '미지정'}</span>
+                                    <span className="flex items-center gap-2"><Building className="size-4 text-muted-foreground"/> {selectedCustomer.address || '미지정'}</span>
                                 </SheetDescription>
                             </div>
                             <div className="flex gap-2">
@@ -416,56 +415,103 @@ export default function CustomersPanel() {
                 </SheetHeader>
                 
                 {selectedCustomer && !isEditingCustomer && (
-                    <div className="mt-6 space-y-8">
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle className="text-lg flex items-center gap-2"><NotepadText/> 활동 이력</CardTitle>
-                                {!isAddingActivity && <Button size="sm" variant="outline" onClick={() => setIsAddingActivity(true)}><CirclePlus className="mr-2"/>기록 추가</Button>}
-                            </CardHeader>
-                            <CardContent>
-                                 {isAddingActivity && (
-                                    <Form {...activityForm}>
-                                        <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="p-4 border rounded-md mb-6 space-y-4 bg-muted/50">
-                                            <FormField control={activityForm.control} name="type" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>활동 유형</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl>
-                                                        <SelectContent>{activityTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}/>
-                                            <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <div className="flex justify-end gap-2">
-                                                <Button type="button" variant="ghost" onClick={() => setIsAddingActivity(false)}>취소</Button>
-                                                <Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록</Button>
-                                            </div>
-                                        </form>
-                                    </Form>
-                                )}
+                    <Tabs defaultValue="activity" className="mt-6">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="activity"><History className="mr-2 size-4"/>활동</TabsTrigger>
+                            <TabsTrigger value="quotes"><FileText className="mr-2 size-4"/>견적</TabsTrigger>
+                            <TabsTrigger value="contracts"><Briefcase className="mr-2 size-4"/>계약</TabsTrigger>
+                            <TabsTrigger value="tasks"><ListTodo className="mr-2 size-4"/>작업</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="activity">
+                             <Card className="mt-4">
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="text-lg flex items-center gap-2"><NotepadText/> 활동 이력</CardTitle>
+                                    {!isAddingActivity && <Button size="sm" variant="outline" onClick={() => setIsAddingActivity(true)}><CirclePlus className="mr-2"/>기록 추가</Button>}
+                                </CardHeader>
+                                <CardContent>
+                                     {isAddingActivity && (
+                                        <Form {...activityForm}>
+                                            <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="p-4 border rounded-md mb-6 space-y-4 bg-muted/50">
+                                                <FormField control={activityForm.control} name="type" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>활동 유형</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder="유형을 선택하세요" /></SelectTrigger></FormControl>
+                                                            <SelectContent>{activityTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}/>
+                                                <FormField control={activityForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>활동 내용</FormLabel><FormControl><Textarea placeholder="상세 내용을 입력하세요..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button type="button" variant="ghost" onClick={() => setIsAddingActivity(false)}>취소</Button>
+                                                    <Button type="submit" disabled={activityForm.formState.isSubmitting}>{activityForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}기록</Button>
+                                                </div>
+                                            </form>
+                                        </Form>
+                                    )}
 
-                                <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
-                                {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => {
-                                    const ActivityIcon = activityTypeMap[activity.type].icon;
-                                    const iconColor = activityTypeMap[activity.type].color;
-                                    return (
-                                    <div key={activity.id} className="relative">
-                                        <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background`}>
-                                          <ActivityIcon className={cn("size-5", iconColor)} />
+                                    <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-full before:w-0.5 before:bg-border">
+                                    {selectedCustomer.activityHistory.length > 0 ? selectedCustomer.activityHistory.map(activity => {
+                                        const ActivityIcon = activityTypeMap[activity.type].icon;
+                                        const iconColor = activityTypeMap[activity.type].color;
+                                        return (
+                                        <div key={activity.id} className="relative">
+                                            <div className={`absolute -left-2.5 top-1 h-6 w-6 rounded-full bg-background flex items-center justify-center ring-4 ring-background`}>
+                                              <ActivityIcon className={cn("size-5", iconColor)} />
+                                            </div>
+                                            <div className="pl-8">
+                                              <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
+                                              <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
+                                              <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
+                                            </div>
                                         </div>
-                                        <div className="pl-8">
-                                          <div className="flex justify-between items-center"><p className="font-semibold text-sm">{activity.type}</p><p className="text-xs text-muted-foreground">{activity.date}</p></div>
-                                          <p className="text-sm text-muted-foreground mt-1">{activity.content}</p>
-                                          <p className="text-xs text-muted-foreground text-right mt-1">담당: {activity.manager}</p>
-                                        </div>
+                                        )
+                                    }) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
                                     </div>
-                                    )
-                                }) : (<p className="text-sm text-muted-foreground text-center py-4">활동 이력이 없습니다.</p>)}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="quotes">
+                            <Card className="mt-4">
+                                <CardHeader><CardTitle className="text-lg">견적 이력</CardTitle></CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>견적번호</TableHead><TableHead>견적일</TableHead><TableHead>총액</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
+                                        <TableBody>
+                                            {quotes.filter(q => q.customerId === selectedCustomer.id).map(q => <TableRow key={q.id}><TableCell>{q.id}</TableCell><TableCell>{q.quoteDate}</TableCell><TableCell>{q.total.toLocaleString()}원</TableCell><TableCell><Badge>{q.status}</Badge></TableCell></TableRow>)}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="contracts">
+                             <Card className="mt-4">
+                                <CardHeader><CardTitle className="text-lg">계약 이력</CardTitle></CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>계약번호</TableHead><TableHead>시작일</TableHead><TableHead>종료일</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
+                                        <TableBody>
+                                            {contracts.filter(c => c.customerId === selectedCustomer.id).map(c => <TableRow key={c.id}><TableCell>{c.contractNumber}</TableCell><TableCell>{c.startDate}</TableCell><TableCell>{c.endDate}</TableCell><TableCell><Badge>{c.status}</Badge></TableCell></TableRow>)}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="tasks">
+                             <Card className="mt-4">
+                                <CardHeader><CardTitle className="text-lg">최근 작업 이력</CardTitle></CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>예정일</TableHead><TableHead>품목</TableHead><TableHead>상태</TableHead></TableRow></TableHeader>
+                                        <TableBody>
+                                            {allCollectionTasks.filter(t => t.customerId === selectedCustomer.id).slice(0, 5).map(t => <TableRow key={t.id}><TableCell>{t.scheduledDate}</TableCell><TableCell>{t.materialType}</TableCell><TableCell><Badge>{t.status}</Badge></TableCell></TableRow>)}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 )}
             </ScrollArea>
         </SheetContent>
